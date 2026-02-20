@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "staging": "recipeapp-staging",
+    "production": "recipeapp-prod"
+  }
+}

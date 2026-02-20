@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // DENY ALL by default — explicit rules required per collection.
+    // This is intentional. Rules will be added per feature as they are built.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Rate limit counters — only writable by authenticated Cloud Functions
+    // (Cloud Functions use admin SDK which bypasses security rules)
+    match /rateLimits/{uid}/{operation}/{window} {
+      allow read: if false;
+      allow write: if false;
+    }
+  }
+}
