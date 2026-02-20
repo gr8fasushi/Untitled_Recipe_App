@@ -200,17 +200,96 @@ git checkout feature/auth
 
 ---
 
+## Environment & Deployment Strategy
+
+### Three-Tier Architecture
+
+| Tier | Firebase Project | Used For |
+|---|---|---|
+| Local | Emulators only | Daily feature development |
+| Staging | `recipeapp-staging` | QA, TestFlight, integration tests |
+| Production | `recipeapp-prod` | Live users |
+
+- Create **2 real Firebase projects**: staging + prod (not 3 — local uses emulators, which are free)
+- Each project has its own `google-services.json` and `GoogleService-Info.plist` (both gitignored)
+- App Check: **Off** in staging, **On** in production
+- Rate limits: loose in staging, tight (10 req/hr) in production
+
+### EAS Build Profiles (`eas.json`)
+```json
+{
+  "build": {
+    "development": { "developmentClient": true, "distribution": "internal", "env": { "EXPO_PUBLIC_FIREBASE_ENV": "local" } },
+    "staging":     { "distribution": "internal", "env": { "EXPO_PUBLIC_FIREBASE_ENV": "staging" } },
+    "production":  { "distribution": "store",    "env": { "EXPO_PUBLIC_FIREBASE_ENV": "production" } }
+  }
+}
+```
+
+### Environment Detection in `firebase.config.ts`
+Read `process.env.EXPO_PUBLIC_FIREBASE_ENV` → switch between emulator / staging / prod config objects.
+
+### Feature Flags (deploy without releasing)
+Store flags in `src/constants/featureFlags.ts` (static) or `Firestore doc config/features` (remote, toggleable instantly with no deploy).
+
+### Rollback Capabilities by Layer
+
+| Layer | Speed | Method |
+|---|---|---|
+| Feature flag kill switch | ~10 sec | Firestore write |
+| Web (Vercel) | ~10 sec | Vercel dashboard 1-click |
+| Firestore security rules | ~1 min | Redeploy previous file from git |
+| Cloud Functions | ~2 min | `firebase deploy` from previous git tag |
+| JS/UI hotfix (OTA) | ~5 min | `eas update --republish --group <id>` |
+| Native code fix | 1–7 days | New App Store submission |
+
+**Key insight:** ~80% of real bugs are JS-only → fixable via EAS Update OTA without App Store review.
+
+### Deployment Flow
+```
+feature branch → PR → main
+  ↓ GitHub Actions auto-deploys
+staging Firebase + EAS Update (staging branch)
+  ↓ QA passes — manual approval
+prod Cloud Functions deploy + EAS Update (production branch)
+  ↓ major releases only
+eas build → App Store submission
+```
+
+### Git Tags for Every Production Release
+```bash
+git tag v1.x.x -m "feat: description"
+git push origin v1.x.x
+```
+Always tag before prod deploy — gives known good state to roll back Cloud Functions to.
+
+---
+
 ## Environment Setup Reference
 
-### Firebase Secrets (run once, never again)
+### Firebase Secrets (run once per project)
 ```bash
-firebase functions:secrets:set GROQ_API_KEY
-firebase functions:secrets:set GEMINI_API_KEY
+firebase use staging && firebase functions:secrets:set GROQ_API_KEY
+firebase use staging && firebase functions:secrets:set GEMINI_API_KEY
+firebase use prod    && firebase functions:secrets:set GROQ_API_KEY
+firebase use prod    && firebase functions:secrets:set GEMINI_API_KEY
+```
+
+### Switch Firebase Projects
+```bash
+firebase use staging
+firebase use prod
 ```
 
 ### Start Firebase Emulators (for local Cloud Function testing)
 ```bash
 firebase emulators:start --only auth,firestore,functions
+```
+
+### OTA Update (hotfix without App Store)
+```bash
+eas update --branch production --message "fix: description"
+eas update --branch production --republish --group <previous-update-id>  # rollback
 ```
 
 ### Run All Tests
