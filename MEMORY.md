@@ -8,8 +8,8 @@
 
 ## Current Status
 
-**Phase:** Feature 1 — Project Scaffold
-**Active Branch:** `main` (initial commits) → then `feature/auth`
+**Phase:** Feature 1 — Restructure + Dependencies (next session)
+**Active Branch:** `feature/restructure-and-dependencies`
 **Blocking Issues:** Firebase project not yet created (see Prerequisites below)
 
 ---
@@ -21,18 +21,9 @@
 - [x] `CLAUDE.md` — full AI session guidelines (tech stack, conventions, security, git workflow)
 - [x] `MEMORY.md` — this file
 - [x] `BUSINESS_PLAN.md` — executive summary, problem, solution, features, monetization
-- [x] Expo project scaffolded (`npx create-expo-app@latest`)
-- [x] Additional folder structure created (`src/features/`, `src/shared/`, etc.)
-- [x] All app dependencies installed (NativeWind, Zustand, Firebase, Expo packages, test tools)
-- [x] All config files created/modified (tailwind, metro, babel, tsconfig, jest, eslint, prettier)
-- [x] Husky pre-commit hooks configured (lint + type-check)
-- [x] Starter source files created (firebase config, stores, types, constants, Cloud Function utils)
-- [x] GitHub Actions CI/CD workflows created
-- [x] `firestore.rules` — security rules written
-- [x] `firebase.json` + `.firebaserc` — Firebase project config
-- [x] `eas.json` — Expo EAS Build config
-- [x] Initial git commits pushed to GitHub (2 commits on main)
-- [x] `feature/auth` branch created and pushed
+- [x] Expo project scaffolded (`npx create-expo-app@latest` tabs template, SDK 54)
+- [x] Git initialized, 2 commits pushed to GitHub main branch
+- [x] `feature/restructure-and-dependencies` branch created and pushed
 
 ---
 
@@ -55,6 +46,50 @@
 ---
 
 ## Next Session: Exactly What To Do
+
+### This Session's Work: Restructure + Install Dependencies
+**Branch:** `feature/restructure-and-dependencies`
+
+The scaffold is the default Expo tabs template. It needs to be restructured to the
+production feature-based `src/` layout defined in CLAUDE.md before any feature work begins.
+
+1. Move `app/` → `src/app/`
+2. Move `components/` → `src/shared/components/ui/` (generic ones) and delete template-specific ones
+3. Move `constants/` → `src/constants/`
+4. Create all feature directories:
+   ```
+   src/features/auth/  src/features/onboarding/  src/features/pantry/
+   src/features/recipes/  src/features/chat/  src/features/scan/  src/features/profile/
+   ```
+5. Create `src/shared/` structure (components, hooks, services, utils, types)
+6. Create `src/stores/` (uiStore.ts)
+7. Install all dependencies:
+   ```bash
+   npx expo install nativewind react-native-reanimated react-native-safe-area-context
+   npm install --save-dev tailwindcss@^3.4.17
+   npm install zustand firebase zod
+   npx expo install expo-secure-store expo-auth-session expo-crypto expo-apple-authentication expo-web-browser expo-image-picker expo-camera expo-image-manipulator @react-native-async-storage/async-storage
+   npm install --save-dev prettier prettier-plugin-tailwindcss eslint eslint-config-expo babel-plugin-module-resolver husky lint-staged jest-expo @testing-library/react-native @testing-library/jest-native
+   ```
+8. Update `babel.config.js` — NativeWind preset + module-resolver for @/ alias
+9. Create `metro.config.js` — withNativeWind wrapper
+10. Create `tailwind.config.js` — NativeWind preset, brand colors
+11. Create `global.css` — Tailwind directives
+12. Create `nativewind-env.d.ts`
+13. Update `tsconfig.json` — strict: true, @/ path alias
+14. Update `app.json` — src/app directory, permissions plugins, scheme, web bundler
+15. Create `jest.config.js` + `jest.setup.ts`
+16. Create `.eslintrc.js`
+17. Create `.prettierrc`
+18. Set up Husky: `npx husky init` + pre-commit hook
+19. Create `functions/` directory + install functions dependencies
+20. Create `firestore.rules` + `firebase.json` + `.firebaserc` + `eas.json`
+21. Create starter files: firebase.config.ts, constants/allergens.ts, types files, Cloud Function prompts
+22. Create `.github/workflows/ci.yml` + `build.yml`
+23. Verify: `npx expo start` works, `npx tsc --noEmit` passes
+24. Update MEMORY.md, commit: `feat: restructure to src/ layout, install all dependencies`
+25. Push: `git push origin feature/restructure-and-dependencies`
+26. Then create `feature/auth` branch for next session
 
 ### Prerequisites (complete BEFORE writing any auth code)
 1. Create Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
