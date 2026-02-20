@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-20 — Feature 1: Restructure + Dependencies complete
+> Last updated: 2026-02-20 — Session 3: Firebase projects + secrets configured
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 2 — Firebase Auth (next session)
-**Active Branch:** `feature/restructure-and-dependencies` (ready to PR → main, then cut `feature/auth`)
-**Blocking Issues:** Firebase project not yet created (see Prerequisites below)
+**Phase:** Feature 2 — Firebase Auth (ready to build)
+**Active Branch:** `feature/auth` (cut from main after this commit)
+**Blocking Issues:** None — all prerequisites complete
 
 ---
 
@@ -24,6 +24,18 @@
 - [x] Expo project scaffolded (`npx create-expo-app@latest` tabs template, SDK 54)
 - [x] Git initialized, 2 commits pushed to GitHub main branch
 - [x] `feature/restructure-and-dependencies` branch created and pushed
+- [x] **Session 3 COMPLETE:** Firebase infrastructure configured
+  - PR #1 merged to main (`feature/restructure-and-dependencies`)
+  - GitHub CLI (`gh`) installed and authenticated
+  - Firebase CLI installed and authenticated
+  - 2 Firebase projects created: `recipeapp-staging-e2d31`, `recipeapp-prod-aa25c`
+  - Auth enabled (Email/Password + Google) on both projects
+  - Firestore created (production mode, us-central1) on both projects
+  - Blaze plan enabled on both projects
+  - Real Firebase configs added to `src/shared/services/firebase/firebase.config.ts`
+  - `.firebaserc` updated with real project IDs
+  - `GROQ_API_KEY` secret set on both projects ✅
+  - `GEMINI_API_KEY` secret set on both projects ✅
 - [x] **Feature 1 COMPLETE:** Restructured to `src/` layout, all dependencies installed
   - `src/app/` — all placeholder route files (auth, onboarding, tabs)
   - `src/features/` — directory scaffold for all 7 features
@@ -59,32 +71,9 @@
 
 ## Next Session: Exactly What To Do
 
-### Prerequisites (complete BEFORE writing any auth code)
-
-1. Create **2 real Firebase projects** at [console.firebase.google.com](https://console.firebase.google.com):
-   - `recipeapp-staging` — for QA/testing
-   - `recipeapp-prod` — for production
-     For EACH project:
-   - Enable Email/Password auth
-   - Enable Google Sign-In (configure OAuth client, add SHA fingerprints)
-   - Enable Apple Sign-In (requires Apple Developer account — $99/year)
-   - Create Firestore database in **production mode** (NOT test mode)
-   - Upgrade to **Blaze plan** (required for Cloud Functions)
-   - Set budget alert: $10/month
-   - Download config → add to `src/shared/services/firebase/firebase.config.ts`
-2. Get Groq API key at [console.groq.com](https://console.groq.com)
-3. Get Gemini API key at [aistudio.google.com](https://aistudio.google.com)
-4. Run secrets setup:
-   ```bash
-   firebase use staging && firebase functions:secrets:set GROQ_API_KEY
-   firebase use staging && firebase functions:secrets:set GEMINI_API_KEY
-   firebase use production && firebase functions:secrets:set GROQ_API_KEY
-   firebase use production && firebase functions:secrets:set GEMINI_API_KEY
-   ```
-
 ### Feature 2: Firebase Auth
 
-**Branch:** `git checkout -b feature/auth`
+**Branch:** `feature/auth` (already cut)
 
 1. Fill real Firebase config values in `src/shared/services/firebase/firebase.config.ts`
 2. Build `src/features/auth/services/authService.ts` (signIn, signUp, signOut, Google, Apple)
@@ -146,12 +135,9 @@ git checkout feature/auth
 
 ## Known Issues / Blockers
 
-- Firebase project not yet created — blocks all auth and backend work
-- `google-services.json` and `GoogleService-Info.plist` not yet generated
-- Groq API key not yet obtained
-- Gemini API key not yet obtained
-- Firebase config values in `firebase.config.ts` are placeholders — must be updated
-- Apple Sign-In requires Apple Developer account ($99/year) — plan accordingly
+- Apple Sign-In requires Apple Developer account ($99/year) — implement later
+- `google-services.json` and `GoogleService-Info.plist` not yet generated — needed for native builds only
+- Firebase project IDs: staging=`recipeapp-staging-e2d31`, prod=`recipeapp-prod-aa25c`
 
 ---
 

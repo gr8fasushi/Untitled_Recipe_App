@@ -15,22 +15,20 @@ const firebaseConfigs = {
     appId: '1:000000000000:web:0000000000000000',
   },
   staging: {
-    // TODO: Replace after creating recipeapp-staging Firebase project
-    apiKey: process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] ?? '',
-    authDomain: process.env['EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'] ?? '',
-    projectId: process.env['EXPO_PUBLIC_FIREBASE_PROJECT_ID'] ?? '',
-    storageBucket: process.env['EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'] ?? '',
-    messagingSenderId: process.env['EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-    appId: process.env['EXPO_PUBLIC_FIREBASE_APP_ID'] ?? '',
+    apiKey: 'AIzaSyDZfXaMItBP1Be4z-q7_06CAgmw0s-CBV0',
+    authDomain: 'recipeapp-staging-e2d31.firebaseapp.com',
+    projectId: 'recipeapp-staging-e2d31',
+    storageBucket: 'recipeapp-staging-e2d31.firebasestorage.app',
+    messagingSenderId: '35730238058',
+    appId: '1:35730238058:web:0848f27ddf291a977af813',
   },
   production: {
-    // TODO: Replace after creating recipeapp-prod Firebase project
-    apiKey: process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] ?? '',
-    authDomain: process.env['EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'] ?? '',
-    projectId: process.env['EXPO_PUBLIC_FIREBASE_PROJECT_ID'] ?? '',
-    storageBucket: process.env['EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'] ?? '',
-    messagingSenderId: process.env['EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'] ?? '',
-    appId: process.env['EXPO_PUBLIC_FIREBASE_APP_ID'] ?? '',
+    apiKey: 'AIzaSyAPnJqV9vhz6GxL_VOMEfYAzoxyyQyhR4o',
+    authDomain: 'recipeapp-prod-aa25c.firebaseapp.com',
+    projectId: 'recipeapp-prod-aa25c',
+    storageBucket: 'recipeapp-prod-aa25c.firebasestorage.app',
+    messagingSenderId: '619451484026',
+    appId: '1:619451484026:web:9e3c02f5fca09835df38c3',
   },
 } as const;
 
