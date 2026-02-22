@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-21 — Feature 3: Onboarding complete ✅
+> Last updated: 2026-02-21 — Feature 4: Pantry (types + store + service + ingredient data done)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 4 — Pantry Management (next to build)
-**Active Branch:** `feature/onboarding` (ready to PR → main)
+**Phase:** Feature 4 — Pantry Management (in progress — UI components + screen remaining)
+**Active Branch:** `feature/pantry`
 **Blocking Issues:** None
 
 ---
@@ -69,7 +69,7 @@
 
 - [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
 - [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
-- [ ] **Feature 4:** Pantry management (manual ingredient search + selection)
+- [ ] **Feature 4:** Pantry management — types ✅ store ✅ service ✅ ingredients ✅ UI/screen pending
 - [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
 - [ ] **Feature 7:** AI chatbot (cooking assistant, recipe-scoped)
@@ -87,41 +87,34 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 4: Pantry Management
+### Feature 4: Pantry Management (remaining)
 
-**Branch:** cut `feature/pantry` from `feature/onboarding` (or from main after PR merges)
+**Branch:** `feature/pantry` (already cut from main)
 
-#### What to Build
+#### Done This Session
 
-Manual ingredient selection screen. User searches/browses ingredients → adds to pantry → used by recipe generation.
+- `src/features/pantry/types/index.ts` — `PantryItem`, `PantrySchema`, `IngredientSchema`
+- `src/features/pantry/store/pantryStore.ts` + 14 tests
+- `src/features/pantry/services/pantryService.ts` + 8 tests (`savePantry`, `loadPantry`)
+- `src/constants/ingredients.ts` — 100 ingredients, 9 categories, `searchIngredients()`, `getIngredientsByCategory()`
 
-#### Steps
+#### Steps Remaining
 
-1. `git checkout -b feature/pantry` (from `feature/onboarding` or merged main)
-2. Create `src/features/pantry/types/index.ts` — `IngredientItem` type, `PantrySchema` Zod schema
-3. Create `src/features/pantry/store/pantryStore.ts` + tests
-   - State: `selectedIngredients: Ingredient[]`, `isLoading: boolean`, `error: string | null`
-   - Actions: `addIngredient`, `removeIngredient`, `clearPantry`, `setLoading`, `setError`, `reset`
-   - Guard `addIngredient` against duplicates (check `id`)
-4. Create `src/features/pantry/services/pantryService.ts` + tests
-   - `savePantry(uid, ingredients)` — writes to Firestore `users/{uid}/pantry`
-   - `loadPantry(uid)` — reads from Firestore (loads persisted pantry on app open)
-5. Create ingredient data in `src/constants/ingredients.ts` (common pantry items with categories)
-6. Create `src/features/pantry/components/IngredientChip.tsx` — small pressable chip showing ingredient + remove button
-7. Create `src/features/pantry/components/IngredientSearch.tsx` — text input + filtered list
-8. Create `src/app/(tabs)/pantry.tsx` — main pantry screen
-9. Update Firestore rules to allow `users/{uid}/pantry` subcollection
-10. Write tests for all of the above
-11. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
-12. Update `CODE_CONTEXT.md`, update `MEMORY.md`
-13. Commit: `feat: add pantry management with ingredient selection and Firestore persistence`
-14. Push + PR to main
+1. Create `src/features/pantry/components/IngredientChip.tsx` — pressable chip with remove button + tests
+2. Create `src/features/pantry/components/IngredientSearch.tsx` — search input + filtered scrollable list + tests
+3. Create `src/features/pantry/index.ts` — barrel export
+4. Update `src/app/(tabs)/pantry.tsx` — wire store, service, search, chips together
+5. Update `firestore.rules` — add `match /pantry/{doc}` under `match /users/{uid}`
+6. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
+7. Update `CODE_CONTEXT.md` + `MEMORY.md`
+8. Commit: `feat: add pantry management with ingredient selection and Firestore persistence`
+9. Push + PR to main
 
-#### Key Files to Know
+#### Key Files
 
-- `src/shared/types/index.ts` — `Ingredient` interface already defined
-- `src/features/auth/services/authService.ts` — Firestore `db` export pattern to follow
+- `src/shared/components/ui/Button.tsx` — canonical component pattern
 - `src/app/(tabs)/` — tabs layout (pantry tab already stubbed)
+- `src/features/pantry/` — all new code lives here
 
 ---
 

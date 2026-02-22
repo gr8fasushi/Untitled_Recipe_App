@@ -1,15 +1,14 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 3 (Onboarding) complete.
+> Last updated: Feature 4 (Pantry) — types, store, service, ingredient data complete.
 
 ---
 
 ## Branch History
 
-- `main` — scaffold only (Expo + deps)
-- `feature/auth` — Firebase Auth complete ✅
-- `feature/onboarding` — **current** — Onboarding flow complete ✅
+- `main` — includes auth + onboarding (merged)
+- `feature/pantry` — **current** — pantry types/store/service complete, UI + screen pending
 
 ---
 
@@ -384,9 +383,58 @@ All resolver-dependent `import/*` rules disabled (resolver crashes on `@/` alias
 
 ---
 
-## Next Feature: Feature 4 — Pantry Management
+## src/features/pantry/
+
+### types/index.ts
+
+```typescript
+export const IngredientSchema: z.ZodObject<...>;  // { id, name, emoji?, category? }
+export const PantrySchema: z.ZodObject<...>;       // { ingredients: IngredientSchema[], updatedAt: string }
+export type PantryItem = z.infer<typeof IngredientSchema>;
+export type Pantry = z.infer<typeof PantrySchema>;
+```
+
+### store/pantryStore.ts
+
+```typescript
+interface PantryState {
+  selectedIngredients: PantryItem[];
+  isLoading: boolean;
+  error: string | null;
+  addIngredient: (ingredient: PantryItem) => void; // no-op if id already present
+  removeIngredient: (id: string) => void;
+  clearPantry: () => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  reset: () => void;
+}
+export const usePantryStore: StoreApi<PantryState>;
+```
+
+### services/pantryService.ts
+
+```typescript
+// Firestore path: users/{uid}/pantry/items
+export async function savePantry(uid: string, ingredients: PantryItem[]): Promise<void>;
+export async function loadPantry(uid: string): Promise<PantryItem[]>;
+// loadPantry returns [] if doc missing or Zod validation fails
+```
+
+---
+
+## src/constants/ingredients.ts
+
+```typescript
+export const INGREDIENT_CATEGORIES: readonly string[];  // 9 categories
+export type IngredientCategory = ...;
+export const INGREDIENTS: PantryItem[];                 // ~100 items
+export function getIngredientsByCategory(category: IngredientCategory): PantryItem[];
+export function searchIngredients(query: string): PantryItem[];  // empty query returns all
+```
+
+---
+
+## Next: Feature 4 (Pantry) — Remaining Work
 
 Branch: `feature/pantry`
-Purpose: Manual ingredient search + selection
-Store: `src/features/pantry/store/pantryStore.ts`
-Key operations: search ingredients, toggle selection, clear pantry, persist to Firestore
+Still needed: `IngredientChip.tsx`, `IngredientSearch.tsx`, `src/app/(tabs)/pantry.tsx`, Firestore rules update
