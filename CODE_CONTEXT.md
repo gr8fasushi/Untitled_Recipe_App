@@ -512,8 +512,56 @@ match /users/{uid} {
 
 ---
 
-## Next: Feature 5 — AI Recipe Generation
+## src/features/recipes/ — Feature 5 (in progress)
 
-Branch: `feature/recipe-generation` (cut from main after pantry PR merges)
-Cloud Function `generateRecipeFn` already in `src/shared/services/firebase/functions.service.ts`
-`Recipe` type already in `src/shared/types/index.ts`
+### types/index.ts
+
+```typescript
+export const GenerateRecipeInputSchema; // z.object({ ingredients (min 1), allergens, dietaryPreferences })
+export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
+```
+
+### store/recipesStore.ts
+
+```typescript
+interface RecipesState {
+  currentRecipe: Recipe | null;
+  isLoading: boolean;
+  error: string | null;
+  setRecipe: (recipe: Recipe | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  reset: () => void;
+}
+export const useRecipesStore = create<RecipesState>(...)
+```
+
+### hooks/useGenerateRecipe.ts
+
+```typescript
+interface UseGenerateRecipeReturn {
+  generate: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+  recipe: Recipe | null;
+}
+export function useGenerateRecipe(): UseGenerateRecipeReturn;
+```
+
+- Reads `selectedIngredients` from `usePantryStore((s) => s.selectedIngredients)`
+- Reads `profile` from `useAuthStore((s) => s.profile)`
+- Validates with `GenerateRecipeInputSchema` before calling Cloud Function
+- Calls `generateRecipeFn`; sets recipe/loading/error on `useRecipesStore`
+
+### Test mock pattern (learned this session)
+
+Double-cast `(store as unknown as jest.Mock)` — single `as jest.Mock` fails strict TSC for Zustand stores and Firebase callables.
+
+---
+
+## Next: Feature 5 (remaining — Chunk C)
+
+- `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
+- `src/app/(tabs)/recipes.tsx` — generation screen (pantry chips → generate → recipe card)
+- `src/features/recipes/index.ts` — barrel export
+- Tests + commit + PR

@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-21 — Feature 4: Pantry COMPLETE; Feature 7 + 9 scope expanded (voice chat, enhanced saved recipes)
+> Last updated: 2026-02-22 — Feature 4 merged to main; Feature 5 Chunk B done (types + store + hook)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 4 — Pantry Management ✅ COMPLETE — PR ready to merge
-**Active Branch:** `feature/pantry`
+**Phase:** Feature 5 — AI Recipe Generation 🔄 IN PROGRESS (Chunk B done, Chunk C next)
+**Active Branch:** `feature/recipe-generation`
 **Blocking Issues:** None
 
 ---
@@ -106,32 +106,29 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Merge Feature 4 First
+### Feature 5: AI Recipe Generation (Chunk C — next session start here)
 
-Feature 4 is complete and pushed. Merge the `feature/pantry` PR to main before starting Feature 5.
+**Branch:** `feature/recipe-generation` (already cut, work in progress)
 
-### Feature 5: AI Recipe Generation
+#### Done ✅
 
-**Branch:** cut `feature/recipe-generation` from main after Feature 4 merges
+1. `src/features/recipes/types/index.ts` — `GenerateRecipeInputSchema` + `GenerateRecipeInput` type
+2. `src/features/recipes/store/recipesStore.ts` — `currentRecipe`, `isLoading`, `error`, actions
+3. `src/features/recipes/hooks/useGenerateRecipe.ts` — wires pantry + profile → Cloud Function → store
+4. Tests for all three (21 tests passing), TSC clean, lint clean
+5. EAS Build workflow disabled (was failing without EXPO_TOKEN — changed trigger to `workflow_dispatch`)
 
-#### Steps
+#### Remaining (Chunk C)
 
-1. `src/features/recipes/types/index.ts` — `GenerateRecipeInput` schema + Zod validation (already have `Recipe` in shared types)
-2. `src/features/recipes/hooks/useGenerateRecipe.ts` — calls `generateRecipeFn`, updates store, handles loading/error
-3. `src/features/recipes/store/recipesStore.ts` — `currentRecipe`, `isLoading`, `error`, actions
-4. `src/features/recipes/components/AIDisclaimer.tsx` — required on every recipe screen (App Store compliance)
-5. `src/app/(tabs)/recipes.tsx` — recipe generation screen (pantry ingredients → generate button → recipe display)
-6. Update `firestore.rules` — add rate limit counter path if needed
-7. Tests for all new files, `npm test`, `npx tsc --noEmit`, `npm run lint`
-8. Update `CODE_CONTEXT.md` + `MEMORY.md`
-9. Commit + push + PR
+1. `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
+2. `src/app/(tabs)/recipes.tsx` — generation screen (pantry ingredient chips → generate button → recipe card)
+3. `src/features/recipes/index.ts` — barrel export
+4. Tests for AIDisclaimer + recipes screen
+5. `npm test`, `npx tsc --noEmit`, `npm run lint` — full suite
+6. Update `CODE_CONTEXT.md` + `MEMORY.md`
+7. Commit + push + PR
 
-#### Key Cloud Function
-
-`generateRecipeFn` in `src/shared/services/firebase/functions.service.ts` — already wired up
-Backend at `functions/src/features/recipes/generateRecipe.ts` — fully implemented
-
-#### Key Types (already exist)
+#### Key wiring (already exists)
 
 `Recipe` interface in `src/shared/types/index.ts` — has all fields (title, ingredients, instructions, nutrition, allergens, etc.)
 
