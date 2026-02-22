@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-20 — Feature 1: Restructure + Dependencies complete
+> Last updated: 2026-02-21 — Feature 3: Onboarding complete ✅
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 2 — Firebase Auth (next session)
-**Active Branch:** `feature/restructure-and-dependencies` (ready to PR → main, then cut `feature/auth`)
-**Blocking Issues:** Firebase project not yet created (see Prerequisites below)
+**Phase:** Feature 4 — Pantry Management (next to build)
+**Active Branch:** `feature/onboarding` (ready to PR → main)
+**Blocking Issues:** None
 
 ---
 
@@ -24,6 +24,32 @@
 - [x] Expo project scaffolded (`npx create-expo-app@latest` tabs template, SDK 54)
 - [x] Git initialized, 2 commits pushed to GitHub main branch
 - [x] `feature/restructure-and-dependencies` branch created and pushed
+- [x] **Session 3 COMPLETE:** Firebase infrastructure configured
+  - PR #1 merged to main (`feature/restructure-and-dependencies`)
+  - GitHub CLI (`gh`) installed and authenticated
+  - Firebase CLI installed and authenticated
+  - 2 Firebase projects created: `recipeapp-staging-e2d31`, `recipeapp-prod-aa25c`
+  - Auth enabled (Email/Password + Google) on both projects
+  - Firestore created (production mode, us-central1) on both projects
+  - Blaze plan enabled on both projects
+  - Real Firebase configs added to `src/shared/services/firebase/firebase.config.ts`
+  - `.firebaserc` updated with real project IDs
+  - `GROQ_API_KEY` secret set on both projects ✅
+  - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 3 COMPLETE:** Onboarding flow (allergen + dietary preference selection)
+  - `src/features/onboarding/` — types, store, 3 components, useCompleteOnboarding hook, barrel
+  - `src/app/(onboarding)/` — 4 screens (welcome, disclaimer, allergens, dietary) + 4 test files
+  - Flow: welcome → disclaimer → allergens → dietary → save Firestore → `/(tabs)`
+  - 182 total tests, 25 suites — all passing, TypeScript clean, lint clean
+- [x] **Feature 2 COMPLETE:** Firebase Auth (email/password, Google, Apple)
+  - `src/features/auth/` — types, services, store, hooks, components (all with tests)
+  - `src/shared/components/ui/Input.tsx` — shared input primitive
+  - `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx` — route screens
+  - `src/app/_layout.tsx` — auth listener + SplashScreen gate
+  - `src/app/index.tsx` — three-way redirect (no user / no onboarding / tabs)
+  - `firestore.rules` — users collection rules deployed to staging
+  - 120 tests passing, 16 suites, TypeScript clean, lint clean
+  - `CODE_CONTEXT.md` created for session-start token efficiency
 - [x] **Feature 1 COMPLETE:** Restructured to `src/` layout, all dependencies installed
   - `src/app/` — all placeholder route files (auth, onboarding, tabs)
   - `src/features/` — directory scaffold for all 7 features
@@ -41,8 +67,8 @@
 
 ## Pending Features
 
-- [ ] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In)
-- [ ] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer)
+- [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
+- [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
 - [ ] **Feature 4:** Pantry management (manual ingredient search + selection)
 - [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
@@ -59,99 +85,51 @@
 
 ## Next Session: Exactly What To Do
 
-### Prerequisites (complete BEFORE writing any auth code)
+> **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-1. Create **2 real Firebase projects** at [console.firebase.google.com](https://console.firebase.google.com):
-   - `recipeapp-staging` — for QA/testing
-   - `recipeapp-prod` — for production
-     For EACH project:
-   - Enable Email/Password auth
-   - Enable Google Sign-In (configure OAuth client, add SHA fingerprints)
-   - Enable Apple Sign-In (requires Apple Developer account — $99/year)
-   - Create Firestore database in **production mode** (NOT test mode)
-   - Upgrade to **Blaze plan** (required for Cloud Functions)
-   - Set budget alert: $10/month
-   - Download config → add to `src/shared/services/firebase/firebase.config.ts`
-2. Get Groq API key at [console.groq.com](https://console.groq.com)
-3. Get Gemini API key at [aistudio.google.com](https://aistudio.google.com)
-4. Run secrets setup:
-   ```bash
-   firebase use staging && firebase functions:secrets:set GROQ_API_KEY
-   firebase use staging && firebase functions:secrets:set GEMINI_API_KEY
-   firebase use production && firebase functions:secrets:set GROQ_API_KEY
-   firebase use production && firebase functions:secrets:set GEMINI_API_KEY
-   ```
+### Feature 4: Pantry Management
 
-### Feature 2: Firebase Auth
+**Branch:** cut `feature/pantry` from `feature/onboarding` (or from main after PR merges)
 
-**Branch:** `git checkout -b feature/auth`
+#### What to Build
 
-1. Fill real Firebase config values in `src/shared/services/firebase/firebase.config.ts`
-2. Build `src/features/auth/services/authService.ts` (signIn, signUp, signOut, Google, Apple)
-3. Build `src/features/auth/store/authStore.ts` + tests
-4. Build `src/features/auth/hooks/useAuth.ts` + tests
-5. Build `src/features/auth/components/SignInForm.tsx` + tests
-6. Build `src/features/auth/components/SignUpForm.tsx` + tests
-7. Build `src/features/auth/components/SocialSignInButton.tsx`
-8. Replace placeholder `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx`
-9. Update `src/app/_layout.tsx` — add auth state listener + redirect logic
-10. Update `src/app/index.tsx` — smart redirect (auth → onboarding → tabs)
-11. Deploy Firestore rules: `firebase deploy --only firestore:rules`
-12. All tests pass: `npm test`
-13. No TypeScript errors: `npx tsc --noEmit`
-14. Update MEMORY.md, commit + push to `feature/auth`
+Manual ingredient selection screen. User searches/browses ingredients → adds to pantry → used by recipe generation.
 
-### Prerequisites (complete BEFORE writing any auth code)
+#### Steps
 
-1. Create Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-   - Enable Email/Password auth
-   - Enable Google Sign-In (configure OAuth client, add SHA fingerprints)
-   - Enable Apple Sign-In (requires Apple Developer account — $99/year)
-   - Create Firestore database in **production mode** (NOT test mode)
-   - Upgrade to **Blaze plan** (required for Cloud Functions)
-   - Set budget alert: $10/month
-   - Enable Firebase App Check
-   - Download `google-services.json` → place in `android/app/` (gitignored)
-   - Download `GoogleService-Info.plist` → place in `ios/` (gitignored)
-2. Get Groq API key at [console.groq.com](https://console.groq.com)
-3. Get Gemini API key at [aistudio.google.com](https://aistudio.google.com)
-4. Run: `firebase functions:secrets:set GROQ_API_KEY`
-5. Run: `firebase functions:secrets:set GEMINI_API_KEY`
-6. Update `src/shared/services/firebase/firebase.config.ts` with real Firebase config values
+1. `git checkout -b feature/pantry` (from `feature/onboarding` or merged main)
+2. Create `src/features/pantry/types/index.ts` — `IngredientItem` type, `PantrySchema` Zod schema
+3. Create `src/features/pantry/store/pantryStore.ts` + tests
+   - State: `selectedIngredients: Ingredient[]`, `isLoading: boolean`, `error: string | null`
+   - Actions: `addIngredient`, `removeIngredient`, `clearPantry`, `setLoading`, `setError`, `reset`
+   - Guard `addIngredient` against duplicates (check `id`)
+4. Create `src/features/pantry/services/pantryService.ts` + tests
+   - `savePantry(uid, ingredients)` — writes to Firestore `users/{uid}/pantry`
+   - `loadPantry(uid)` — reads from Firestore (loads persisted pantry on app open)
+5. Create ingredient data in `src/constants/ingredients.ts` (common pantry items with categories)
+6. Create `src/features/pantry/components/IngredientChip.tsx` — small pressable chip showing ingredient + remove button
+7. Create `src/features/pantry/components/IngredientSearch.tsx` — text input + filtered list
+8. Create `src/app/(tabs)/pantry.tsx` — main pantry screen
+9. Update Firestore rules to allow `users/{uid}/pantry` subcollection
+10. Write tests for all of the above
+11. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
+12. Update `CODE_CONTEXT.md`, update `MEMORY.md`
+13. Commit: `feat: add pantry management with ingredient selection and Firestore persistence`
+14. Push + PR to main
 
-### Then Build Feature 2: Auth
+#### Key Files to Know
 
-```
-git checkout feature/auth
-```
-
-1. Build `src/shared/services/firebase/firebase.config.ts` (fill in real config)
-2. Build `src/features/auth/services/authService.ts` (signIn, signUp, signOut, Google, Apple)
-3. Build `src/features/auth/store/authStore.ts` + tests
-4. Build `src/features/auth/hooks/useAuth.ts` + tests
-5. Build `src/features/auth/components/SignInForm.tsx` + tests
-6. Build `src/features/auth/components/SignUpForm.tsx` + tests
-7. Build `src/features/auth/components/SocialSignInButton.tsx`
-8. Build `src/app/(auth)/_layout.tsx`, `sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx`
-9. Build `src/app/_layout.tsx` — auth state listener, redirect logic
-10. Build `src/app/index.tsx` — smart redirect (auth → onboarding → tabs)
-11. Write Firestore security rules, deploy: `firebase deploy --only firestore:rules`
-12. Test on iOS simulator, Android emulator, and web
-13. All tests pass: `npm test`
-14. No TypeScript errors: `npx tsc --noEmit`
-15. Update MEMORY.md, commit: `feat: add Firebase authentication with email, Google, Apple`
-16. Push: `git push origin feature/auth`
+- `src/shared/types/index.ts` — `Ingredient` interface already defined
+- `src/features/auth/services/authService.ts` — Firestore `db` export pattern to follow
+- `src/app/(tabs)/` — tabs layout (pantry tab already stubbed)
 
 ---
 
 ## Known Issues / Blockers
 
-- Firebase project not yet created — blocks all auth and backend work
-- `google-services.json` and `GoogleService-Info.plist` not yet generated
-- Groq API key not yet obtained
-- Gemini API key not yet obtained
-- Firebase config values in `firebase.config.ts` are placeholders — must be updated
-- Apple Sign-In requires Apple Developer account ($99/year) — plan accordingly
+- Apple Sign-In requires Apple Developer account ($99/year) — implement later
+- `google-services.json` and `GoogleService-Info.plist` not yet generated — needed for native builds only
+- Firebase project IDs: staging=`recipeapp-staging-e2d31`, prod=`recipeapp-prod-aa25c`
 
 ---
 
@@ -197,11 +175,11 @@ git checkout feature/auth
 
 ### Apple App Store
 
-- [ ] Apple Sign-In implemented (Feature 2)
+- [x] Apple Sign-In implemented (Feature 2) ✅
 - [ ] Privacy policy URL live and linked in-app (Feature 12)
 - [ ] Account deletion flow working (Feature 11)
 - [ ] AI disclaimer on every recipe screen (Feature 5)
-- [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6)
+- [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6) — onboarding part next
 - [ ] Camera permission string descriptive in app.json (Feature 8)
 - [ ] Error boundaries on all tab screens (Feature 5+)
 - [ ] App works offline with cached data (Feature 9+)

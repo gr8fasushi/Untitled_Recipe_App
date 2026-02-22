@@ -1,10 +1,13 @@
 # CLAUDE.md — AI Session Guidelines
 
-## CRITICAL: START EVERY SESSION HERE
-1. Read `MEMORY.md` first — understand current project state and next steps
-2. Run `git status && git log --oneline -5` to orient yourself
-3. Read only the sections of this file relevant to your current task
-4. Never modify `.env`, `google-services.json`, or `GoogleService-Info.plist`
+## CRITICAL: START EVERY SESSION
+
+1. `git pull origin [current-branch]` to get latest
+2. Read `MEMORY.md` — current status and exact next steps
+3. Read `CODE_CONTEXT.md` — all current exports/interfaces (saves re-reading source files)
+4. Run `git status && git log --oneline -5` to orient
+5. Read only the sections of this file relevant to your current task
+6. **Never modify** `.env`, `google-services.json`, `GoogleService-Info.plist`
 
 ---
 
@@ -12,29 +15,28 @@
 
 AI-powered recipe app for iOS, Android, and web. App name is a placeholder ("RecipeApp").
 
-**Core concept:** Users select or photograph ingredients → AI generates recipes
-tailored to their allergens and dietary preferences, with nutritional info and
-an AI cooking assistant chatbot.
+**Core concept:** Users select or photograph ingredients → AI generates recipes tailored to
+their allergens and dietary preferences, with nutritional info and an AI cooking assistant.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Language | TypeScript | strict mode — no `any`, no exceptions |
-| App Framework | Expo SDK 54 | Managed workflow |
-| Routing | Expo Router v4 | File-based, `src/app/` directory |
-| Styling | NativeWind v4 | Tailwind CSS — use `tailwindcss@^3.4.17` (NOT v4 Tailwind) |
-| State | Zustand v5 | Feature-scoped stores + global UI store |
-| Auth | Firebase Auth | JS SDK (not React Native Firebase) |
-| Database | Firestore | JS SDK |
-| Backend | Firebase Cloud Functions Gen 2 | All AI calls routed through here |
-| AI Recipes/Chat | Groq — Llama 3.3 70B | Model: `llama-3.3-70b-versatile` |
-| AI Vision | Gemini 2.0 Flash | Model: `gemini-2.0-flash-exp` |
-| Token Storage | expo-secure-store | Never AsyncStorage for sensitive data |
-| Web Hosting | Vercel | Auto-deploy from GitHub main branch |
-| Package Manager | npm | Do not switch to yarn/bun |
+| Layer           | Technology                     | Notes                                                      |
+| --------------- | ------------------------------ | ---------------------------------------------------------- |
+| Language        | TypeScript                     | strict mode — no `any`, no exceptions                      |
+| App Framework   | Expo SDK 54                    | Managed workflow                                           |
+| Routing         | Expo Router v4                 | File-based, `src/app/` directory                           |
+| Styling         | NativeWind v4                  | Tailwind CSS — use `tailwindcss@^3.4.17` (NOT v4 Tailwind) |
+| State           | Zustand v5                     | Feature-scoped stores + global UI store                    |
+| Auth            | Firebase Auth                  | JS SDK (not React Native Firebase)                         |
+| Database        | Firestore                      | JS SDK                                                     |
+| Backend         | Firebase Cloud Functions Gen 2 | All AI calls routed through here                           |
+| AI Recipes/Chat | Groq — Llama 3.3 70B           | Model: `llama-3.3-70b-versatile`                           |
+| AI Vision       | Gemini 2.0 Flash               | Model: `gemini-2.0-flash-exp`                              |
+| Token Storage   | expo-secure-store              | Never AsyncStorage for sensitive data                      |
+| Web Hosting     | Vercel                         | Auto-deploy from GitHub main branch                        |
+| Package Manager | npm                            | Do not switch to yarn/bun                                  |
 
 ---
 
@@ -66,95 +68,50 @@ functions/src/
 └── shared/           # prompts/, middleware/, utils/
 ```
 
-**Rule:** No imports between feature modules. Cross-feature communication goes
-through `src/stores/` (global) or `src/shared/`.
+**Rule:** No imports between feature modules. Cross-feature via `src/stores/` or `src/shared/`.
 
 ---
 
 ## Coding Conventions
 
 ### TypeScript
+
 - `strict: true` — no `any`, use `unknown` and narrow
 - Explicit return types on all functions
 - Zod for runtime validation of all external data (API responses, user input)
 - Path alias `@/` maps to `src/` — use it everywhere
 
 ### NativeWind
+
 - Always use `className` — never `StyleSheet.create()` in new code
 - Platform-specific: `ios:bg-blue-500 android:bg-green-500`
 - Brand colors defined in `tailwind.config.js` and `src/constants/theme.ts`
 
-### Zustand Store Pattern
-```typescript
-// src/features/pantry/store/pantryStore.ts
-import { create } from 'zustand';
+### Zustand Stores
 
-interface PantryState {
-  ingredients: Ingredient[];
-  addIngredient: (item: Ingredient) => void;
-  removeIngredient: (id: string) => void;
-  clear: () => void;
-}
+- Feature-scoped. State interface + actions in one `create<State>()` call.
+- Guard array mutations against duplicates before spreading.
+- See `src/features/auth/store/authStore.ts` for canonical pattern.
 
-export const usePantryStore = create<PantryState>((set) => ({
-  ingredients: [],
-  addIngredient: (item) =>
-    set((s) => ({
-      ingredients: s.ingredients.some((i) => i.id === item.id)
-        ? s.ingredients
-        : [...s.ingredients, item],
-    })),
-  removeIngredient: (id) =>
-    set((s) => ({ ingredients: s.ingredients.filter((i) => i.id !== id) })),
-  clear: () => set({ ingredients: [] }),
-}));
-```
+### Components
 
-### Component Pattern
-```typescript
-// PascalCase filename. Props interface above component.
-interface ButtonProps {
-  label: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
-  disabled?: boolean;
-  testID?: string; // Always include for testing
-}
-
-export function Button({ label, onPress, variant = 'primary', disabled, testID }: ButtonProps) {
-  const base = 'px-4 py-3 rounded-xl items-center';
-  const variants = {
-    primary: 'bg-primary-600',
-    secondary: 'bg-gray-200',
-    danger: 'bg-red-600',
-  };
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      className={`${base} ${variants[variant]} ${disabled ? 'opacity-50' : ''}`}
-      testID={testID}
-    >
-      <Text className="font-semibold text-white text-center">{label}</Text>
-    </Pressable>
-  );
-}
-```
+- `PascalCase.tsx`. Props interface declared above component function.
+- `testID` on every interactive element. `variant` prop for styled variants.
+- See `src/shared/components/ui/Button.tsx` for canonical pattern.
 
 ### File Naming
+
 - Components: `PascalCase.tsx` + `PascalCase.test.tsx` (co-located)
 - Hooks: `useHookName.ts` + `useHookName.test.ts`
 - Stores: `featureStore.ts` + `featureStore.test.ts`
-- Services: `featureService.ts`
-- Routes: `kebab-case.tsx`
+- Services: `featureService.ts` | Routes: `kebab-case.tsx`
 - Barrel exports: `index.ts` at feature level only
 
 ---
 
 ## Security — MANDATORY, NEVER VIOLATE
 
-1. **Groq + Gemini API keys** → Firebase Cloud Function secrets ONLY
-   (`firebase functions:secrets:set KEY_NAME`). Never in app, never in git.
+1. **Groq + Gemini API keys** → Firebase Cloud Function secrets ONLY. Never in app, never in git.
 2. **Firebase config** (apiKey, projectId) → safe to commit. It's a public identifier.
 3. **Auth tokens** → `expo-secure-store` only. Never `AsyncStorage`.
 4. **All AI calls** → routed through Cloud Functions. App never calls Groq/Gemini directly.
@@ -168,152 +125,139 @@ export function Button({ label, onPress, variant = 'primary', disabled, testID }
 
 ---
 
-## Cloud Functions Pattern (Gen 2)
+## Cloud Functions (Gen 2)
 
-```typescript
-// functions/src/features/recipes/generateRecipe.ts
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { authenticate } from '../../shared/middleware/authenticate';
-import { checkRateLimit } from '../../shared/middleware/rateLimit';
-import { validateGenerateRecipeInput } from '../../shared/middleware/validate';
-import { buildRecipePrompt, RECIPE_SYSTEM_PROMPT } from '../../shared/prompts/recipePrompts';
-import Groq from 'groq-sdk';
+Every function: **authenticate → rate limit → validate/sanitize → AI call → validate output**
 
-export const generateRecipe = onCall(
-  { secrets: ['GROQ_API_KEY'], maxInstances: 10 },
-  async (request) => {
-    const uid = authenticate(request);           // 1. Auth check
-    await checkRateLimit(uid, 'generateRecipe'); // 2. Rate limit
-    const input = validateGenerateRecipeInput(request.data); // 3. Validate + sanitize
-
-    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: RECIPE_SYSTEM_PROMPT },
-        { role: 'user', content: buildRecipePrompt(input) },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
-
-    return parseAndValidateResponse(response); // 4. Validate AI output
-  }
-);
-```
-
-### Calling from App
-```typescript
-// src/shared/services/firebase/functions.service.ts
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { firebaseApp } from './firebase.config';
-
-const functions = getFunctions(firebaseApp);
-
-export const generateRecipeFn = httpsCallable(functions, 'generateRecipe');
-export const chatFn = httpsCallable(functions, 'chatWithAssistant');
-export const analyzePhotoFn = httpsCallable(functions, 'analyzeIngredientPhoto');
-```
+- Declare secrets in `onCall({ secrets: ['KEY_NAME'], maxInstances: 10 }, ...)`
+- System prompts in `functions/src/shared/prompts/` — never inline them in function files
+- Call from app via `httpsCallable()` — see `src/shared/services/firebase/functions.service.ts`
 
 ---
 
 ## Testing Conventions
 
-- Tests co-located with source: `Component.test.tsx` next to `Component.tsx`
-- Use `@testing-library/react-native` for component tests
-- Use Firebase Emulator Suite for Cloud Function integration tests
-- Every store action must have a unit test
-- Every Cloud Function must have an integration test with emulator
-- Always add `testID` props to interactive elements
-
-```typescript
-// Example store test
-import { act } from '@testing-library/react-native';
-import { usePantryStore } from './pantryStore';
-
-beforeEach(() => usePantryStore.setState({ ingredients: [] }));
-
-it('adds ingredient without duplicates', () => {
-  const { addIngredient } = usePantryStore.getState();
-  act(() => addIngredient({ id: '1', name: 'garlic' }));
-  act(() => addIngredient({ id: '1', name: 'garlic' })); // duplicate
-  expect(usePantryStore.getState().ingredients).toHaveLength(1);
-});
-```
+- Co-located: `Component.test.tsx` next to `Component.tsx`
+- `@testing-library/react-native` for components; Firebase Emulator for Cloud Functions
+- Every store action has a unit test. Every Cloud Function has an emulator integration test.
+- `testID` on every interactive element — required for `getByTestId` in tests
+- `renderHook` must be called OUTSIDE `act()` — only await async side effects inside act
 
 ---
 
 ## App Store Compliance (Build Into Every Feature)
 
-| Requirement | Where |
-|---|---|
-| Apple Sign-In | `src/features/auth/` — mandatory if Google Sign-In exists |
-| Account deletion | `src/app/(tabs)/profile/delete-account.tsx` |
-| Privacy policy link | `src/features/profile/components/PrivacyPolicyLink.tsx` |
-| AI disclaimer | `src/features/recipes/components/AIDisclaimer.tsx` — every recipe screen |
-| Allergen disclaimer | `src/features/onboarding/components/DisclaimerCard.tsx` + recipe screens |
-| Camera permission string | `app.json` plugins config — descriptive, not generic |
-| Offline behavior | `src/shared/components/OfflineBanner.tsx` — show on no internet |
-| Error boundaries | Wrap every tab screen |
+| Requirement              | Where                                                                    |
+| ------------------------ | ------------------------------------------------------------------------ |
+| Apple Sign-In            | `src/features/auth/` — mandatory if Google Sign-In exists                |
+| Account deletion         | `src/app/(tabs)/profile/delete-account.tsx`                              |
+| Privacy policy link      | `src/features/profile/components/PrivacyPolicyLink.tsx`                  |
+| AI disclaimer            | `src/features/recipes/components/AIDisclaimer.tsx` — every recipe screen |
+| Allergen disclaimer      | `src/features/onboarding/components/DisclaimerCard.tsx` + recipe screens |
+| Camera permission string | `app.json` plugins config — descriptive, not generic                     |
+| Offline behavior         | `src/shared/components/OfflineBanner.tsx` — show on no internet          |
+| Error boundaries         | Wrap every tab screen                                                    |
 
 ---
 
 ## Git Workflow
 
 ### Branch Naming
+
 `feature/scaffold` → `feature/auth` → `feature/onboarding` → `feature/pantry`
 → `feature/recipe-generation` → `feature/recipe-detail` → `feature/chatbot`
 → `feature/photo-scan` → `feature/saved-recipes` → `feature/profile`
 → `feature/privacy` → `feature/web-deploy` → `feature/store-prep`
 
 ### Per-Feature Process
+
 1. Work on feature branch
 2. All tests pass (`npm test`)
 3. No TypeScript errors (`npx tsc --noEmit`)
 4. No lint errors (`npm run lint`)
-5. Update `MEMORY.md`
-6. Commit with descriptive message
-7. Push to remote
+5. Update `CODE_CONTEXT.md` with new exports/interfaces
+6. Capture debugging lessons in auto-memory if any corrections occurred
+7. Update `MEMORY.md`
+8. Commit with descriptive message
+9. Push to remote
 
 ### Commit Message Format
-```
-feat: add ingredient search to pantry screen
-fix: resolve allergen badge not rendering on Android
-test: add unit tests for pantryStore
-chore: update MEMORY.md after auth feature
-docs: update CLAUDE.md with Firestore patterns
-```
+
+`feat:` new feature | `fix:` bug fix | `test:` tests only | `chore:` config/tooling | `docs:` docs only
 
 ---
 
-## Firebase Setup Notes
+## Firebase & AI Settings
 
-- Use Firebase JS SDK (not React Native Firebase) — enables Expo Go + web
-- Cloud Functions Gen 2 — better cold starts, secret management
-- Firestore region: `us-central1` (default) — update before launch if user base is elsewhere
-- Firebase config object is safe to commit — it's a public project identifier
-- Secrets set via CLI: `firebase functions:secrets:set GROQ_API_KEY`
+**Firebase:** JS SDK (not React Native Firebase) — enables Expo Go + web. Cloud Functions Gen 2.
+Firestore region: `us-central1`. Config object safe to commit. Secrets: `firebase functions:secrets:set KEY`
 
----
-
-## AI Model Settings
-
-| Setting | Recipes | Chat | Vision |
-|---|---|---|---|
-| Provider | Groq | Groq | Gemini |
-| Model | `llama-3.3-70b-versatile` | `llama-3.3-70b-versatile` | `gemini-2.0-flash-exp` |
-| Temperature | 0.7 | 0.5 | 0.2 |
-| Max tokens | 2048 | 512 | 1024 |
-| Response format | JSON | text | JSON |
-
-System prompts live in `functions/src/shared/prompts/` — never inline them in function files.
+| Setting         | Recipes                   | Chat                      | Vision                 |
+| --------------- | ------------------------- | ------------------------- | ---------------------- |
+| Provider        | Groq                      | Groq                      | Gemini                 |
+| Model           | `llama-3.3-70b-versatile` | `llama-3.3-70b-versatile` | `gemini-2.0-flash-exp` |
+| Temperature     | 0.7                       | 0.5                       | 0.2                    |
+| Max tokens      | 2048                      | 512                       | 1024                   |
+| Response format | JSON                      | text                      | JSON                   |
 
 ---
 
-## How to Resume Work
+## Workflow Orchestration
 
-1. `git pull origin [current-branch]`
-2. Read `MEMORY.md` — check Current Status and Next Session sections
-3. `git status` to confirm clean working tree
-4. Continue from "Next Session: Exactly What To Do" in MEMORY.md
+### 1. Plan Mode Default
+
+- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- If something goes sideways, STOP and re-plan immediately — don't keep pushing
+- Use plan mode for verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+
+### 2. Subagent Strategy
+
+- Use subagents liberally to keep the main context window clean
+- Offload research, exploration, and parallel analysis to subagents
+- For complex problems, throw more compute at it via subagents
+- One task per subagent for focused execution
+
+### 3. Self-Improvement Loop
+
+- After ANY correction from the user: update the auto-memory system with the pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review memory files at session start for relevant context
+
+### 4. Verification Before Done
+
+- Never mark a task complete without proving it works
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
+
+### 5. Demand Elegance (Balanced)
+
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes — don't over-engineer
+
+### 6. Autonomous Bug Fixing
+
+- When given a bug report: just fix it. Don't ask for hand-holding
+- Point at logs, errors, failing tests — then resolve them
+- Zero context switching required from the user
+
+---
+
+## Task Management
+
+1. **Plan First**: Use Claude Code plan mode for non-trivial tasks
+2. **Verify Plan**: Check in with user before starting implementation
+3. **Track Progress**: Use the built-in `TodoWrite` tool to mark items complete as you go
+4. **Explain Changes**: High-level summary at each step
+5. **Document Results**: Update `MEMORY.md` with completed work
+6. **Capture Lessons**: Update auto-memory files after corrections
+
+---
+
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.

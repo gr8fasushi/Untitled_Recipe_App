@@ -11,10 +11,18 @@ module.exports = [
     },
   },
   {
-    // Suppress false-positive import resolver warnings for TypeScript path aliases
+    // Disable all import resolver rules — eslint-config-expo's bundled TypeScript
+    // resolver crashes on default imports and @/ path aliases.
+    // TypeScript's `tsc --noEmit` handles all module resolution validation correctly.
     rules: {
+      'import/no-unresolved': 'off',
       'import/namespace': 'off',
-      'import/no-duplicates': 'warn',
+      'import/named': 'off',
+      'import/default': 'off',
+      'import/export': 'off',
+      'import/no-named-as-default': 'off',
+      'import/no-named-as-default-member': 'off',
+      'import/no-duplicates': 'off',
     },
   },
   {
