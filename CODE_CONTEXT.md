@@ -1,15 +1,14 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 3 (Onboarding) complete.
+> Last updated: Feature 4 (Pantry) — COMPLETE. All components, screen, and Firestore rules done.
 
 ---
 
 ## Branch History
 
-- `main` — scaffold only (Expo + deps)
-- `feature/auth` — Firebase Auth complete ✅
-- `feature/onboarding` — **current** — Onboarding flow complete ✅
+- `main` — includes auth + onboarding (merged)
+- `feature/pantry` — **current** — pantry COMPLETE, PR ready to merge
 
 ---
 
@@ -384,9 +383,137 @@ All resolver-dependent `import/*` rules disabled (resolver crashes on `@/` alias
 
 ---
 
-## Next Feature: Feature 4 — Pantry Management
+## src/features/pantry/
 
-Branch: `feature/pantry`
-Purpose: Manual ingredient search + selection
-Store: `src/features/pantry/store/pantryStore.ts`
-Key operations: search ingredients, toggle selection, clear pantry, persist to Firestore
+### types/index.ts
+
+```typescript
+export const IngredientSchema: z.ZodObject<...>;  // { id, name, emoji?, category? }
+export const PantrySchema: z.ZodObject<...>;       // { ingredients: IngredientSchema[], updatedAt: string }
+export type PantryItem = z.infer<typeof IngredientSchema>;
+export type Pantry = z.infer<typeof PantrySchema>;
+```
+
+### store/pantryStore.ts
+
+```typescript
+interface PantryState {
+  selectedIngredients: PantryItem[];
+  isLoading: boolean;
+  error: string | null;
+  addIngredient: (ingredient: PantryItem) => void; // no-op if id already present
+  removeIngredient: (id: string) => void;
+  clearPantry: () => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  reset: () => void;
+}
+export const usePantryStore: StoreApi<PantryState>;
+```
+
+### services/pantryService.ts
+
+```typescript
+// Firestore path: users/{uid}/pantry/items
+export async function savePantry(uid: string, ingredients: PantryItem[]): Promise<void>;
+export async function loadPantry(uid: string): Promise<PantryItem[]>;
+// loadPantry returns [] if doc missing or Zod validation fails
+```
+
+### components/IngredientChip.tsx
+
+```typescript
+interface IngredientChipProps {
+  ingredient: PantryItem;
+  onRemove: () => void;
+  testID?: string;
+}
+export function IngredientChip(props: IngredientChipProps): React.JSX.Element;
+```
+
+- Rounded chip: emoji + name + × remove button
+- Remove button testID: `${testID ?? 'ingredient-chip'}-remove`
+- `accessibilityLabel`: `Remove ${ingredient.name}`
+
+### components/IngredientSearch.tsx
+
+```typescript
+export function IngredientSearch(): React.JSX.Element;
+// No props — reads usePantryStore() and calls searchIngredients(query)
+```
+
+- Search input testID: `ingredient-search-input`
+- Each result row testID: `ingredient-row-${item.id}`
+- Check indicator testID: `ingredient-row-${item.id}-check` (shown when already added)
+- Empty state testID: `ingredient-search-empty`
+- Disabled (no-op press) when ingredient already in selectedIngredients
+
+### index.ts (barrel)
+
+```typescript
+export { IngredientChip } from './components/IngredientChip';
+export { IngredientSearch } from './components/IngredientSearch';
+export { usePantryStore } from './store/pantryStore';
+export { savePantry, loadPantry } from './services/pantryService';
+export { IngredientSchema, PantrySchema } from './types';
+export type { PantryItem, Pantry } from './types';
+```
+
+---
+
+## src/app/(tabs)/index.tsx — Pantry Screen
+
+testIDs: `pantry-screen`, `btn-save-pantry`, `pantry-error`, `pantry-loading`, `pantry-chips`, `pantry-empty`, `chip-${ingredient.id}`
+
+- Loads pantry from Firestore on mount (`loadPantry`)
+- Saves on "Save" button press (`savePantry`)
+- Shows `IngredientChip` for each selected ingredient (horizontal scroll)
+- Shows `IngredientSearch` below chips
+- Shows loading indicator only during initial load with no ingredients
+
+---
+
+## src/constants/ingredients.ts
+
+```typescript
+export const INGREDIENT_CATEGORIES: readonly string[];  // 9 categories
+export type IngredientCategory = ...;
+export const INGREDIENTS: PantryItem[];                 // ~100 items
+export function getIngredientsByCategory(category: IngredientCategory): PantryItem[];
+export function searchIngredients(query: string): PantryItem[];  // empty query returns all
+```
+
+---
+
+## firestore.rules (pantry subcollection added)
+
+```
+match /users/{uid} {
+  // ... existing user rules ...
+
+  match /pantry/{doc} {
+    allow read, write: if request.auth != null && request.auth.uid == uid;
+  }
+}
+```
+
+---
+
+## Test Coverage (Feature 4 additions)
+
+| File                      | Tests                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IngredientChip.test.tsx   | render, emoji, no-emoji, onRemove, accessibility, default testID                                                                                  |
+| IngredientSearch.test.tsx | input, rows, search query, add, already-added disabled, check shown, empty state                                                                  |
+| (tabs)/index.test.tsx     | render, save btn, empty state, load on mount, clearPantry+addIngredient, error banner, loading, chips, search, savePantry, load error, save error |
+
+**Feature 4 total: 26 new tests**
+**Grand total: 230 tests, 30 suites — all passing**
+
+---
+
+## Next: Feature 5 — AI Recipe Generation
+
+Branch: `feature/recipe-generation` (cut from main after pantry PR merges)
+Cloud Function `generateRecipeFn` already in `src/shared/services/firebase/functions.service.ts`
+`Recipe` type already in `src/shared/types/index.ts`

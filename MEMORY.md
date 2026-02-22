@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-21 — Feature 3: Onboarding complete ✅
+> Last updated: 2026-02-21 — Feature 4: Pantry COMPLETE; Feature 7 + 9 scope expanded (voice chat, enhanced saved recipes)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 4 — Pantry Management (next to build)
-**Active Branch:** `feature/onboarding` (ready to PR → main)
+**Phase:** Feature 4 — Pantry Management ✅ COMPLETE — PR ready to merge
+**Active Branch:** `feature/pantry`
 **Blocking Issues:** None
 
 ---
@@ -36,6 +36,11 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 4 COMPLETE:** Pantry management (ingredient selection + Firestore persistence)
+  - `src/features/pantry/` — types, store, service, `IngredientChip`, `IngredientSearch`, barrel
+  - `src/app/(tabs)/index.tsx` — full pantry screen (load, save, chips, search)
+  - `firestore.rules` — `match /pantry/{doc}` subcollection added
+  - 230 total tests, 30 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 3 COMPLETE:** Onboarding flow (allergen + dietary preference selection)
   - `src/features/onboarding/` — types, store, 3 components, useCompleteOnboarding hook, barrel
   - `src/app/(onboarding)/` — 4 screens (welcome, disclaimer, allergens, dietary) + 4 test files
@@ -69,12 +74,26 @@
 
 - [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
 - [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
-- [ ] **Feature 4:** Pantry management (manual ingredient search + selection)
+- [x] **Feature 4:** Pantry management — types ✅ store ✅ service ✅ ingredients ✅ UI/screen ✅
 - [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
-- [ ] **Feature 7:** AI chatbot (cooking assistant, recipe-scoped)
+- [ ] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped)
+  - Text always shown; voice is additive (not a replacement)
+  - **Voice input:** `expo-speech-recognition` (device-native STT, free) — mic button in chat input
+  - **Voice output:** `expo-speech` (device-native TTS, free) — mutable via speaker icon in header
+  - `isVoiceMuted` persisted to AsyncStorage; survives sessions
+  - Chat is accessed from Recipe Detail screen (push nav, not a top-level tab)
+  - Files: `types/`, `store/chatStore.ts`, `services/chatService.ts`, hooks: `useChat`, `useVoiceInput`, `useTextToSpeech`, components: `ChatBubble`, `ChatInput`, `VoiceButton`
+  - Permissions in `app.json`: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
 - [ ] **Feature 8:** Photo scanning (Gemini Vision Cloud Function)
-- [ ] **Feature 9:** Saved recipes (Firestore)
+- [ ] **Feature 9:** Enhanced saved recipes (save + notes + 1–10 user rating + edit/remove)
+  - Firestore path: `users/{uid}/savedRecipes/{recipeId}`
+  - Data: `{ id, recipe (immutable AI original), savedAt, rating: number|null (1–10), notes: string, lastModifiedAt }`
+  - Saved tab: list sorted by savedAt desc, filterable by rating
+  - Detail screen: original recipe + `RatingPicker` (1–10) + `RecipeNotes` (multiline) + delete
+  - Save button on Recipe Detail screen (Feature 6) — bookmark icon (filled/outline)
+  - Files: `types/`, `store/savedRecipesStore.ts`, `services/savedRecipesService.ts`, components: `SavedRecipeCard`, `RatingPicker`, `RecipeNotes`
+  - Firestore rule: `match /savedRecipes/{recipeId} { allow read, write, delete: if auth.uid == uid; }`
 - [ ] **Feature 10:** Profile + settings (edit allergies, preferences)
 - [ ] **Feature 11:** Delete account (mandatory for both app stores)
 - [ ] **Feature 12:** Privacy policy screen + link
@@ -87,41 +106,34 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 4: Pantry Management
+### Merge Feature 4 First
 
-**Branch:** cut `feature/pantry` from `feature/onboarding` (or from main after PR merges)
+Feature 4 is complete and pushed. Merge the `feature/pantry` PR to main before starting Feature 5.
 
-#### What to Build
+### Feature 5: AI Recipe Generation
 
-Manual ingredient selection screen. User searches/browses ingredients → adds to pantry → used by recipe generation.
+**Branch:** cut `feature/recipe-generation` from main after Feature 4 merges
 
 #### Steps
 
-1. `git checkout -b feature/pantry` (from `feature/onboarding` or merged main)
-2. Create `src/features/pantry/types/index.ts` — `IngredientItem` type, `PantrySchema` Zod schema
-3. Create `src/features/pantry/store/pantryStore.ts` + tests
-   - State: `selectedIngredients: Ingredient[]`, `isLoading: boolean`, `error: string | null`
-   - Actions: `addIngredient`, `removeIngredient`, `clearPantry`, `setLoading`, `setError`, `reset`
-   - Guard `addIngredient` against duplicates (check `id`)
-4. Create `src/features/pantry/services/pantryService.ts` + tests
-   - `savePantry(uid, ingredients)` — writes to Firestore `users/{uid}/pantry`
-   - `loadPantry(uid)` — reads from Firestore (loads persisted pantry on app open)
-5. Create ingredient data in `src/constants/ingredients.ts` (common pantry items with categories)
-6. Create `src/features/pantry/components/IngredientChip.tsx` — small pressable chip showing ingredient + remove button
-7. Create `src/features/pantry/components/IngredientSearch.tsx` — text input + filtered list
-8. Create `src/app/(tabs)/pantry.tsx` — main pantry screen
-9. Update Firestore rules to allow `users/{uid}/pantry` subcollection
-10. Write tests for all of the above
-11. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
-12. Update `CODE_CONTEXT.md`, update `MEMORY.md`
-13. Commit: `feat: add pantry management with ingredient selection and Firestore persistence`
-14. Push + PR to main
+1. `src/features/recipes/types/index.ts` — `GenerateRecipeInput` schema + Zod validation (already have `Recipe` in shared types)
+2. `src/features/recipes/hooks/useGenerateRecipe.ts` — calls `generateRecipeFn`, updates store, handles loading/error
+3. `src/features/recipes/store/recipesStore.ts` — `currentRecipe`, `isLoading`, `error`, actions
+4. `src/features/recipes/components/AIDisclaimer.tsx` — required on every recipe screen (App Store compliance)
+5. `src/app/(tabs)/recipes.tsx` — recipe generation screen (pantry ingredients → generate button → recipe display)
+6. Update `firestore.rules` — add rate limit counter path if needed
+7. Tests for all new files, `npm test`, `npx tsc --noEmit`, `npm run lint`
+8. Update `CODE_CONTEXT.md` + `MEMORY.md`
+9. Commit + push + PR
 
-#### Key Files to Know
+#### Key Cloud Function
 
-- `src/shared/types/index.ts` — `Ingredient` interface already defined
-- `src/features/auth/services/authService.ts` — Firestore `db` export pattern to follow
-- `src/app/(tabs)/` — tabs layout (pantry tab already stubbed)
+`generateRecipeFn` in `src/shared/services/firebase/functions.service.ts` — already wired up
+Backend at `functions/src/features/recipes/generateRecipe.ts` — fully implemented
+
+#### Key Types (already exist)
+
+`Recipe` interface in `src/shared/types/index.ts` — has all fields (title, ingredients, instructions, nutrition, allergens, etc.)
 
 ---
 
