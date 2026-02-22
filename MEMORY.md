@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-20 — Session 3: Firebase projects + secrets configured
+> Last updated: 2026-02-21 — Feature 2: Firebase Auth complete ✅
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 2 — Firebase Auth (ready to build)
-**Active Branch:** `feature/auth` (cut from main after this commit)
-**Blocking Issues:** None — all prerequisites complete
+**Phase:** Feature 3 — Onboarding (next to build)
+**Active Branch:** `feature/auth` (ready to merge / PR) → cut `feature/onboarding` next
+**Blocking Issues:** None
 
 ---
 
@@ -36,6 +36,15 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 2 COMPLETE:** Firebase Auth (email/password, Google, Apple)
+  - `src/features/auth/` — types, services, store, hooks, components (all with tests)
+  - `src/shared/components/ui/Input.tsx` — shared input primitive
+  - `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx` — route screens
+  - `src/app/_layout.tsx` — auth listener + SplashScreen gate
+  - `src/app/index.tsx` — three-way redirect (no user / no onboarding / tabs)
+  - `firestore.rules` — users collection rules deployed to staging
+  - 120 tests passing, 16 suites, TypeScript clean, lint clean
+  - `CODE_CONTEXT.md` created for session-start token efficiency
 - [x] **Feature 1 COMPLETE:** Restructured to `src/` layout, all dependencies installed
   - `src/app/` — all placeholder route files (auth, onboarding, tabs)
   - `src/features/` — directory scaffold for all 7 features
@@ -53,7 +62,7 @@
 
 ## Pending Features
 
-- [ ] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In)
+- [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
 - [ ] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer)
 - [ ] **Feature 4:** Pantry management (manual ingredient search + selection)
 - [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
@@ -71,65 +80,38 @@
 
 ## Next Session: Exactly What To Do
 
-### Feature 2: Firebase Auth
+> **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-**Branch:** `feature/auth` (already cut)
+### Feature 3: Onboarding
 
-1. Fill real Firebase config values in `src/shared/services/firebase/firebase.config.ts`
-2. Build `src/features/auth/services/authService.ts` (signIn, signUp, signOut, Google, Apple)
-3. Build `src/features/auth/store/authStore.ts` + tests
-4. Build `src/features/auth/hooks/useAuth.ts` + tests
-5. Build `src/features/auth/components/SignInForm.tsx` + tests
-6. Build `src/features/auth/components/SignUpForm.tsx` + tests
-7. Build `src/features/auth/components/SocialSignInButton.tsx`
-8. Replace placeholder `src/app/(auth)/sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx`
-9. Update `src/app/_layout.tsx` — add auth state listener + redirect logic
-10. Update `src/app/index.tsx` — smart redirect (auth → onboarding → tabs)
-11. Deploy Firestore rules: `firebase deploy --only firestore:rules`
-12. All tests pass: `npm test`
-13. No TypeScript errors: `npx tsc --noEmit`
-14. Update MEMORY.md, commit + push to `feature/auth`
+**Branch:** cut `feature/onboarding` from `feature/auth` (or from main after PR merges)
 
-### Prerequisites (complete BEFORE writing any auth code)
+#### Steps
 
-1. Create Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-   - Enable Email/Password auth
-   - Enable Google Sign-In (configure OAuth client, add SHA fingerprints)
-   - Enable Apple Sign-In (requires Apple Developer account — $99/year)
-   - Create Firestore database in **production mode** (NOT test mode)
-   - Upgrade to **Blaze plan** (required for Cloud Functions)
-   - Set budget alert: $10/month
-   - Enable Firebase App Check
-   - Download `google-services.json` → place in `android/app/` (gitignored)
-   - Download `GoogleService-Info.plist` → place in `ios/` (gitignored)
-2. Get Groq API key at [console.groq.com](https://console.groq.com)
-3. Get Gemini API key at [aistudio.google.com](https://aistudio.google.com)
-4. Run: `firebase functions:secrets:set GROQ_API_KEY`
-5. Run: `firebase functions:secrets:set GEMINI_API_KEY`
-6. Update `src/shared/services/firebase/firebase.config.ts` with real Firebase config values
+1. `git checkout -b feature/onboarding` (from `feature/auth` or merged main)
+2. Create `src/features/onboarding/types/index.ts` — Zod schemas for allergen + dietary prefs
+3. Create `src/features/onboarding/store/onboardingStore.ts` + tests
+   - State: `selectedAllergens: string[]`, `dietaryPreferences: string[]`, `isComplete: boolean`
+   - Actions: `toggleAllergen`, `toggleDietaryPreference`, `reset`
+4. Create onboarding screens:
+   - `src/app/(onboarding)/_layout.tsx` — Stack layout
+   - `src/app/(onboarding)/welcome.tsx` — intro + disclaimer (allergen accuracy warning)
+   - `src/app/(onboarding)/allergens.tsx` — Big 9 allergen picker (from `src/constants/allergens.ts`)
+   - `src/app/(onboarding)/dietary-preferences.tsx` — vegan, vegetarian, halal, etc.
+5. On final step: call `updateUserProfile(uid, { allergens, dietaryPreferences, onboardingComplete: true })`
+6. After save: `router.replace('/(tabs)')` → index.tsx redirect takes over
+7. Add `DisclaimerCard` component to onboarding welcome (App Store required)
+8. Write tests for all store actions and screen components
+9. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
+10. Update `CODE_CONTEXT.md` with new exports
+11. Update `MEMORY.md`, commit: `feat: add onboarding flow with allergen and dietary preference selection`
+12. Push + PR to main
 
-### Then Build Feature 2: Auth
+#### Key Files to Know
 
-```
-git checkout feature/auth
-```
-
-1. Build `src/shared/services/firebase/firebase.config.ts` (fill in real config)
-2. Build `src/features/auth/services/authService.ts` (signIn, signUp, signOut, Google, Apple)
-3. Build `src/features/auth/store/authStore.ts` + tests
-4. Build `src/features/auth/hooks/useAuth.ts` + tests
-5. Build `src/features/auth/components/SignInForm.tsx` + tests
-6. Build `src/features/auth/components/SignUpForm.tsx` + tests
-7. Build `src/features/auth/components/SocialSignInButton.tsx`
-8. Build `src/app/(auth)/_layout.tsx`, `sign-in.tsx`, `sign-up.tsx`, `forgot-password.tsx`
-9. Build `src/app/_layout.tsx` — auth state listener, redirect logic
-10. Build `src/app/index.tsx` — smart redirect (auth → onboarding → tabs)
-11. Write Firestore security rules, deploy: `firebase deploy --only firestore:rules`
-12. Test on iOS simulator, Android emulator, and web
-13. All tests pass: `npm test`
-14. No TypeScript errors: `npx tsc --noEmit`
-15. Update MEMORY.md, commit: `feat: add Firebase authentication with email, Google, Apple`
-16. Push: `git push origin feature/auth`
+- `src/constants/allergens.ts` — Big 9 allergen list already defined
+- `src/features/auth/services/authService.ts:updateUserProfile` — use this to save preferences
+- `src/app/index.tsx` — checks `profile.onboardingComplete` for redirect logic (already wired)
 
 ---
 
@@ -183,11 +165,11 @@ git checkout feature/auth
 
 ### Apple App Store
 
-- [ ] Apple Sign-In implemented (Feature 2)
+- [x] Apple Sign-In implemented (Feature 2) ✅
 - [ ] Privacy policy URL live and linked in-app (Feature 12)
 - [ ] Account deletion flow working (Feature 11)
 - [ ] AI disclaimer on every recipe screen (Feature 5)
-- [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6)
+- [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6) — onboarding part next
 - [ ] Camera permission string descriptive in app.json (Feature 8)
 - [ ] Error boundaries on all tab screens (Feature 5+)
 - [ ] App works offline with cached data (Feature 9+)

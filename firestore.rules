@@ -2,10 +2,42 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper: validates required fields and types for a UserProfile document
+    function validateUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'allergens',
+                                  'dietaryPreferences', 'onboardingComplete', 'createdAt'])
+        && data.uid is string
+        && data.email is string
+        && data.allergens is list
+        && data.dietaryPreferences is list
+        && data.onboardingComplete is bool;
+    }
+
     // DENY ALL by default — explicit rules required per collection.
     // This is intentional. Rules will be added per feature as they are built.
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Users collection — each user can only read/write their own document
+    match /users/{uid} {
+      // Read own profile
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Create profile on sign-up — must be authenticated, uid must match
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && validateUserProfile(request.resource.data);
+
+      // Update own profile — uid and createdAt are immutable
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validateUserProfile(request.resource.data);
+
+      // Delete own profile — required for App Store account deletion compliance
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // Rate limit counters — only writable by authenticated Cloud Functions
