@@ -1,14 +1,15 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 2 (Firebase Auth) complete.
+> Last updated: Feature 3 (Onboarding) complete.
 
 ---
 
 ## Branch History
 
 - `main` — scaffold only (Expo + deps)
-- `feature/auth` — **current** — Firebase Auth complete ✅
+- `feature/auth` — Firebase Auth complete ✅
+- `feature/onboarding` — **current** — Onboarding flow complete ✅
 
 ---
 
@@ -217,6 +218,107 @@ return <Redirect href="/(tabs)" />;
 
 ---
 
+## src/features/onboarding/
+
+### types/index.ts
+
+```typescript
+export const OnboardingPreferencesSchema; // z.object({ allergens: string[], dietaryPreferences: string[] })
+export type OnboardingPreferences = z.infer<typeof OnboardingPreferencesSchema>;
+```
+
+### store/onboardingStore.ts
+
+```typescript
+interface OnboardingState {
+  selectedAllergens: string[];
+  dietaryPreferences: string[];
+  isLoading: boolean;
+  error: string | null;
+  toggleAllergen: (id: string) => void;         // add if absent, remove if present
+  toggleDietaryPreference: (id: string) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  reset: () => void;
+}
+export const useOnboardingStore = create<OnboardingState>(...)
+```
+
+### hooks/useCompleteOnboarding.ts
+
+```typescript
+interface UseCompleteOnboardingReturn {
+  completeOnboarding: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+}
+export function useCompleteOnboarding(): UseCompleteOnboardingReturn;
+```
+
+- Reads `selectedAllergens` + `dietaryPreferences` from onboardingStore
+- Reads `user.uid` from authStore
+- Calls `updateUserProfile(uid, { allergens, dietaryPreferences, onboardingComplete: true })`
+- Fetches fresh profile → `setProfile()` on authStore → `router.replace('/')`
+
+### components/AllergenCard.tsx
+
+```typescript
+interface AllergenCardProps {
+  allergen: Allergen; // from @/constants/allergens
+  isSelected: boolean;
+  onToggle: () => void;
+  testID?: string;
+}
+export function AllergenCard(props): React.JSX.Element;
+```
+
+### components/DietaryPreferenceCard.tsx
+
+```typescript
+interface DietaryPreferenceCardProps {
+  preference: { id: string; name: string; icon: string };
+  isSelected: boolean;
+  onToggle: () => void;
+  testID?: string;
+}
+export function DietaryPreferenceCard(props): React.JSX.Element;
+```
+
+### components/DisclaimerCard.tsx
+
+```typescript
+export function DisclaimerCard(): React.JSX.Element;
+// No props — static App Store allergen disclaimer content
+// testID: 'disclaimer-card'
+```
+
+### index.ts (barrel)
+
+```typescript
+export { AllergenCard, DietaryPreferenceCard, DisclaimerCard } from './components/*';
+export { useCompleteOnboarding } from './hooks/useCompleteOnboarding';
+export { useOnboardingStore } from './store/onboardingStore';
+export { OnboardingPreferencesSchema } from './types';
+export type { OnboardingPreferences } from './types';
+```
+
+---
+
+## src/app/(onboarding)/ — Onboarding Screens
+
+Flow: `welcome → disclaimer → allergens → dietary → router.replace('/') → index.tsx → /(tabs)`
+
+| Screen           | testIDs                                                                                           | Navigates to                 |
+| ---------------- | ------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `welcome.tsx`    | `btn-get-started`                                                                                 | `/(onboarding)/disclaimer`   |
+| `disclaimer.tsx` | `btn-i-understand`, `progress-indicator`                                                          | `/(onboarding)/allergens`    |
+| `allergens.tsx`  | `card-allergen-{id}`, `btn-continue-allergens`, `btn-none-apply`, `progress-indicator`            | `/(onboarding)/dietary`      |
+| `dietary.tsx`    | `card-dietary-{id}`, `btn-finish-setup`, `dietary-loading`, `dietary-error`, `progress-indicator` | calls `completeOnboarding()` |
+
+`_layout.tsx`: `gestureEnabled: false` on `welcome` (no back swipe to auth screens).
+
+---
+
 ## firestore.rules (deployed)
 
 ```
@@ -261,13 +363,30 @@ All resolver-dependent `import/*` rules disabled (resolver crashes on `@/` alias
 | index.test.tsx              | 3-way redirect logic                         |
 | \_layout.test.tsx           | auth listener, profile fetch, SplashScreen   |
 
-**Total: 120 tests, 16 suites — all passing**
+**Feature 2 total: 120 tests, 16 suites**
+
+### Feature 3: Onboarding (added)
+
+| File                           | Tests                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| onboardingStore.test.ts        | toggle add/remove, duplicate guard, setLoading, setError, reset           |
+| AllergenCard.test.tsx          | render, press, checkmark, accessibility                                   |
+| DietaryPreferenceCard.test.tsx | render, press, checkmark, accessibility                                   |
+| DisclaimerCard.test.tsx        | renders, heading, medical disclaimer                                      |
+| useCompleteOnboarding.test.ts  | no user guard, updateUserProfile call, profile refresh, navigation, error |
+| welcome.test.tsx               | render, app name, tagline, navigation                                     |
+| disclaimer.test.tsx            | render, disclaimer card, progress, navigation                             |
+| allergens.test.tsx             | all 9 cards, toggle, clear-all, navigation                                |
+| dietary.test.tsx               | all 9 cards, finish button, loading/error states                          |
+
+**Feature 3 total: 62 new tests**
+**Grand total: 182 tests, 25 suites — all passing**
 
 ---
 
-## Next Feature: Feature 3 — Onboarding
+## Next Feature: Feature 4 — Pantry Management
 
-Branch: `feature/onboarding`
-Screens: `(onboarding)/welcome`, `(onboarding)/allergens`, `(onboarding)/dietary-preferences`
-Store: `src/features/onboarding/store/onboardingStore.ts`
-After complete: sets `profile.onboardingComplete = true` → `router.replace('/(tabs)')`
+Branch: `feature/pantry`
+Purpose: Manual ingredient search + selection
+Store: `src/features/pantry/store/pantryStore.ts`
+Key operations: search ingredients, toggle selection, clear pantry, persist to Firestore

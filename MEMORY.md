@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-21 — Feature 2: Firebase Auth complete ✅
+> Last updated: 2026-02-21 — Feature 3: Onboarding complete ✅
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 3 — Onboarding (next to build)
-**Active Branch:** `feature/auth` (ready to merge / PR) → cut `feature/onboarding` next
+**Phase:** Feature 4 — Pantry Management (next to build)
+**Active Branch:** `feature/onboarding` (ready to PR → main)
 **Blocking Issues:** None
 
 ---
@@ -36,6 +36,11 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 3 COMPLETE:** Onboarding flow (allergen + dietary preference selection)
+  - `src/features/onboarding/` — types, store, 3 components, useCompleteOnboarding hook, barrel
+  - `src/app/(onboarding)/` — 4 screens (welcome, disclaimer, allergens, dietary) + 4 test files
+  - Flow: welcome → disclaimer → allergens → dietary → save Firestore → `/(tabs)`
+  - 182 total tests, 25 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 2 COMPLETE:** Firebase Auth (email/password, Google, Apple)
   - `src/features/auth/` — types, services, store, hooks, components (all with tests)
   - `src/shared/components/ui/Input.tsx` — shared input primitive
@@ -63,7 +68,7 @@
 ## Pending Features
 
 - [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
-- [ ] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer)
+- [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
 - [ ] **Feature 4:** Pantry management (manual ingredient search + selection)
 - [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
@@ -82,36 +87,41 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 3: Onboarding
+### Feature 4: Pantry Management
 
-**Branch:** cut `feature/onboarding` from `feature/auth` (or from main after PR merges)
+**Branch:** cut `feature/pantry` from `feature/onboarding` (or from main after PR merges)
+
+#### What to Build
+
+Manual ingredient selection screen. User searches/browses ingredients → adds to pantry → used by recipe generation.
 
 #### Steps
 
-1. `git checkout -b feature/onboarding` (from `feature/auth` or merged main)
-2. Create `src/features/onboarding/types/index.ts` — Zod schemas for allergen + dietary prefs
-3. Create `src/features/onboarding/store/onboardingStore.ts` + tests
-   - State: `selectedAllergens: string[]`, `dietaryPreferences: string[]`, `isComplete: boolean`
-   - Actions: `toggleAllergen`, `toggleDietaryPreference`, `reset`
-4. Create onboarding screens:
-   - `src/app/(onboarding)/_layout.tsx` — Stack layout
-   - `src/app/(onboarding)/welcome.tsx` — intro + disclaimer (allergen accuracy warning)
-   - `src/app/(onboarding)/allergens.tsx` — Big 9 allergen picker (from `src/constants/allergens.ts`)
-   - `src/app/(onboarding)/dietary-preferences.tsx` — vegan, vegetarian, halal, etc.
-5. On final step: call `updateUserProfile(uid, { allergens, dietaryPreferences, onboardingComplete: true })`
-6. After save: `router.replace('/(tabs)')` → index.tsx redirect takes over
-7. Add `DisclaimerCard` component to onboarding welcome (App Store required)
-8. Write tests for all store actions and screen components
-9. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
-10. Update `CODE_CONTEXT.md` with new exports
-11. Update `MEMORY.md`, commit: `feat: add onboarding flow with allergen and dietary preference selection`
-12. Push + PR to main
+1. `git checkout -b feature/pantry` (from `feature/onboarding` or merged main)
+2. Create `src/features/pantry/types/index.ts` — `IngredientItem` type, `PantrySchema` Zod schema
+3. Create `src/features/pantry/store/pantryStore.ts` + tests
+   - State: `selectedIngredients: Ingredient[]`, `isLoading: boolean`, `error: string | null`
+   - Actions: `addIngredient`, `removeIngredient`, `clearPantry`, `setLoading`, `setError`, `reset`
+   - Guard `addIngredient` against duplicates (check `id`)
+4. Create `src/features/pantry/services/pantryService.ts` + tests
+   - `savePantry(uid, ingredients)` — writes to Firestore `users/{uid}/pantry`
+   - `loadPantry(uid)` — reads from Firestore (loads persisted pantry on app open)
+5. Create ingredient data in `src/constants/ingredients.ts` (common pantry items with categories)
+6. Create `src/features/pantry/components/IngredientChip.tsx` — small pressable chip showing ingredient + remove button
+7. Create `src/features/pantry/components/IngredientSearch.tsx` — text input + filtered list
+8. Create `src/app/(tabs)/pantry.tsx` — main pantry screen
+9. Update Firestore rules to allow `users/{uid}/pantry` subcollection
+10. Write tests for all of the above
+11. `npm test` → all pass | `npx tsc --noEmit` → clean | `npm run lint` → clean
+12. Update `CODE_CONTEXT.md`, update `MEMORY.md`
+13. Commit: `feat: add pantry management with ingredient selection and Firestore persistence`
+14. Push + PR to main
 
 #### Key Files to Know
 
-- `src/constants/allergens.ts` — Big 9 allergen list already defined
-- `src/features/auth/services/authService.ts:updateUserProfile` — use this to save preferences
-- `src/app/index.tsx` — checks `profile.onboardingComplete` for redirect logic (already wired)
+- `src/shared/types/index.ts` — `Ingredient` interface already defined
+- `src/features/auth/services/authService.ts` — Firestore `db` export pattern to follow
+- `src/app/(tabs)/` — tabs layout (pantry tab already stubbed)
 
 ---
 

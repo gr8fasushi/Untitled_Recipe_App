@@ -1,16 +1,40 @@
-import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView, Text, View } from 'react-native';
+import { Button } from '@/shared/components/ui/Button';
+import { DisclaimerCard } from '@/features/onboarding/components/DisclaimerCard';
 
-// TODO Feature 3: Implement allergen disclaimer (required for App Store)
 export default function DisclaimerScreen(): React.JSX.Element {
+  const router = useRouter();
+
+  function handleContinue(): void {
+    router.push('/(onboarding)/allergens');
+  }
+
   return (
-    <View className="flex-1 items-center justify-center bg-white px-6">
-      <Text className="text-3xl font-bold text-gray-900">Important Disclaimer</Text>
-      <Text className="mt-4 text-gray-600 text-center leading-6">
-        RecipeApp provides AI-generated recipes for informational purposes only. Always verify
-        ingredient safety if you have food allergies. This app is not a substitute for medical
-        advice.
-      </Text>
-      <Text className="mt-4 text-gray-400 text-sm">Onboarding coming in Feature 3</Text>
-    </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="flex-1 px-6 py-8">
+        {/* Progress indicator */}
+        <View className="mb-6 flex-row justify-center gap-2" testID="progress-indicator">
+          <View className="h-2 w-8 rounded-full bg-primary-600" />
+          <View className="h-2 w-8 rounded-full bg-gray-200" />
+          <View className="h-2 w-8 rounded-full bg-gray-200" />
+        </View>
+
+        <Text className="mb-2 text-2xl font-bold text-gray-900">Before We Begin</Text>
+        <Text className="mb-6 text-base text-gray-500">
+          Please read this important information about AI-generated recipes and allergen safety.
+        </Text>
+
+        <DisclaimerCard />
+
+        <View className="mt-auto pt-6">
+          <Button
+            label="I Understand, Continue"
+            onPress={handleContinue}
+            testID="btn-i-understand"
+          />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
