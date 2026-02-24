@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-24 — Feature 9 COMPLETE (606 tests, 68 suites — all passing)
+> Last updated: 2026-02-24 — Feature 10 COMPLETE (646 tests, 70 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 9 — Enhanced Saved Recipes + Community Sharing ✅ COMPLETE
-**Active Branch:** `feature/saved-recipes`
+**Phase:** Feature 10 — Profile + Settings ✅ COMPLETE
+**Active Branch:** `feature/profile`
 **Blocking Issues:** None — ready to PR and merge
 
 ---
@@ -36,6 +36,16 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 10 COMPLETE:** Profile + Settings
+  - `src/features/profile/hooks/useProfileSettings.ts` — load/edit/save profile (displayName, allergens, dietaryPrefs) + signOut
+  - `src/app/(tabs)/profile.tsx` — full profile screen replacing skeleton
+  - `src/app/(tabs)/delete-account.tsx` — stub screen for Feature 11 navigation
+  - `src/app/(tabs)/privacy-policy.tsx` — stub screen for Feature 12 navigation
+  - `src/app/(tabs)/_layout.tsx` — delete-account + privacy-policy registered hidden
+  - `src/features/profile/index.ts` — barrel export
+  - Reuses AllergenCard, DietaryPreferenceCard, DisclaimerCard from onboarding
+  - No payments UI — deferred to Phase 2 post-launch (RevenueCat + Apple IAP + Google Play Billing)
+  - 646 total tests, 70 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 9 COMPLETE:** Enhanced Saved Recipes + Community Sharing
   - `src/features/saved-recipes/types/` — SavedRecipe, SharedRecipe Zod schemas (MAX_NOTES/REVIEW_LENGTH = 500)
   - `src/features/saved-recipes/services/savedRecipesService.ts` — CRUD for users/{uid}/savedRecipes
@@ -141,7 +151,10 @@
   - Community tab: share recipes, browse others', save to personal collection
   - Firestore paths: `users/{uid}/savedRecipes/{id}` + `sharedRecipes/{id}` (top-level)
   - 606 tests, 68 suites — all passing, TypeScript clean, lint clean
-- [ ] **Feature 10:** Profile + settings (edit allergies, preferences)
+- [x] **Feature 10:** Profile + settings ✅
+  - Display name, allergens, dietary preferences — editable and saved to Firestore
+  - Sign Out, Delete Account stub nav, Privacy Policy stub nav, app version
+  - 646 tests, 70 suites — all passing, TypeScript clean, lint clean
 - [ ] **Feature 11:** Delete account (mandatory for both app stores)
 - [ ] **Feature 12:** Privacy policy screen + link
 - [ ] **Feature 13:** Web deployment (Vercel)
@@ -153,15 +166,19 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 10: Profile + Settings (start here — branch `feature/profile`)
+### Feature 11: Delete Account (start here — branch `feature/delete-account`)
 
-Create from `feature/saved-recipes` after PR #7 is merged.
+Create from `feature/profile` after PR is merged.
 
 Scope:
 
-- Profile screen: display name, email, allergens (editable), dietary preferences (editable)
-- Settings: change display name, manage allergens/dietary prefs (reuse onboarding components)
-- All changes saved to Firestore via `updateUserProfile`
+- Full `delete-account.tsx` screen replacing stub (currently shows "coming soon")
+- Alert confirmation dialog before deleting
+- Calls `deleteUserAccount(uid)` from authService (deletes Firestore doc first, then Firebase Auth user)
+- After deletion: auth listener fires → index.tsx redirects to sign-in
+- Tests: render, back nav, confirm dialog, delete success, delete error
+
+**Note:** `delete-account.tsx` stub already exists — just replace the stub body.
 
 ---
 
