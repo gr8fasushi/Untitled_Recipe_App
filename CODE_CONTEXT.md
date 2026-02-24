@@ -1,14 +1,14 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 4 (Pantry) — COMPLETE. All components, screen, and Firestore rules done.
+> Last updated: Feature 8 (Photo Scan) — COMPLETE. 457 tests, 51 suites, all passing.
 
 ---
 
 ## Branch History
 
-- `main` — includes auth + onboarding (merged)
-- `feature/pantry` — **current** — pantry COMPLETE, PR ready to merge
+- `main` — includes features 1–7 (merged)
+- `feature/photo-scan` — **current** — Feature 8 COMPLETE, PR ready to merge
 
 ---
 
@@ -788,3 +788,129 @@ testIDs: `chat-screen`, `btn-back`, `chat-heading`, `btn-toggle-mute`,
 
 **Feature 7 total: 88 new tests**
 **Grand total: 391 tests, 45 suites — all passing**
+
+---
+
+## src/features/scan/ — Feature 8 COMPLETE ✅
+
+### types/index.ts
+
+```typescript
+export type ScanStatus = 'idle' | 'analyzing' | 'done' | 'error';
+export type ScanMimeType = 'image/jpeg' | 'image/png' | 'image/webp';
+```
+
+### store/scanStore.ts
+
+```typescript
+interface ScanState {
+  status: ScanStatus;
+  error: string | null;
+  accumulatedIngredients: PantryItem[];  // grows with each scan; deduped by id
+  setStatus(s: ScanStatus): void;
+  setError(e: string | null): void;
+  mergeIngredients(newItems: PantryItem[]): void;  // deduplicates by id
+  removeIngredient(id: string): void;
+  reset(): void;
+}
+export const useScanStore = create<ScanState>(...)
+```
+
+### services/scanService.ts
+
+```typescript
+export async function analyzePhoto(
+  imageBase64: string,
+  mimeType: ScanMimeType
+): Promise<PantryItem[]>;
+// Calls analyzePhotoFn; throws Error('No food ingredients detected...') on empty result
+// Images never stored — base64 is a local var discarded after call
+```
+
+### hooks/useScan.ts
+
+```typescript
+interface UseScanReturn {
+  status: ScanStatus;
+  error: string | null;
+  accumulatedIngredients: PantryItem[];
+  isAnalyzing: boolean; // status === 'analyzing'
+  takePhoto(): Promise<void>; // launchCameraAsync + analyzePhoto → mergeIngredients
+  pickFromGallery(): Promise<void>; // launchImageLibraryAsync + analyzePhoto → mergeIngredients
+  addManually(ingredient: PantryItem): void; // mergeIngredients([ingredient])
+  removeIngredient(id: string): void;
+  addAllToPantry(): void; // addIngredient for each → reset() → router.replace('/(tabs)')
+  clearAll(): void; // reset()
+}
+export function useScan(): UseScanReturn;
+```
+
+- Cancel (no assets): no-op, status unchanged
+- mimeType mapping: `'image/png'`→png, `'image/webp'`→webp, anything else→jpeg
+- Error (incl. empty result): `setStatus('error')` + `setError(message)` — accumulated list preserved
+
+### components/ScanResultCard.tsx
+
+```typescript
+interface ScanResultCardProps {
+  ingredient: PantryItem;
+  onRemove: () => void;
+  testID?: string; // defaults to `scan-result-${ingredient.id}`
+}
+export function ScanResultCard(props): React.JSX.Element;
+// testID-name, testID-remove sub-testIDs; accessibilityLabel: "Remove {name}"
+```
+
+### components/ManualIngredientSearch.tsx
+
+```typescript
+interface ManualIngredientSearchProps {
+  onAdd: (ingredient: PantryItem) => void;
+  alreadyAdded: PantryItem[];
+  testID?: string;
+}
+export function ManualIngredientSearch(props): React.JSX.Element;
+// Real-time filter via searchIngredients(query) on every keystroke; max 5 results
+// Already-added items: disabled + checkmark; clears input after selection
+// testIDs: 'manual-search-input', 'manual-result-{id}', 'manual-result-{id}-check'
+```
+
+### index.ts (barrel)
+
+```typescript
+export { ScanResultCard, ManualIngredientSearch } from './components/*';
+export { useScan } from './hooks/useScan';
+export { useScanStore } from './store/scanStore';
+export { analyzePhoto } from './services/scanService';
+export type { ScanStatus, ScanMimeType } from './types';
+```
+
+---
+
+## src/app/(tabs)/scan.tsx — Scan Screen (Feature 8) ✅
+
+testIDs: `scan-screen`, `btn-take-photo`, `btn-pick-gallery`, `scan-analyzing-indicator`,
+`scan-error-banner`, `scan-results-list`, `btn-add-all`, `btn-clear-all`
+
+- Camera + Gallery buttons (disabled while analyzing)
+- Analyzing indicator (spinner + "Analyzing photo…")
+- Error banner (status=error && error msg present)
+- `ManualIngredientSearch` — real-time search from INGREDIENTS constant
+- Accumulated list: `ScanResultCard` per item + "Add N to Pantry" CTA + "Clear" link
+- "Add to Pantry" → `addAllToPantry()` → navigates to `/(tabs)` (pantry screen)
+
+---
+
+## Test Coverage (Feature 8)
+
+| File                              | Tests                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `scanStore.test.ts`               | initial state, setStatus, setError, mergeIngredients (dedup), removeIngredient, reset         |
+| `scanService.test.ts`             | correct args, returns ingredients, throws on empty, error propagation                         |
+| `useScan.test.ts`                 | idle state, takePhoto/gallery success+cancel+error, addManually, addAllToPantry, clearAll     |
+| `ScanResultCard.test.tsx`         | render, emoji, no-emoji, remove, default/custom testID, accessibilityLabel                    |
+| `ManualIngredientSearch.test.tsx` | input, real-time results, add, already-added disabled+check, clear after add                  |
+| `scan.test.tsx`                   | idle UI, analyzing disables buttons, error banner, results list, add-to-pantry, clear, remove |
+
+**Feature 8 total: 66 new tests**
+**Grand total: 457 tests, 51 suites — all passing**
