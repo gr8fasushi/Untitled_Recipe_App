@@ -2,13 +2,13 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-23 — Feature 5 COMPLETE (279 tests, 35 suites — all passing)
+> Last updated: 2026-02-23 — Feature 6 COMPLETE (303 tests, 37 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 5 — AI Recipe Generation ✅ COMPLETE — ready for PR
+**Phase:** Feature 6 — Recipe Detail Screen ✅ COMPLETE — ready for PR
 **Active Branch:** `feature/recipe-generation`
 **Blocking Issues:** None
 
@@ -36,6 +36,11 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 6 COMPLETE:** Recipe Detail Screen
+  - `src/app/(tabs)/recipe-detail.tsx` — full-screen recipe view with Save stub + Chat with AI stub
+  - `src/app/(tabs)/_layout.tsx` — `recipe-detail` registered with `href: null`
+  - `src/app/(tabs)/recipes.tsx` — "View Full Recipe" CTA added
+  - 303 total tests, 37 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 5 COMPLETE:** AI recipe generation via Groq Cloud Function
   - `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
   - `src/app/(tabs)/recipes.tsx` — generation screen (ingredient count → generate → recipe card)
@@ -81,6 +86,7 @@
 - [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
 - [x] **Feature 4:** Pantry management — types ✅ store ✅ service ✅ ingredients ✅ UI/screen ✅
 - [x] **Feature 5:** AI recipe generation via Groq Cloud Function ✅
+- [x] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings) ✅
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
 - [ ] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped)
   - Text always shown; voice is additive (not a replacement)
@@ -111,25 +117,30 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 6: Recipe Detail Screen (next session start here)
+### Feature 7: AI Chatbot (next session start here)
 
-**Branch:** Cut `feature/recipe-detail` from `main` after Feature 5 PR is merged.
+**Branch:** Cut `feature/chatbot` from `main` after Feature 6 PR is merged.
 
 #### What to build
 
-1. `src/app/(tabs)/recipe-detail.tsx` (or push-nav route) — full recipe detail view
-   - Same recipe card content as in `recipes.tsx` but as a standalone dedicated screen
-   - "Save" bookmark button (Feature 9 integration point — stub for now)
-   - "Chat with AI" button → pushes to chatbot screen (Feature 7)
-   - Allergen disclaimer + AIDisclaimer (App Store compliance)
-2. Navigation: recipe generation screen → recipe detail (push nav, pass recipe as param or read from store)
-3. Tests for the detail screen
+Per original plan in MEMORY.md Feature 7 section:
 
-#### Key reference
+- `src/app/chat.tsx` — root-level push-nav screen (accessed via `router.push('/chat')` from recipe-detail)
+- `src/features/chat/` — types, store, service, hooks, components
+  - `types/` — ChatMessage already in `src/shared/types/index.ts`
+  - `store/chatStore.ts` — messages array, isLoading, error
+  - `services/chatService.ts` — calls `chatFn` (already in functions.service.ts)
+  - `hooks/useChat.ts` — sends message, updates store
+  - `components/ChatBubble.tsx`, `ChatInput.tsx`
+- Voice is additive (expo-speech-recognition + expo-speech) — implement after text chat works
+- Chat is recipe-scoped: send `recipeId` with each message
+- Enable `btn-chat-with-ai` in recipe-detail.tsx (currently navigates to `/chat` which doesn't exist)
 
-- `Recipe` interface in `src/shared/types/index.ts`
-- Recipe generation screen already displays full recipe in `recipe-card` — detail screen can reuse same layout
-- `useRecipesStore` holds `currentRecipe` — detail screen can read from it directly (no prop drilling needed)
+#### Key wiring (already exists)
+
+- `chatFn` callable in `src/shared/services/firebase/functions.service.ts`
+- `ChatMessage` interface in `src/shared/types/index.ts`
+- `btn-chat-with-ai` in `recipe-detail.tsx` navigates to `'/chat'`
 
 ---
 

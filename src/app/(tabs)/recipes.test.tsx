@@ -65,6 +65,11 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+const mockRouterPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+}));
+
 // eslint-disable-next-line import/first
 import RecipesScreen from './recipes';
 
@@ -122,6 +127,7 @@ describe('RecipesScreen', () => {
     mockError = null;
     mockRecipe = null;
     mockGenerate.mockResolvedValue(undefined);
+    mockRouterPush.mockReset();
   });
 
   it('renders the screen', () => {
@@ -264,5 +270,23 @@ describe('RecipesScreen', () => {
     mockRecipe = sampleRecipe;
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('ai-disclaimer')).toBeTruthy();
+  });
+
+  it('shows View Full Recipe button when a recipe is available', () => {
+    mockRecipe = sampleRecipe;
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-view-full-recipe')).toBeTruthy();
+  });
+
+  it('does not show View Full Recipe button when no recipe', () => {
+    const { queryByTestId } = render(<RecipesScreen />);
+    expect(queryByTestId('btn-view-full-recipe')).toBeNull();
+  });
+
+  it('pressing View Full Recipe navigates to recipe-detail', () => {
+    mockRecipe = sampleRecipe;
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-view-full-recipe'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
   });
 });

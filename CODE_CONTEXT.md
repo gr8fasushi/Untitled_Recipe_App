@@ -583,22 +583,45 @@ export type { GenerateRecipeInput } from './types';
 
 testIDs: `recipes-screen`, `recipes-heading`, `btn-generate-recipe`, `recipes-no-ingredients`,
 `recipes-loading`, `recipes-error`, `recipe-card`, `recipe-allergen-warning`, `recipe-title`,
-`recipe-description`, `recipe-ingredients-list`, `recipe-instructions-list`, `recipe-nutrition`, `ai-disclaimer`
+`recipe-description`, `recipe-ingredients-list`, `recipe-instructions-list`, `recipe-nutrition`,
+`btn-view-full-recipe`, `ai-disclaimer`
 
 - Shows ingredient count from pantry (`usePantryStore` selector)
 - Generate button disabled when no ingredients or loading
 - Recipe card (allergen warning, title, description, meta, ingredients, instructions, nutrition)
+- "View Full Recipe" button → `router.push('/(tabs)/recipe-detail')` (inside recipe-card, only when recipe loaded)
 - `AIDisclaimer` always shown at bottom (App Store compliance)
 
 ---
 
-## Test Coverage (Feature 5 additions)
+## src/app/(tabs)/recipe-detail.tsx — Recipe Detail Screen (Feature 6) ✅
 
-| File                  | Tests                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| AIDisclaimer.test.tsx | renders, heading, disclaimer text, allergen verification, healthcare mention           |
-| recipes.test.tsx      | render, heading, no-ingredients hint, disabled states, generate call, loading, error,  |
-|                       | recipe card, allergen warning, ingredients, instructions, nutrition, disclaimer always |
+testIDs: `recipe-detail-screen`, `btn-back`, `recipe-detail-empty`, `recipe-detail-content`,
+`detail-allergen-warning`, `detail-title`, `detail-description`, `detail-ingredients-list`,
+`detail-instructions-list`, `detail-nutrition`, `btn-save-recipe`, `btn-chat-with-ai`, `ai-disclaimer`
 
-**Feature 5 total: 49 new tests (21 Chunk B + 28 Chunk C)**
-**Grand total: 279 tests, 35 suites — all passing**
+- Reads `currentRecipe` from `useRecipesStore()` (NOT `useGenerateRecipe` — no side effects needed)
+- Back button: `router.back()`
+- Empty state when no recipe loaded
+- Full recipe display (same structure as inline recipe card in recipes.tsx)
+- `btn-save-recipe`: disabled stub (Feature 9)
+- `btn-chat-with-ai`: `router.push('/chat')` (Feature 7 — `/chat` route doesn't exist yet)
+- `AIDisclaimer` always shown
+
+### (tabs)/\_layout.tsx
+
+Added `<Tabs.Screen name="recipe-detail" options={{ href: null }} />` — hides from tab bar.
+
+---
+
+## Test Coverage (Feature 5 + 6)
+
+| File                   | Tests                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| AIDisclaimer.test.tsx  | renders, heading, disclaimer text, allergen verification, healthcare mention             |
+| recipes.test.tsx       | 26 tests — generation, disabled states, recipe card, View Full Recipe button, disclaimer |
+| recipe-detail.test.tsx | 21 tests — empty state, recipe content, action buttons, back nav, chat nav, disclaimer   |
+
+**Feature 5 total: 49 tests**
+**Feature 6 total: 24 new tests (21 recipe-detail + 3 additions to recipes)**
+**Grand total: 303 tests, 37 suites — all passing**

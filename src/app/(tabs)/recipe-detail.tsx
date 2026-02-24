@@ -1,78 +1,40 @@
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { usePantryStore } from '@/features/pantry/store/pantryStore';
-import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
+import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { Button } from '@/shared/components/ui';
 
-export default function RecipesScreen(): React.JSX.Element {
-  const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const { generate, isLoading, error, recipe } = useGenerateRecipe();
+export default function RecipeDetailScreen(): React.JSX.Element {
+  const { currentRecipe: recipe } = useRecipesStore();
   const router = useRouter();
 
-  const hasIngredients = selectedIngredients.length > 0;
-
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="recipes-screen">
+    <SafeAreaView className="flex-1 bg-white" testID="recipe-detail-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Header */}
-        <View className="px-4 py-3 border-b border-gray-100">
-          <Text testID="recipes-heading" className="text-2xl font-bold text-gray-900">
-            Generate Recipe
-          </Text>
-          <Text className="mt-1 text-sm text-gray-500">
-            {hasIngredients
-              ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
-              : 'Add ingredients in the Pantry tab first'}
-          </Text>
+        <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
+          <Pressable testID="btn-back" onPress={() => router.back()}>
+            <Text className="text-lg text-primary-600 font-medium">← Back</Text>
+          </Pressable>
+          <Text className="ml-3 text-lg font-bold text-gray-900">Recipe Detail</Text>
         </View>
 
-        {/* No ingredients hint */}
-        {!hasIngredients ? (
-          <View
-            testID="recipes-no-ingredients"
-            className="mx-4 mt-4 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3"
-          >
-            <Text className="text-sm text-blue-700">
-              Head to the Pantry tab, select your ingredients, save them, then come back here to
-              generate a recipe tailored to what you have.
+        {/* Empty state */}
+        {!recipe ? (
+          <View testID="recipe-detail-empty" className="items-center justify-center px-6 mt-20">
+            <Text className="text-xl font-semibold text-gray-700 mb-2">No recipe loaded</Text>
+            <Text className="text-sm text-gray-400 text-center">
+              Go back and generate a recipe first.
             </Text>
           </View>
-        ) : null}
-
-        {/* Generate button */}
-        <View className="px-4 mt-4">
-          <Button
-            label={isLoading ? 'Generating…' : 'Generate Recipe'}
-            onPress={generate}
-            disabled={isLoading || !hasIngredients}
-            testID="btn-generate-recipe"
-          />
-        </View>
-
-        {/* Error banner */}
-        {error ? (
-          <View testID="recipes-error" className="mx-4 mt-3 rounded-xl bg-red-50 px-4 py-3">
-            <Text className="text-sm text-red-700">{error}</Text>
-          </View>
-        ) : null}
-
-        {/* Loading state */}
-        {isLoading ? (
-          <View testID="recipes-loading" className="mt-8 items-center justify-center">
-            <ActivityIndicator size="large" color="#2563eb" />
-            <Text className="mt-3 text-gray-400">Crafting your recipe…</Text>
-          </View>
-        ) : null}
-
-        {/* Recipe card */}
-        {recipe && !isLoading ? (
-          <View testID="recipe-card" className="mx-4 mt-6">
+        ) : (
+          /* Recipe content */
+          <View testID="recipe-detail-content" className="mx-4 mt-6">
             {/* Allergen warning */}
             {recipe.allergens.length > 0 ? (
               <View
-                testID="recipe-allergen-warning"
+                testID="detail-allergen-warning"
                 className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3"
               >
                 <Text className="text-xs font-semibold text-red-800 mb-1">Allergen Warning</Text>
@@ -83,10 +45,10 @@ export default function RecipesScreen(): React.JSX.Element {
             ) : null}
 
             {/* Title + description */}
-            <Text testID="recipe-title" className="text-2xl font-bold text-gray-900 mb-1">
+            <Text testID="detail-title" className="text-2xl font-bold text-gray-900 mb-1">
               {recipe.title}
             </Text>
-            <Text testID="recipe-description" className="text-sm text-gray-500 mb-4">
+            <Text testID="detail-description" className="text-sm text-gray-500 mb-4">
               {recipe.description}
             </Text>
 
@@ -114,7 +76,7 @@ export default function RecipesScreen(): React.JSX.Element {
 
             {/* Ingredients */}
             <Text className="text-lg font-bold text-gray-900 mb-2">Ingredients</Text>
-            <View testID="recipe-ingredients-list" className="mb-5">
+            <View testID="detail-ingredients-list" className="mb-5">
               {recipe.ingredients.map((item, index) => (
                 <View
                   key={index}
@@ -133,7 +95,7 @@ export default function RecipesScreen(): React.JSX.Element {
 
             {/* Instructions */}
             <Text className="text-lg font-bold text-gray-900 mb-2">Instructions</Text>
-            <View testID="recipe-instructions-list" className="mb-5">
+            <View testID="detail-instructions-list" className="mb-5">
               {recipe.instructions.map((step) => (
                 <View key={step.stepNumber} className="mb-4">
                   <View className="flex-row items-start gap-3">
@@ -153,7 +115,7 @@ export default function RecipesScreen(): React.JSX.Element {
 
             {/* Nutrition */}
             <Text className="text-lg font-bold text-gray-900 mb-2">Nutrition per serving</Text>
-            <View testID="recipe-nutrition" className="flex-row flex-wrap gap-2 mb-6">
+            <View testID="detail-nutrition" className="flex-row flex-wrap gap-2 mb-6">
               {(
                 [
                   { label: 'Calories', value: `${recipe.nutrition.calories} kcal` },
@@ -171,16 +133,24 @@ export default function RecipesScreen(): React.JSX.Element {
               ))}
             </View>
 
-            {/* View Full Recipe CTA */}
-            <View className="mt-4">
+            {/* Action buttons */}
+            <View className="gap-3 mb-2">
               <Button
-                label="View Full Recipe"
-                onPress={() => router.push('/(tabs)/recipe-detail')}
-                testID="btn-view-full-recipe"
+                label="Save Recipe"
+                variant="secondary"
+                disabled={true}
+                onPress={() => {}}
+                testID="btn-save-recipe"
+              />
+              <Button
+                label="Chat with AI"
+                variant="primary"
+                onPress={() => router.push('/chat')}
+                testID="btn-chat-with-ai"
               />
             </View>
           </View>
-        ) : null}
+        )}
 
         {/* AI Disclaimer — always visible, required by App Store */}
         <View className="mx-4 mt-4">

@@ -1,0 +1,226 @@
+import React from 'react';
+import { render, fireEvent } from '@testing-library/react-native';
+import type { Recipe } from '@/shared/types';
+
+// ---------------------------------------------------------------------------
+// Mocks — ALL use explicit factory functions so Jest never loads real modules.
+// ---------------------------------------------------------------------------
+
+let mockCurrentRecipe: Recipe | null = null;
+
+jest.mock('@/features/recipes/store/recipesStore', () => ({
+  useRecipesStore: () => ({ currentRecipe: mockCurrentRecipe }),
+}));
+
+const mockRouterBack = jest.fn();
+const mockRouterPush = jest.fn();
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: mockRouterBack, push: mockRouterPush }),
+}));
+
+jest.mock('@/shared/components/ui', () => ({
+  Button: ({
+    label,
+    onPress,
+    disabled,
+    testID,
+  }: {
+    label: string;
+    onPress: () => void;
+    disabled?: boolean;
+    testID?: string;
+  }) => {
+    const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
+    return (
+      <Pressable
+        testID={testID}
+        onPress={onPress}
+        disabled={disabled}
+        accessibilityState={{ disabled: !!disabled }}
+      >
+        <Text>{label}</Text>
+      </Pressable>
+    );
+  },
+}));
+
+jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
+  AIDisclaimer: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="ai-disclaimer" />;
+  },
+}));
+
+// eslint-disable-next-line import/first
+import RecipeDetailScreen from './recipe-detail';
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+const sampleRecipe: Recipe = {
+  id: 'r1',
+  title: 'Tomato Chicken',
+  description: 'A quick and healthy dish.',
+  ingredients: [
+    { name: 'Chicken Breast', amount: '200', unit: 'g', optional: false },
+    { name: 'Tomato', amount: '2', unit: 'whole', optional: true },
+  ],
+  instructions: [
+    { stepNumber: 1, instruction: 'Season the chicken.', duration: 2 },
+    { stepNumber: 2, instruction: 'Cook on medium heat.' },
+  ],
+  nutrition: {
+    calories: 350,
+    protein: 40,
+    carbohydrates: 10,
+    fat: 12,
+    fiber: 3,
+    sugar: 5,
+    sodium: 180,
+  },
+  allergens: ['gluten'],
+  dietaryTags: ['high-protein'],
+  prepTime: 5,
+  cookTime: 20,
+  servings: 2,
+  difficulty: 'easy',
+  generatedAt: '2026-01-01T00:00:00Z',
+};
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('RecipeDetailScreen — empty state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCurrentRecipe = null;
+    mockRouterBack.mockReset();
+    mockRouterPush.mockReset();
+  });
+
+  it('renders the screen container', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('recipe-detail-screen')).toBeTruthy();
+  });
+
+  it('shows empty state when no recipe is loaded', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('recipe-detail-empty')).toBeTruthy();
+  });
+
+  it('does not show recipe content when no recipe is loaded', () => {
+    const { queryByTestId } = render(<RecipeDetailScreen />);
+    expect(queryByTestId('recipe-detail-content')).toBeNull();
+  });
+
+  it('always shows the AI disclaimer even with no recipe', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('ai-disclaimer')).toBeTruthy();
+  });
+
+  it('shows the back button in empty state', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-back')).toBeTruthy();
+  });
+
+  it('pressing back calls router.back()', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByTestId('btn-back'));
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RecipeDetailScreen — with recipe', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCurrentRecipe = sampleRecipe;
+    mockRouterBack.mockReset();
+    mockRouterPush.mockReset();
+  });
+
+  it('shows recipe content when a recipe is loaded', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('recipe-detail-content')).toBeTruthy();
+  });
+
+  it('does not show empty state when recipe is loaded', () => {
+    const { queryByTestId } = render(<RecipeDetailScreen />);
+    expect(queryByTestId('recipe-detail-empty')).toBeNull();
+  });
+
+  it('shows the recipe title', () => {
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-title')).toBeTruthy();
+    expect(getByText('Tomato Chicken')).toBeTruthy();
+  });
+
+  it('shows the recipe description', () => {
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-description')).toBeTruthy();
+    expect(getByText('A quick and healthy dish.')).toBeTruthy();
+  });
+
+  it('shows allergen warning when recipe has allergens', () => {
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-allergen-warning')).toBeTruthy();
+    expect(getByText(/Contains: gluten/i)).toBeTruthy();
+  });
+
+  it('hides allergen warning when recipe has no allergens', () => {
+    mockCurrentRecipe = { ...sampleRecipe, allergens: [] };
+    const { queryByTestId } = render(<RecipeDetailScreen />);
+    expect(queryByTestId('detail-allergen-warning')).toBeNull();
+  });
+
+  it('shows the ingredients list', () => {
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-ingredients-list')).toBeTruthy();
+    expect(getByText('Chicken Breast')).toBeTruthy();
+  });
+
+  it('shows the instructions list', () => {
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-instructions-list')).toBeTruthy();
+    expect(getByText('Season the chicken.')).toBeTruthy();
+    expect(getByText('Cook on medium heat.')).toBeTruthy();
+  });
+
+  it('shows the nutrition section', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-nutrition')).toBeTruthy();
+  });
+
+  it('shows the Save Recipe button', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-save-recipe')).toBeTruthy();
+  });
+
+  it('Save Recipe button is disabled (stub — Feature 9)', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-save-recipe').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('shows the Chat with AI button', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
+  });
+
+  it('Chat with AI button is enabled', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+  });
+
+  it('pressing Chat with AI navigates to /chat', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByTestId('btn-chat-with-ai'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/chat');
+  });
+
+  it('shows the AI disclaimer when recipe is loaded', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('ai-disclaimer')).toBeTruthy();
+  });
+});
