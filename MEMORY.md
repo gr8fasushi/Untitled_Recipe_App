@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-21 — Feature 4: Pantry COMPLETE; Feature 7 + 9 scope expanded (voice chat, enhanced saved recipes)
+> Last updated: 2026-02-23 — Feature 6 COMPLETE (303 tests, 37 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 4 — Pantry Management ✅ COMPLETE — PR ready to merge
-**Active Branch:** `feature/pantry`
+**Phase:** Feature 6 — Recipe Detail Screen ✅ COMPLETE — ready for PR
+**Active Branch:** `feature/recipe-generation`
 **Blocking Issues:** None
 
 ---
@@ -36,6 +36,16 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 6 COMPLETE:** Recipe Detail Screen
+  - `src/app/(tabs)/recipe-detail.tsx` — full-screen recipe view with Save stub + Chat with AI stub
+  - `src/app/(tabs)/_layout.tsx` — `recipe-detail` registered with `href: null`
+  - `src/app/(tabs)/recipes.tsx` — "View Full Recipe" CTA added
+  - 303 total tests, 37 suites — all passing, TypeScript clean, lint clean
+- [x] **Feature 5 COMPLETE:** AI recipe generation via Groq Cloud Function
+  - `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
+  - `src/app/(tabs)/recipes.tsx` — generation screen (ingredient count → generate → recipe card)
+  - `src/features/recipes/index.ts` — barrel export
+  - 279 total tests, 35 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 4 COMPLETE:** Pantry management (ingredient selection + Firestore persistence)
   - `src/features/pantry/` — types, store, service, `IngredientChip`, `IngredientSearch`, barrel
   - `src/app/(tabs)/index.tsx` — full pantry screen (load, save, chips, search)
@@ -75,7 +85,8 @@
 - [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
 - [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
 - [x] **Feature 4:** Pantry management — types ✅ store ✅ service ✅ ingredients ✅ UI/screen ✅
-- [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
+- [x] **Feature 5:** AI recipe generation via Groq Cloud Function ✅
+- [x] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings) ✅
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
 - [ ] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped)
   - Text always shown; voice is additive (not a replacement)
@@ -106,34 +117,30 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Merge Feature 4 First
+### Feature 7: AI Chatbot (next session start here)
 
-Feature 4 is complete and pushed. Merge the `feature/pantry` PR to main before starting Feature 5.
+**Branch:** Cut `feature/chatbot` from `main` after Feature 6 PR is merged.
 
-### Feature 5: AI Recipe Generation
+#### What to build
 
-**Branch:** cut `feature/recipe-generation` from main after Feature 4 merges
+Per original plan in MEMORY.md Feature 7 section:
 
-#### Steps
+- `src/app/chat.tsx` — root-level push-nav screen (accessed via `router.push('/chat')` from recipe-detail)
+- `src/features/chat/` — types, store, service, hooks, components
+  - `types/` — ChatMessage already in `src/shared/types/index.ts`
+  - `store/chatStore.ts` — messages array, isLoading, error
+  - `services/chatService.ts` — calls `chatFn` (already in functions.service.ts)
+  - `hooks/useChat.ts` — sends message, updates store
+  - `components/ChatBubble.tsx`, `ChatInput.tsx`
+- Voice is additive (expo-speech-recognition + expo-speech) — implement after text chat works
+- Chat is recipe-scoped: send `recipeId` with each message
+- Enable `btn-chat-with-ai` in recipe-detail.tsx (currently navigates to `/chat` which doesn't exist)
 
-1. `src/features/recipes/types/index.ts` — `GenerateRecipeInput` schema + Zod validation (already have `Recipe` in shared types)
-2. `src/features/recipes/hooks/useGenerateRecipe.ts` — calls `generateRecipeFn`, updates store, handles loading/error
-3. `src/features/recipes/store/recipesStore.ts` — `currentRecipe`, `isLoading`, `error`, actions
-4. `src/features/recipes/components/AIDisclaimer.tsx` — required on every recipe screen (App Store compliance)
-5. `src/app/(tabs)/recipes.tsx` — recipe generation screen (pantry ingredients → generate button → recipe display)
-6. Update `firestore.rules` — add rate limit counter path if needed
-7. Tests for all new files, `npm test`, `npx tsc --noEmit`, `npm run lint`
-8. Update `CODE_CONTEXT.md` + `MEMORY.md`
-9. Commit + push + PR
+#### Key wiring (already exists)
 
-#### Key Cloud Function
-
-`generateRecipeFn` in `src/shared/services/firebase/functions.service.ts` — already wired up
-Backend at `functions/src/features/recipes/generateRecipe.ts` — fully implemented
-
-#### Key Types (already exist)
-
-`Recipe` interface in `src/shared/types/index.ts` — has all fields (title, ingredients, instructions, nutrition, allergens, etc.)
+- `chatFn` callable in `src/shared/services/firebase/functions.service.ts`
+- `ChatMessage` interface in `src/shared/types/index.ts`
+- `btn-chat-with-ai` in `recipe-detail.tsx` navigates to `'/chat'`
 
 ---
 
