@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-24 — Feature 10 COMPLETE (646 tests, 70 suites — all passing)
+> Last updated: 2026-02-24 — Feature 11 COMPLETE (658 tests, 71 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 10 — Profile + Settings ✅ COMPLETE
-**Active Branch:** `feature/profile`
+**Phase:** Feature 11 — Delete Account ✅ COMPLETE
+**Active Branch:** `feature/delete-account`
 **Blocking Issues:** None — ready to PR and merge
 
 ---
@@ -36,6 +36,12 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 11 COMPLETE:** Delete Account (mandatory for both app stores)
+  - `src/app/(tabs)/delete-account.tsx` — full screen replacing stub; Alert confirm → `deleteUserAccount(uid)` → auth listener auto-redirects
+  - Handles `auth/requires-recent-login` + generic errors with `getAuthErrorMessage`
+  - Loading indicator + disabled button during deletion; no-op guard when `user` is null
+  - `src/app/(tabs)/delete-account.test.tsx` — 12 tests: render, back nav, dialog, confirm, cancel, error, loading, disabled
+  - 658 total tests, 71 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 10 COMPLETE:** Profile + Settings
   - `src/features/profile/hooks/useProfileSettings.ts` — load/edit/save profile (displayName, allergens, dietaryPrefs) + signOut
   - `src/app/(tabs)/profile.tsx` — full profile screen replacing skeleton
@@ -155,7 +161,7 @@
   - Display name, allergens, dietary preferences — editable and saved to Firestore
   - Sign Out, Delete Account stub nav, Privacy Policy stub nav, app version
   - 646 tests, 70 suites — all passing, TypeScript clean, lint clean
-- [ ] **Feature 11:** Delete account (mandatory for both app stores)
+- [x] **Feature 11:** Delete account (mandatory for both app stores) ✅
 - [ ] **Feature 12:** Privacy policy screen + link
 - [ ] **Feature 13:** Web deployment (Vercel)
 - [ ] **Feature 14:** App Store submission prep + compliance review
@@ -166,19 +172,20 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 11: Delete Account (start here — branch `feature/delete-account`)
+### Feature 12: Privacy Policy Screen (start here — branch `feature/privacy`)
 
-Create from `feature/profile` after PR is merged.
+Create from `feature/delete-account` after PR is merged.
 
 Scope:
 
-- Full `delete-account.tsx` screen replacing stub (currently shows "coming soon")
-- Alert confirmation dialog before deleting
-- Calls `deleteUserAccount(uid)` from authService (deletes Firestore doc first, then Firebase Auth user)
-- After deletion: auth listener fires → index.tsx redirects to sign-in
-- Tests: render, back nav, confirm dialog, delete success, delete error
+- Full `privacy-policy.tsx` screen replacing stub (currently shows placeholder)
+- Display privacy policy content (inline text or WebView linking to hosted URL)
+- Options: (a) inline markdown-style text, or (b) `WebView` pointing to a hosted URL
+- Recommendation: use inline text for App Store compliance (no external dependency)
+- Back button navigation
+- Tests: render, back nav, content visible
 
-**Note:** `delete-account.tsx` stub already exists — just replace the stub body.
+**Note:** `privacy-policy.tsx` stub already exists at `src/app/(tabs)/privacy-policy.tsx`.
 
 ---
 
@@ -234,7 +241,7 @@ Scope:
 
 - [x] Apple Sign-In implemented (Feature 2) ✅
 - [ ] Privacy policy URL live and linked in-app (Feature 12)
-- [ ] Account deletion flow working (Feature 11)
+- [x] Account deletion flow working (Feature 11) ✅
 - [ ] AI disclaimer on every recipe screen (Feature 5)
 - [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6) — onboarding part next
 - [ ] Camera permission string descriptive in app.json (Feature 8)
@@ -246,7 +253,7 @@ Scope:
 ### Google Play Store
 
 - [ ] Privacy policy URL live
-- [ ] Account deletion flow working
+- [x] Account deletion flow working ✅
 - [ ] Data Safety section completed in Play Console
 - [ ] Content rating questionnaire completed
 - [ ] App tested on Android 10, 12, 14

@@ -1,14 +1,14 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 10 (Profile + Settings) — COMPLETE. 646 tests, 70 suites, all passing.
+> Last updated: Feature 11 (Delete Account) — COMPLETE. 658 tests, 71 suites, all passing.
 
 ---
 
 ## Branch History
 
-- `main` — includes features 1–8 (merged)
-- `feature/saved-recipes` — **current** — Feature 9 COMPLETE, PR ready to merge
+- `main` — includes features 1–10 (merged)
+- `feature/delete-account` — **current** — Feature 11 COMPLETE, PR ready to merge
 
 ---
 
