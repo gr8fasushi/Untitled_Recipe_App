@@ -1,14 +1,14 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 8 (Photo Scan) — COMPLETE. 457 tests, 51 suites, all passing.
+> Last updated: Feature 9 (Saved Recipes + Community Sharing) — COMPLETE. 606 tests, 68 suites, all passing.
 
 ---
 
 ## Branch History
 
-- `main` — includes features 1–7 (merged)
-- `feature/photo-scan` — **current** — Feature 8 COMPLETE, PR ready to merge
+- `main` — includes features 1–8 (merged)
+- `feature/saved-recipes` — **current** — Feature 9 COMPLETE, PR ready to merge
 
 ---
 
@@ -914,3 +914,369 @@ testIDs: `scan-screen`, `btn-take-photo`, `btn-pick-gallery`, `scan-analyzing-in
 
 **Feature 8 total: 66 new tests**
 **Grand total: 457 tests, 51 suites — all passing**
+
+---
+
+## src/features/saved-recipes/ — Feature 9 COMPLETE ✅
+
+### types/index.ts
+
+```typescript
+export const MAX_NOTES_LENGTH = 500;
+export const MAX_REVIEW_LENGTH = 500;
+
+export const SavedRecipeSchema; // Zod — id, recipe, savedAt, rating(1-10|null), review(≤500), notes(≤500), lastModifiedAt, isShared, sharedAt?, sharedFrom?
+export type SavedRecipe = z.infer<typeof SavedRecipeSchema>;
+
+export const SharedRecipeSchema; // Zod — id, recipe, sharedBy{uid,displayName}, sharedAt, rating(1-10|null), review(≤500), saveCount
+export type SharedRecipe = z.infer<typeof SharedRecipeSchema>;
+```
+
+### services/savedRecipesService.ts
+
+```typescript
+// Firestore path: users/{uid}/savedRecipes/{recipeId}
+export async function saveRecipe(uid: string, recipe: Recipe): Promise<SavedRecipe>;
+// setDoc — idempotent; defaults: rating=null, review='', notes='', isShared=false
+export async function updateSavedRecipe(
+  uid: string,
+  id: string,
+  updates: Partial<Pick<SavedRecipe, 'rating' | 'review' | 'notes' | 'isShared' | 'sharedAt'>>
+): Promise<void>;
+export async function deleteSavedRecipe(uid: string, id: string): Promise<void>;
+export async function loadSavedRecipes(uid: string): Promise<SavedRecipe[]>; // orderBy savedAt desc
+export async function isRecipeSaved(uid: string, recipeId: string): Promise<boolean>;
+```
+
+### services/communityService.ts
+
+```typescript
+// Top-level collection: sharedRecipes/{recipeId}
+export async function shareRecipe(
+  savedRecipe: SavedRecipe,
+  sharedBy: { uid: string; displayName: string }
+): Promise<void>;
+// setDoc — copies rating+review from savedRecipe at share-time (snapshot)
+export async function unshareRecipe(savedRecipeId: string): Promise<void>;
+export async function loadSharedRecipes(): Promise<SharedRecipe[]>; // orderBy sharedAt desc, limit 50
+export async function saveToMyCollection(
+  uid: string,
+  sharedRecipe: SharedRecipe
+): Promise<SavedRecipe>;
+// creates savedRecipes doc with sharedFrom = sharedRecipe.sharedBy.uid
+export async function incrementSaveCount(sharedRecipeId: string): Promise<void>; // increment(1)
+```
+
+### store/savedRecipesStore.ts
+
+```typescript
+interface SavedRecipesState {
+  savedRecipes: SavedRecipe[];          // sorted savedAt desc
+  currentSavedRecipe: SavedRecipe | null;
+  isLoading: boolean;
+  error: string | null;
+  setSavedRecipes(recipes: SavedRecipe[]): void;
+  addSavedRecipe(recipe: SavedRecipe): void;    // prepend; deduplicates by id
+  updateSavedRecipe(id: string, updates: Partial<SavedRecipe>): void; // updates list + currentSavedRecipe if match
+  removeSavedRecipe(id: string): void;          // removes from list; clears currentSavedRecipe if match
+  setCurrentSavedRecipe(recipe: SavedRecipe | null): void;
+  setLoading(v: boolean): void;
+  setError(e: string | null): void;
+  reset(): void;
+}
+export const useSavedRecipesStore = create<SavedRecipesState>(...)
+```
+
+### store/communityStore.ts
+
+```typescript
+interface CommunityState {
+  sharedRecipes: SharedRecipe[];
+  currentSharedRecipe: SharedRecipe | null;
+  isLoading: boolean;
+  error: string | null;
+  setSharedRecipes(recipes: SharedRecipe[]): void;
+  setCurrentSharedRecipe(recipe: SharedRecipe | null): void;
+  updateSaveCount(id: string, count: number): void; // updates saveCount on matching recipe
+  setLoading(v: boolean): void;
+  setError(e: string | null): void;
+  reset(): void;
+}
+export const useCommunityStore = create<CommunityState>(...)
+```
+
+### hooks/useSavedRecipes.ts
+
+```typescript
+interface UseSavedRecipesReturn {
+  savedRecipes: SavedRecipe[];
+  isLoading: boolean;
+  error: string | null;
+  ratingFilter: number | null; // null = all; n = rating >= n
+  setRatingFilter(filter: number | null): void;
+  filteredRecipes: SavedRecipe[];
+  deleteRecipe(id: string): Promise<void>; // removes from store + Firestore
+}
+export function useSavedRecipes(): UseSavedRecipesReturn;
+```
+
+### hooks/useSaveRecipe.ts
+
+```typescript
+interface UseSaveRecipeReturn {
+  isSaved: boolean; // checks savedRecipesStore by recipe.id (optimistic)
+  isSaving: boolean;
+  toggleSave(): Promise<void>; // save → saveRecipe+addSavedRecipe; unsave → deleteSavedRecipe+removeSavedRecipe
+}
+export function useSaveRecipe(recipe: Recipe | null): UseSaveRecipeReturn;
+```
+
+### hooks/useSavedRecipeDetail.ts
+
+```typescript
+interface UseSavedRecipeDetailReturn {
+  savedRecipe: SavedRecipe | null;
+  updateRating(rating: number | null): Promise<void>; // debounced 500ms
+  updateReview(review: string): Promise<void>; // debounced 500ms
+  updateNotes(notes: string): Promise<void>; // debounced 500ms
+  shareRecipeHandler(): Promise<void>; // shareRecipe + updates store isShared/sharedAt
+  unshareRecipeHandler(): Promise<void>; // unshareRecipe + clears store isShared/sharedAt
+  deleteRecipeHandler(): void; // Alert.alert confirm → removeSavedRecipe + deleteSavedRecipe + router.back()
+}
+export function useSavedRecipeDetail(): UseSavedRecipeDetailReturn;
+```
+
+### hooks/useCommunityRecipes.ts
+
+```typescript
+interface UseCommunityRecipesReturn {
+  sharedRecipes: SharedRecipe[];
+  isLoading: boolean;
+  error: string | null;
+  saveToMyCollection(sharedRecipe: SharedRecipe): Promise<void>;
+  // calls saveToMyCollection service + addSavedRecipe + incrementSaveCount + optimistic updateSaveCount
+}
+export function useCommunityRecipes(): UseCommunityRecipesReturn;
+```
+
+### components/SavedRecipeCard.tsx
+
+```typescript
+interface SavedRecipeCardProps {
+  savedRecipe: SavedRecipe;
+  onPress: () => void;
+  onDelete: () => void;
+  testID?: string; // defaults to `saved-card-${savedRecipe.id}`
+}
+export function SavedRecipeCard(props): React.JSX.Element;
+// Sub-testIDs: ${testID}-title, ${testID}-rating, ${testID}-review, ${testID}-delete
+// Rating badge shows only when rating !== null; review snippet shows only when review.length > 0
+// Shows "Shared" badge when isShared === true
+```
+
+### components/CommunityRecipeCard.tsx
+
+```typescript
+interface CommunityRecipeCardProps {
+  sharedRecipe: SharedRecipe;
+  onPress: () => void;
+  isSaved: boolean;
+  testID?: string; // defaults to `community-card-${sharedRecipe.id}`
+}
+export function CommunityRecipeCard(props): React.JSX.Element;
+// Sub-testIDs: ${testID}-title, ${testID}-rating, ${testID}-review, ${testID}-sharer, ${testID}-saved-badge
+// Rating badge shows only when rating !== null; review snippet shows only when review.length > 0
+// "Saved" badge when isSaved === true
+```
+
+### components/RatingPicker.tsx
+
+```typescript
+interface RatingPickerProps {
+  rating: number | null;
+  onRatingChange: (rating: number | null) => void;
+  testID?: string; // defaults to 'rating-picker'
+}
+export function RatingPicker(props): React.JSX.Element;
+// 10 horizontal buttons (1–10); tap selected → deselect (null)
+// Button testIDs: ${testID}-btn-{n}; accessibilityState.selected on selected btn
+```
+
+### components/RecipeNotes.tsx
+
+```typescript
+interface RecipeNotesProps {
+  notes: string;
+  onNotesChange: (notes: string) => void;
+  testID?: string; // defaults to 'recipe-notes'
+}
+export function RecipeNotes(props): React.JSX.Element;
+// Label: "Private Notes"; placeholder: "Add cooking notes…"; max 500 chars; char counter
+// testIDs: ${testID}-input, ${testID}-counter
+```
+
+### components/ReviewInput.tsx
+
+```typescript
+interface ReviewInputProps {
+  review: string;
+  onReviewChange: (review: string) => void;
+  testID?: string; // defaults to 'review-input'
+}
+export function ReviewInput(props): React.JSX.Element;
+// Label: "Your Review (public if shared)"; max 500 chars; char counter
+// testIDs: ${testID}-input, ${testID}-counter
+```
+
+### index.ts (barrel)
+
+```typescript
+export {
+  SavedRecipeCard,
+  CommunityRecipeCard,
+  RatingPicker,
+  RecipeNotes,
+  ReviewInput,
+} from './components/*';
+export {
+  useSavedRecipes,
+  useSaveRecipe,
+  useSavedRecipeDetail,
+  useCommunityRecipes,
+} from './hooks/*';
+export { useSavedRecipesStore } from './store/savedRecipesStore';
+export { useCommunityStore } from './store/communityStore';
+export {
+  saveRecipe,
+  updateSavedRecipe,
+  deleteSavedRecipe,
+  loadSavedRecipes,
+  isRecipeSaved,
+} from './services/savedRecipesService';
+export {
+  shareRecipe,
+  unshareRecipe,
+  loadSharedRecipes,
+  saveToMyCollection,
+  incrementSaveCount,
+} from './services/communityService';
+export {
+  SavedRecipeSchema,
+  SharedRecipeSchema,
+  MAX_NOTES_LENGTH,
+  MAX_REVIEW_LENGTH,
+} from './types';
+export type { SavedRecipe, SharedRecipe } from './types';
+```
+
+---
+
+## src/app/(tabs)/ — Feature 9 Screens
+
+### saved.tsx
+
+testIDs: `saved-screen`, `saved-loading`, `saved-error`, `saved-empty`, `saved-list`,
+`filter-all`, `filter-6`, `filter-7`, `filter-8`, `filter-9`, `filter-10`, `saved-card-{id}`
+
+- Rating filter pills: All / 6+ / 7+ / 8+ / 9+ / 10 (client-side filtering via `filteredRecipes`)
+- FlatList of `SavedRecipeCard` — pressing → `setCurrentSavedRecipe` + `router.push('/(tabs)/saved-recipe-detail')`
+- Delete via `SavedRecipeCard.onDelete` → `deleteRecipe(id)` with `Alert.alert` confirm
+
+### saved-recipe-detail.tsx (hidden from tab bar — `href: null`)
+
+testIDs: `saved-detail-screen`, `btn-back`, `saved-detail-empty`, `detail-title`,
+`rating-picker`, `review-input`, `recipe-notes`, `btn-share`, `btn-unshare`,
+`btn-delete-saved`, `ai-disclaimer`
+
+- Reads `currentSavedRecipe` from store via `useSavedRecipeDetail()`
+- Full recipe display + `RatingPicker` + `ReviewInput` + `RecipeNotes` (all debounced auto-save)
+- Share/Unshare toggle; Delete with Alert confirmation
+- `AIDisclaimer` at bottom
+
+### community.tsx (6th tab)
+
+testIDs: `community-screen`, `community-loading`, `community-error`, `community-empty`,
+`community-list`, `community-card-{id}`
+
+- `useCommunityRecipes()` loads on mount
+- FlatList of `CommunityRecipeCard` — pressing → `setCurrentSharedRecipe` + `router.push('/(tabs)/community-recipe-detail')`
+
+### community-recipe-detail.tsx (hidden from tab bar — `href: null`)
+
+testIDs: `community-detail-screen`, `btn-back`, `community-detail-empty`, `detail-title`,
+`community-sharer`, `community-rating`, `community-review`,
+`btn-save-to-collection`, `ai-disclaimer`
+
+- Read-only recipe display from `currentSharedRecipe` store
+- Shows sharer info (name, rating, review from original share)
+- "Save to My Recipes" button (disabled if already saved) → `saveToMyCollection` → `router.replace('/(tabs)/saved')`
+
+### recipe-detail.tsx (modified — Save button wired up)
+
+```typescript
+// Added import:
+import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
+// Hook usage:
+const { isSaved, isSaving, toggleSave } = useSaveRecipe(recipe);
+// Button:
+label={isSaved ? 'Saved ✓' : 'Save Recipe'}
+variant={isSaved ? 'primary' : 'secondary'}
+disabled={isSaving}
+onPress={() => { void toggleSave(); }}
+```
+
+### \_layout.tsx (tabs) — modified
+
+```typescript
+// New tab:
+<Tabs.Screen name="community" options={{ title: 'Community', tabBarIcon: ({color}) => <Ionicons name={focused ? 'people' : 'people-outline'} ... /> }} />
+// Hidden screens registered:
+<Tabs.Screen name="saved-recipe-detail" options={{ href: null }} />
+<Tabs.Screen name="community-recipe-detail" options={{ href: null }} />
+```
+
+---
+
+## firestore.rules — Feature 9 additions
+
+```
+match /users/{uid} {
+  // ... existing rules ...
+  match /savedRecipes/{recipeId} {
+    allow read, write, delete: if request.auth != null && request.auth.uid == uid;
+  }
+}
+match /sharedRecipes/{recipeId} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null;
+  allow update: if request.auth != null;  // anyone can increment saveCount
+  allow delete: if request.auth != null && request.auth.uid == resource.data.sharedBy.uid;
+}
+```
+
+---
+
+## Test Coverage (Feature 9)
+
+| File                               | Tests                                                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `savedRecipesService.test.ts`      | saveRecipe, updateSavedRecipe, deleteSavedRecipe, loadSavedRecipes, isRecipeSaved                          |
+| `communityService.test.ts`         | shareRecipe, unshareRecipe, loadSharedRecipes, saveToMyCollection, incrementSaveCount                      |
+| `savedRecipesStore.test.ts`        | all store actions, dedup, updateSavedRecipe syncs currentSavedRecipe, removeSavedRecipe clears current     |
+| `communityStore.test.ts`           | all store actions, updateSaveCount                                                                         |
+| `useSavedRecipes.test.ts`          | load on mount, ratingFilter, filteredRecipes, deleteRecipe                                                 |
+| `useSaveRecipe.test.ts`            | isSaved optimistic, toggleSave (save + unsave), isSaving flag                                              |
+| `useSavedRecipeDetail.test.ts`     | load from store, updateRating/review/notes (debounced), shareRecipeHandler, unshareRecipeHandler, delete   |
+| `useCommunityRecipes.test.ts`      | load on mount, setError on failure, saveToMyCollection calls service+store+incrementSaveCount              |
+| `RatingPicker.test.tsx`            | 10 buttons, select, deselect (tap selected again), accessibilityState.selected                             |
+| `RecipeNotes.test.tsx`             | render, onChange, char counter, 500-char limit enforced                                                    |
+| `ReviewInput.test.tsx`             | render, onChange, char counter, 500-char limit enforced                                                    |
+| `SavedRecipeCard.test.tsx`         | render, title, description, rating badge, review snippet, onPress, onDelete, custom testID                 |
+| `CommunityRecipeCard.test.tsx`     | render, title, sharer name, rating badge, review snippet, isSaved badge, onPress, custom testID            |
+| `saved.test.tsx`                   | loading, empty, list, filter pills, navigate to detail, delete                                             |
+| `saved-recipe-detail.test.tsx`     | render, empty state, rating/review/notes update, share/unshare, delete                                     |
+| `community.test.tsx`               | loading, empty, list, navigate to detail                                                                   |
+| `community-recipe-detail.test.tsx` | render, empty state, sharer info, allergen warning, save button enabled/disabled, save calls service, back |
+
+**Feature 9 total: 149 new tests**
+**Grand total: 606 tests, 68 suites — all passing**
