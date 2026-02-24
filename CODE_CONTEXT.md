@@ -1,7 +1,7 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 9 (Saved Recipes + Community Sharing) — COMPLETE. 606 tests, 68 suites, all passing.
+> Last updated: Feature 10 (Profile + Settings) — COMPLETE. 646 tests, 70 suites, all passing.
 
 ---
 
@@ -1280,3 +1280,88 @@ match /sharedRecipes/{recipeId} {
 
 **Feature 9 total: 149 new tests**
 **Grand total: 606 tests, 68 suites — all passing**
+
+---
+
+## src/features/profile/ — Feature 10 COMPLETE ✅
+
+### hooks/useProfileSettings.ts
+
+```typescript
+interface UseProfileSettingsReturn {
+  email: string; // read-only, from profile
+  displayName: string;
+  selectedAllergens: string[]; // IDs only
+  selectedDietaryPreferences: string[];
+  isLoading: boolean;
+  error: string | null;
+  hasChanges: boolean; // true when local state differs from profile
+  setDisplayName: (name: string) => void;
+  toggleAllergen: (id: string) => void;
+  toggleDietaryPreference: (id: string) => void;
+  saveChanges: () => Promise<void>; // updateUserProfile → fetchUserProfile → setProfile
+  resetChanges: () => void; // discard local edits, restore from profile
+  signOut: () => Promise<void>; // signOutUser(); auth listener handles redirect
+}
+export function useProfileSettings(): UseProfileSettingsReturn;
+```
+
+- Initializes local state from `useAuthStore((s) => s.profile)`
+- `hasChanges` computed via `useMemo` — compares sorted allergen/dietary arrays
+- `saveChanges` validates displayName non-empty before calling service
+- No profile store needed — auth store already holds profile
+
+### index.ts (barrel)
+
+```typescript
+export { useProfileSettings } from './hooks/useProfileSettings';
+```
+
+---
+
+## src/app/(tabs)/profile.tsx — Profile Screen (Feature 10) ✅
+
+testIDs: `profile-screen`, `input-display-name`, `input-email`,
+`card-allergen-{id}` (9 cards), `card-dietary-{id}` (9 cards),
+`disclaimer-card`, `profile-error`, `profile-loading`, `btn-save-profile`,
+`btn-sign-out`, `btn-privacy-policy`, `btn-delete-account`, `app-version`
+
+- Displays + edits display name (Input with autoCapitalize="words")
+- Displays email (Input with editable=false)
+- 9 AllergenCards + 9 DietaryPreferenceCards (reused from onboarding)
+- DisclaimerCard (App Store allergen requirement)
+- Save Changes button: disabled when !hasChanges || isLoading
+- Sign Out: calls `signOut()` (auth listener handles redirect)
+- Privacy Policy → `router.push('/(tabs)/privacy-policy')` [Feature 12 stub]
+- Delete Account → `router.push('/(tabs)/delete-account')` [Feature 11 stub]
+- App version from `Constants.expoConfig?.version ?? '1.0.0'`
+
+---
+
+## src/app/(tabs)/delete-account.tsx + privacy-policy.tsx — Stubs (Features 11/12)
+
+Minimal stub screens registered in `_layout.tsx` with `href: null`.
+Allows typed router.push calls from profile.tsx to compile.
+Full implementation in Features 11 and 12.
+
+---
+
+## src/app/(tabs)/\_layout.tsx — Updated (Feature 10)
+
+```typescript
+// New hidden screens added:
+<Tabs.Screen name="delete-account" options={{ href: null }} />
+<Tabs.Screen name="privacy-policy" options={{ href: null }} />
+```
+
+---
+
+## Test Coverage (Feature 10)
+
+| File                         | Tests                                                                                                                                                                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useProfileSettings.test.ts` | init from profile, hasChanges, toggleAllergen, toggleDietaryPreference, saveChanges (success+error+empty name), resetChanges, signOut (success+error)                                                                                                           |
+| `profile.test.tsx`           | render, display name, email read-only, 9 allergen cards, 9 dietary cards, selected states, toggle calls, save button disabled/enabled/loading, loading indicator, error, save calls hook, disclaimer, sign out, delete account nav, privacy policy nav, version |
+
+**Feature 10 total: 40 new tests**
+**Grand total: 646 tests, 70 suites — all passing**
