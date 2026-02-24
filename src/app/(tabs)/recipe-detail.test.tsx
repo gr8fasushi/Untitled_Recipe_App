@@ -216,7 +216,10 @@ describe('RecipeDetailScreen — with recipe', () => {
   it('pressing Chat with AI navigates to /chat', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-chat-with-ai'));
-    expect(mockRouterPush).toHaveBeenCalledWith('/chat');
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/chat',
+      params: { recipeId: sampleRecipe.id },
+    });
   });
 
   it('shows the AI disclaimer when recipe is loaded', () => {
