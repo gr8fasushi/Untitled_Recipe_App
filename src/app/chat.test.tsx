@@ -30,7 +30,7 @@ jest.mock('@/features/chat/hooks/useTextToSpeech', () => ({
 
 jest.mock('@/features/chat/components/ChatInput', () => ({
   ChatInput: ({ testID }: { testID?: string }) => {
-    const { View } = require('react-native');
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
     return <View testID={testID ?? 'chat-input'} />;
   },
 }));
@@ -43,7 +43,7 @@ jest.mock('@/features/chat/components/ChatBubble', () => ({
     testID?: string;
     message: { id: string; content: string };
   }) => {
-    const { View, Text } = require('react-native');
+    const { View, Text } = jest.requireActual<typeof import('react-native')>('react-native');
     return (
       <View testID={testID ?? `chat-bubble-${message.id}`}>
         <Text>{message.content}</Text>
