@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-24 — Feature 11 COMPLETE (658 tests, 71 suites — all passing)
+> Last updated: 2026-02-24 — Feature 12 COMPLETE (669 tests, 72 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 11 — Delete Account ✅ COMPLETE
-**Active Branch:** `feature/delete-account`
+**Phase:** Feature 12 — Privacy Policy Screen ✅ COMPLETE
+**Active Branch:** `feature/privacy`
 **Blocking Issues:** None — ready to PR and merge
 
 ---
@@ -36,6 +36,12 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 12 COMPLETE:** Privacy Policy Screen (mandatory for both app stores)
+  - `src/app/(tabs)/privacy-policy.tsx` — full screen replacing stub; inline policy content in ScrollView (9 sections)
+  - Sections: Introduction, Data We Collect, How We Use Your Data, Third-Party Services, Data Security, Data Retention & Deletion, Children's Privacy, Changes to Policy, Contact Us
+  - No external dependencies — inline text only (App Store compliance, no WebView required)
+  - `src/app/(tabs)/privacy-policy.test.tsx` — 11 tests: render, back nav, scrollable content, all section headings
+  - 669 total tests, 72 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 11 COMPLETE:** Delete Account (mandatory for both app stores)
   - `src/app/(tabs)/delete-account.tsx` — full screen replacing stub; Alert confirm → `deleteUserAccount(uid)` → auth listener auto-redirects
   - Handles `auth/requires-recent-login` + generic errors with `getAuthErrorMessage`
@@ -162,7 +168,7 @@
   - Sign Out, Delete Account stub nav, Privacy Policy stub nav, app version
   - 646 tests, 70 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 11:** Delete account (mandatory for both app stores) ✅
-- [ ] **Feature 12:** Privacy policy screen + link
+- [x] **Feature 12:** Privacy policy screen + link ✅
 - [ ] **Feature 13:** Web deployment (Vercel)
 - [ ] **Feature 14:** App Store submission prep + compliance review
 
@@ -172,20 +178,20 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 12: Privacy Policy Screen (start here — branch `feature/privacy`)
+### Feature 13: Web Deployment (Vercel) (start here — branch `feature/web-deploy`)
 
-Create from `feature/delete-account` after PR is merged.
+Create from `feature/privacy` after PR is merged.
 
 Scope:
 
-- Full `privacy-policy.tsx` screen replacing stub (currently shows placeholder)
-- Display privacy policy content (inline text or WebView linking to hosted URL)
-- Options: (a) inline markdown-style text, or (b) `WebView` pointing to a hosted URL
-- Recommendation: use inline text for App Store compliance (no external dependency)
-- Back button navigation
-- Tests: render, back nav, content visible
+- Verify Expo web build works (`npx expo export --platform web`)
+- Connect GitHub repo to Vercel (auto-deploy on push to main)
+- Set environment variables in Vercel dashboard (Firebase config)
+- Confirm web app loads and auth works on deployed URL
+- Update README with live URL
+- Tests: ensure existing tests still pass (no web-specific changes needed)
 
-**Note:** `privacy-policy.tsx` stub already exists at `src/app/(tabs)/privacy-policy.tsx`.
+**Note:** NativeWind v4 web support requires `@expo/metro-config` with CSS enabled — already configured in `metro.config.js`.
 
 ---
 
@@ -240,7 +246,7 @@ Scope:
 ### Apple App Store
 
 - [x] Apple Sign-In implemented (Feature 2) ✅
-- [ ] Privacy policy URL live and linked in-app (Feature 12)
+- [x] Privacy policy screen linked in-app (Feature 12) ✅ — inline content, no hosted URL required
 - [x] Account deletion flow working (Feature 11) ✅
 - [ ] AI disclaimer on every recipe screen (Feature 5)
 - [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6) — onboarding part next
@@ -252,7 +258,7 @@ Scope:
 
 ### Google Play Store
 
-- [ ] Privacy policy URL live
+- [x] Privacy policy screen linked in-app ✅
 - [x] Account deletion flow working ✅
 - [ ] Data Safety section completed in Play Console
 - [ ] Content rating questionnaire completed
