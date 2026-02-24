@@ -145,7 +145,7 @@ export default function RecipeDetailScreen(): React.JSX.Element {
               <Button
                 label="Chat with AI"
                 variant="primary"
-                onPress={() => router.push('/chat')}
+                onPress={() => router.push({ pathname: '/chat', params: { recipeId: recipe.id } })}
                 testID="btn-chat-with-ai"
               />
             </View>

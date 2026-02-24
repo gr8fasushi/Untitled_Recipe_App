@@ -605,7 +605,7 @@ testIDs: `recipe-detail-screen`, `btn-back`, `recipe-detail-empty`, `recipe-deta
 - Empty state when no recipe loaded
 - Full recipe display (same structure as inline recipe card in recipes.tsx)
 - `btn-save-recipe`: disabled stub (Feature 9)
-- `btn-chat-with-ai`: `router.push('/chat')` (Feature 7 — `/chat` route doesn't exist yet)
+- `btn-chat-with-ai`: `router.push({ pathname: '/chat', params: { recipeId: recipe.id } })`
 - `AIDisclaimer` always shown
 
 ### (tabs)/\_layout.tsx
@@ -625,3 +625,166 @@ Added `<Tabs.Screen name="recipe-detail" options={{ href: null }} />` — hides 
 **Feature 5 total: 49 tests**
 **Feature 6 total: 24 new tests (21 recipe-detail + 3 additions to recipes)**
 **Grand total: 303 tests, 37 suites — all passing**
+
+---
+
+## src/features/chat/ — Feature 7 COMPLETE ✅
+
+### store/chatStore.ts
+
+```typescript
+interface ChatState {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: string | null;
+  recipeId: string | null;
+  isVoiceMuted: boolean;        // persisted to AsyncStorage key '@recipeapp/voice_muted'
+  addMessage: (message: ChatMessage) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setRecipeId: (id: string | null) => void;
+  setVoiceMuted: (muted: boolean) => void;
+  loadVoiceMuted: () => Promise<void>;  // call on mount to restore persisted value
+  reset: () => void;  // clears messages/loading/error/recipeId — NOT isVoiceMuted
+}
+export const useChatStore = create<ChatState>(...)
+```
+
+### services/chatService.ts
+
+```typescript
+export async function sendChatMessage(
+  message: string,
+  history: Pick<ChatMessage, 'role' | 'content'>[],
+  recipeId?: string
+): Promise<string>;
+// Calls chatFn httpsCallable → returns reply string
+```
+
+### hooks/useChat.ts
+
+```typescript
+interface UseChatReturn {
+  messages: ChatMessage[];
+  isLoading: boolean;
+  error: string | null;
+  sendMessage: (text: string) => Promise<void>;
+}
+export function useChat(): UseChatReturn;
+```
+
+- Trims whitespace; no-ops on empty string
+- Adds user message immediately, then fetches AI reply, then adds assistant message
+- Reads `recipeId` from store
+
+### hooks/useVoiceInput.ts
+
+```typescript
+interface UseVoiceInputReturn {
+  isListening: boolean;
+  transcript: string;
+  error: string | null;
+  isAvailable: boolean; // false on web/emulator; true on device with STT
+  startListening: () => Promise<void>;
+  stopListening: () => void;
+  clearTranscript: () => void;
+}
+export function useVoiceInput(): UseVoiceInputReturn;
+```
+
+- `isRecognitionAvailable()` is **synchronous** (returns `boolean`, not `Promise`)
+- Uses `expo-speech-recognition` — `ExpoSpeechRecognitionModule`
+- Ignores `no-speech` error code; surfaces all others
+
+### hooks/useTextToSpeech.ts
+
+```typescript
+interface UseTextToSpeechReturn {
+  speak: (text: string) => void; // stops current speech, then speaks
+  stop: () => void;
+  isVoiceMuted: boolean;
+  toggleMute: () => void; // stops speech + persists via setVoiceMuted
+}
+export function useTextToSpeech(): UseTextToSpeechReturn;
+```
+
+### components/ChatBubble.tsx
+
+```typescript
+interface ChatBubbleProps {
+  message: ChatMessage;
+  testID?: string;
+}
+export function ChatBubble(props): React.JSX.Element;
+// testID defaults to `chat-bubble-${message.id}`; text testID: `${testID}-text`
+// User messages: self-end, primary-600 bg, "You" label
+// Assistant messages: self-start, gray-100 bg, "AI Chef" label
+```
+
+### components/ChatInput.tsx
+
+```typescript
+interface ChatInputProps {
+  onSend: (text: string) => void;
+  isLoading: boolean;
+  testID?: string; // defaults to 'chat-input'
+}
+export function ChatInput(props): React.JSX.Element;
+// testIDs: 'chat-text-input', 'btn-send-message', 'btn-voice' (if voice available)
+// Voice transcript auto-populates text input
+```
+
+### components/VoiceButton.tsx
+
+```typescript
+interface VoiceButtonProps {
+  isListening: boolean;
+  isAvailable: boolean;
+  onPress: () => void;
+  testID?: string; // defaults to 'btn-voice'
+}
+export function VoiceButton(props): React.JSX.Element | null;
+// Returns null when isAvailable=false (web/emulator)
+// 🎤 when idle, ⏹ when listening; red bg when active
+```
+
+### index.ts (barrel)
+
+```typescript
+export { ChatBubble, ChatInput, VoiceButton } from './components/*';
+export { useChat, useVoiceInput, useTextToSpeech } from './hooks/*';
+export { useChatStore } from './store/chatStore';
+export { sendChatMessage } from './services/chatService';
+```
+
+---
+
+## src/app/chat.tsx — Chat Screen (Feature 7) ✅
+
+testIDs: `chat-screen`, `btn-back`, `chat-heading`, `btn-toggle-mute`,
+`chat-empty`, `chat-message-list`, `chat-loading`, `chat-error`, `chat-input-bar`
+
+- Root-level route — push nav from recipe-detail (`router.push({ pathname: '/chat', params: { recipeId } })`)
+- `useLocalSearchParams<{ recipeId?: string }>()` to get recipe context
+- `loadVoiceMuted()` called on mount; `reset()` called on unmount
+- Auto-scrolls to bottom on new message; TTS speaks new assistant messages
+- `btn-toggle-mute`: 🔊 / 🔇 depending on `isVoiceMuted`
+
+---
+
+## Test Coverage (Feature 7)
+
+| File                    | Tests                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| chatStore.test.ts       | addMessage, setLoading, setError, setRecipeId, setVoiceMuted+persist, loadVoiceMuted, reset |
+| chatService.test.ts     | reply, argument passing, no-recipeId, error propagation                                     |
+| useChat.test.ts         | initial state, user+AI messages, trim, empty no-op, error, loading, recipeId                |
+| useVoiceInput.test.ts   | available/unavailable/throws, start, stop, transcript, final, errors, clear, denied         |
+| useTextToSpeech.test.ts | speak, muted, stop-before-speak, stop(), toggleMute, persistence                            |
+| ChatBubble.test.tsx     | renders, You/AI Chef labels, default/custom testID                                          |
+| ChatInput.test.tsx      | text input, send disabled/enabled, trim, clear after send, loading                          |
+| VoiceButton.test.tsx    | mic/stop icons, onPress, null when unavailable, accessibility                               |
+| chat.test.tsx           | render, empty state, heading, mute, back nav, message list, loading, error, input           |
+
+**Feature 7 total: 88 new tests**
+**Grand total: 391 tests, 45 suites — all passing**

@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-23 — Feature 6 COMPLETE (303 tests, 37 suites — all passing)
+> Last updated: 2026-02-23 — Feature 7 COMPLETE (391 tests, 45 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 6 — Recipe Detail Screen ✅ COMPLETE — ready for PR
-**Active Branch:** `feature/recipe-generation`
+**Phase:** Feature 7 — AI Chatbot ✅ COMPLETE — ready for PR
+**Active Branch:** `feature/chatbot`
 **Blocking Issues:** None
 
 ---
@@ -36,6 +36,18 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 7 COMPLETE:** AI Chatbot (text + voice)
+  - `src/app/chat.tsx` — root-level push-nav chat screen (recipe-scoped)
+  - `src/features/chat/store/chatStore.ts` — messages, isLoading, error, recipeId, isVoiceMuted (persisted)
+  - `src/features/chat/services/chatService.ts` — calls `chatFn` Cloud Function
+  - `src/features/chat/hooks/useChat.ts` — sends message, updates store
+  - `src/features/chat/hooks/useVoiceInput.ts` — expo-speech-recognition STT
+  - `src/features/chat/hooks/useTextToSpeech.ts` — expo-speech TTS
+  - `src/features/chat/components/ChatBubble.tsx`, `ChatInput.tsx`, `VoiceButton.tsx`
+  - `src/features/chat/index.ts` — barrel
+  - `app.json` — NSMicrophoneUsageDescription, NSSpeechRecognitionUsageDescription, RECORD_AUDIO
+  - `src/app/(tabs)/recipe-detail.tsx` — Chat with AI now passes `recipeId` param
+  - 391 total tests, 45 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 6 COMPLETE:** Recipe Detail Screen
   - `src/app/(tabs)/recipe-detail.tsx` — full-screen recipe view with Save stub + Chat with AI stub
   - `src/app/(tabs)/_layout.tsx` — `recipe-detail` registered with `href: null`
@@ -88,7 +100,7 @@
 - [x] **Feature 5:** AI recipe generation via Groq Cloud Function ✅
 - [x] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings) ✅
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
-- [ ] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped)
+- [x] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped) ✅
   - Text always shown; voice is additive (not a replacement)
   - **Voice input:** `expo-speech-recognition` (device-native STT, free) — mic button in chat input
   - **Voice output:** `expo-speech` (device-native TTS, free) — mutable via speaker icon in header
@@ -117,30 +129,18 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 7: AI Chatbot (next session start here)
+### Feature 8: Photo Scan (next session start here)
 
-**Branch:** Cut `feature/chatbot` from `main` after Feature 6 PR is merged.
+**Branch:** Cut `feature/photo-scan` from `main` after Feature 7 PR is merged.
 
 #### What to build
 
-Per original plan in MEMORY.md Feature 7 section:
-
-- `src/app/chat.tsx` — root-level push-nav screen (accessed via `router.push('/chat')` from recipe-detail)
-- `src/features/chat/` — types, store, service, hooks, components
-  - `types/` — ChatMessage already in `src/shared/types/index.ts`
-  - `store/chatStore.ts` — messages array, isLoading, error
-  - `services/chatService.ts` — calls `chatFn` (already in functions.service.ts)
-  - `hooks/useChat.ts` — sends message, updates store
-  - `components/ChatBubble.tsx`, `ChatInput.tsx`
-- Voice is additive (expo-speech-recognition + expo-speech) — implement after text chat works
-- Chat is recipe-scoped: send `recipeId` with each message
-- Enable `btn-chat-with-ai` in recipe-detail.tsx (currently navigates to `/chat` which doesn't exist)
-
-#### Key wiring (already exists)
-
-- `chatFn` callable in `src/shared/services/firebase/functions.service.ts`
-- `ChatMessage` interface in `src/shared/types/index.ts`
-- `btn-chat-with-ai` in `recipe-detail.tsx` navigates to `'/chat'`
+- `src/app/(tabs)/scan.tsx` — camera tab screen
+- `src/features/scan/` — types, store, service, hooks, components
+  - `services/scanService.ts` — calls `analyzePhotoFn` (already in functions.service.ts)
+  - Photo captured → base64 → Cloud Function → ingredients returned → add to pantry
+  - Permission string already in `app.json` (NSCameraUsageDescription)
+- Already scaffolded: `analyzePhotoFn` in functions.service.ts + `analyzeIngredientPhoto` Cloud Function
 
 ---
 
