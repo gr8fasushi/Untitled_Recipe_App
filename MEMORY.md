@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-23 — Feature 8 COMPLETE (457 tests, 51 suites — all passing)
+> Last updated: 2026-02-24 — Feature 9 COMPLETE (606 tests, 68 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 8 — Photo Scan ✅ COMPLETE — ready for PR
-**Active Branch:** `feature/photo-scan`
-**Blocking Issues:** None
+**Phase:** Feature 9 — Enhanced Saved Recipes + Community Sharing ✅ COMPLETE
+**Active Branch:** `feature/saved-recipes`
+**Blocking Issues:** None — ready to PR and merge
 
 ---
 
@@ -36,6 +36,22 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 9 COMPLETE:** Enhanced Saved Recipes + Community Sharing
+  - `src/features/saved-recipes/types/` — SavedRecipe, SharedRecipe Zod schemas (MAX_NOTES/REVIEW_LENGTH = 500)
+  - `src/features/saved-recipes/services/savedRecipesService.ts` — CRUD for users/{uid}/savedRecipes
+  - `src/features/saved-recipes/services/communityService.ts` — CRUD for sharedRecipes top-level collection
+  - `src/features/saved-recipes/store/savedRecipesStore.ts` — savedRecipes[], currentSavedRecipe, dedup addSavedRecipe
+  - `src/features/saved-recipes/store/communityStore.ts` — sharedRecipes[], currentSharedRecipe, updateSaveCount
+  - `src/features/saved-recipes/hooks/useSavedRecipes.ts` — loads on mount, client-side rating filter
+  - `src/features/saved-recipes/hooks/useSaveRecipe.ts` — isSaved/isSaving/toggleSave (optimistic)
+  - `src/features/saved-recipes/hooks/useSavedRecipeDetail.ts` — debounced auto-save, share/unshare/delete
+  - `src/features/saved-recipes/hooks/useCommunityRecipes.ts` — loads shared recipes, saveToMyCollection
+  - Components: SavedRecipeCard, CommunityRecipeCard, RatingPicker (1-10), RecipeNotes (500), ReviewInput (500)
+  - Screens: saved.tsx (filter pills), saved-recipe-detail.tsx, community.tsx (6th tab), community-recipe-detail.tsx
+  - `_layout.tsx` — community tab added; saved-recipe-detail + community-recipe-detail registered hidden
+  - `recipe-detail.tsx` — Save button fully wired to useSaveRecipe
+  - `firestore.rules` — savedRecipes subcollection + sharedRecipes top-level collection rules
+  - 606 total tests, 68 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 8 COMPLETE:** Photo Scan (Gemini Vision + manual search)
   - `src/app/(tabs)/scan.tsx` — full scan screen (camera, gallery, manual search, accumulated list)
   - `src/features/scan/types/index.ts` — ScanStatus, ScanMimeType
@@ -120,14 +136,11 @@
   - Files: `types/`, `store/chatStore.ts`, `services/chatService.ts`, hooks: `useChat`, `useVoiceInput`, `useTextToSpeech`, components: `ChatBubble`, `ChatInput`, `VoiceButton`
   - Permissions in `app.json`: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
 - [x] **Feature 8:** Photo scanning (Gemini Vision Cloud Function) ✅
-- [ ] **Feature 9:** Enhanced saved recipes (save + notes + 1–10 user rating + edit/remove)
-  - Firestore path: `users/{uid}/savedRecipes/{recipeId}`
-  - Data: `{ id, recipe (immutable AI original), savedAt, rating: number|null (1–10), notes: string, lastModifiedAt }`
-  - Saved tab: list sorted by savedAt desc, filterable by rating
-  - Detail screen: original recipe + `RatingPicker` (1–10) + `RecipeNotes` (multiline) + delete
-  - Save button on Recipe Detail screen (Feature 6) — bookmark icon (filled/outline)
-  - Files: `types/`, `store/savedRecipesStore.ts`, `services/savedRecipesService.ts`, components: `SavedRecipeCard`, `RatingPicker`, `RecipeNotes`
-  - Firestore rule: `match /savedRecipes/{recipeId} { allow read, write, delete: if auth.uid == uid; }`
+- [x] **Feature 9:** Enhanced saved recipes + Community sharing ✅
+  - Rating (1–10) + Review (500 chars, public) + Notes (500 chars, private)
+  - Community tab: share recipes, browse others', save to personal collection
+  - Firestore paths: `users/{uid}/savedRecipes/{id}` + `sharedRecipes/{id}` (top-level)
+  - 606 tests, 68 suites — all passing, TypeScript clean, lint clean
 - [ ] **Feature 10:** Profile + settings (edit allergies, preferences)
 - [ ] **Feature 11:** Delete account (mandatory for both app stores)
 - [ ] **Feature 12:** Privacy policy screen + link
@@ -140,9 +153,15 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 9: Enhanced Saved Recipes (next session start here)
+### Feature 10: Profile + Settings (start here — branch `feature/profile`)
 
-**Branch:** Cut `feature/saved-recipes` from `main` after Feature 8 PR is merged.
+Create from `feature/saved-recipes` after PR #7 is merged.
+
+Scope:
+
+- Profile screen: display name, email, allergens (editable), dietary preferences (editable)
+- Settings: change display name, manage allergens/dietary prefs (reuse onboarding components)
+- All changes saved to Firestore via `updateUserProfile`
 
 ---
 

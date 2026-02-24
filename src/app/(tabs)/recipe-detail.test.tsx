@@ -52,6 +52,18 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+const mockToggleSave = jest.fn();
+let mockIsSaved = false;
+let mockIsSaving = false;
+
+jest.mock('@/features/saved-recipes/hooks/useSaveRecipe', () => ({
+  useSaveRecipe: () => ({
+    isSaved: mockIsSaved,
+    isSaving: mockIsSaving,
+    toggleSave: mockToggleSave,
+  }),
+}));
+
 // eslint-disable-next-line import/first
 import RecipeDetailScreen from './recipe-detail';
 
@@ -97,6 +109,8 @@ describe('RecipeDetailScreen — empty state', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentRecipe = null;
+    mockIsSaved = false;
+    mockIsSaving = false;
     mockRouterBack.mockReset();
     mockRouterPush.mockReset();
   });
@@ -137,6 +151,8 @@ describe('RecipeDetailScreen — with recipe', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentRecipe = sampleRecipe;
+    mockIsSaved = false;
+    mockIsSaving = false;
     mockRouterBack.mockReset();
     mockRouterPush.mockReset();
   });
@@ -198,9 +214,27 @@ describe('RecipeDetailScreen — with recipe', () => {
     expect(getByTestId('btn-save-recipe')).toBeTruthy();
   });
 
-  it('Save Recipe button is disabled (stub — Feature 9)', () => {
+  it('Save Recipe button shows "Save Recipe" when not saved', () => {
+    const { getByText } = render(<RecipeDetailScreen />);
+    expect(getByText('Save Recipe')).toBeTruthy();
+  });
+
+  it('Save Recipe button shows "Saved ✓" when saved', () => {
+    mockIsSaved = true;
+    const { getByText } = render(<RecipeDetailScreen />);
+    expect(getByText('Saved ✓')).toBeTruthy();
+  });
+
+  it('Save Recipe button is disabled while saving', () => {
+    mockIsSaving = true;
     const { getByTestId } = render(<RecipeDetailScreen />);
     expect(getByTestId('btn-save-recipe').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('pressing Save Recipe calls toggleSave', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    fireEvent.press(getByTestId('btn-save-recipe'));
+    expect(mockToggleSave).toHaveBeenCalledTimes(1);
   });
 
   it('shows the Chat with AI button', () => {
