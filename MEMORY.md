@@ -2,14 +2,14 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-23 — Feature 7 COMPLETE (391 tests, 45 suites — all passing)
+> Last updated: 2026-02-23 — Feature 8 COMPLETE (457 tests, 51 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 7 — AI Chatbot ✅ COMPLETE — ready for PR
-**Active Branch:** `feature/chatbot`
+**Phase:** Feature 8 — Photo Scan ✅ COMPLETE — ready for PR
+**Active Branch:** `feature/photo-scan`
 **Blocking Issues:** None
 
 ---
@@ -36,6 +36,17 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 8 COMPLETE:** Photo Scan (Gemini Vision + manual search)
+  - `src/app/(tabs)/scan.tsx` — full scan screen (camera, gallery, manual search, accumulated list)
+  - `src/features/scan/types/index.ts` — ScanStatus, ScanMimeType
+  - `src/features/scan/store/scanStore.ts` — accumulates ingredients across multiple scans (dedup by id)
+  - `src/features/scan/services/scanService.ts` — calls analyzePhotoFn, throws on empty result
+  - `src/features/scan/hooks/useScan.ts` — takePhoto, pickFromGallery, addManually, addAllToPantry
+  - `src/features/scan/components/ScanResultCard.tsx` — ingredient card with remove
+  - `src/features/scan/components/ManualIngredientSearch.tsx` — real-time filtered ingredient search
+  - `src/features/scan/index.ts` — barrel export
+  - 457 total tests, 51 suites — all passing, TypeScript clean, lint clean
+  - Images never stored: base64 local var discarded after Cloud Function returns
 - [x] **Feature 7 COMPLETE:** AI Chatbot (text + voice)
   - `src/app/chat.tsx` — root-level push-nav chat screen (recipe-scoped)
   - `src/features/chat/store/chatStore.ts` — messages, isLoading, error, recipeId, isVoiceMuted (persisted)
@@ -108,7 +119,7 @@
   - Chat is accessed from Recipe Detail screen (push nav, not a top-level tab)
   - Files: `types/`, `store/chatStore.ts`, `services/chatService.ts`, hooks: `useChat`, `useVoiceInput`, `useTextToSpeech`, components: `ChatBubble`, `ChatInput`, `VoiceButton`
   - Permissions in `app.json`: `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`
-- [ ] **Feature 8:** Photo scanning (Gemini Vision Cloud Function)
+- [x] **Feature 8:** Photo scanning (Gemini Vision Cloud Function) ✅
 - [ ] **Feature 9:** Enhanced saved recipes (save + notes + 1–10 user rating + edit/remove)
   - Firestore path: `users/{uid}/savedRecipes/{recipeId}`
   - Data: `{ id, recipe (immutable AI original), savedAt, rating: number|null (1–10), notes: string, lastModifiedAt }`
@@ -129,18 +140,9 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 8: Photo Scan (next session start here)
+### Feature 9: Enhanced Saved Recipes (next session start here)
 
-**Branch:** Cut `feature/photo-scan` from `main` after Feature 7 PR is merged.
-
-#### What to build
-
-- `src/app/(tabs)/scan.tsx` — camera tab screen
-- `src/features/scan/` — types, store, service, hooks, components
-  - `services/scanService.ts` — calls `analyzePhotoFn` (already in functions.service.ts)
-  - Photo captured → base64 → Cloud Function → ingredients returned → add to pantry
-  - Permission string already in `app.json` (NSCameraUsageDescription)
-- Already scaffolded: `analyzePhotoFn` in functions.service.ts + `analyzeIngredientPhoto` Cloud Function
+**Branch:** Cut `feature/saved-recipes` from `main` after Feature 8 PR is merged.
 
 ---
 
