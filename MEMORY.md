@@ -2,13 +2,13 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-22 — Feature 4 merged to main; Feature 5 Chunk B done (types + store + hook)
+> Last updated: 2026-02-23 — Feature 5 COMPLETE (279 tests, 35 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 5 — AI Recipe Generation 🔄 IN PROGRESS (Chunk B done, Chunk C next)
+**Phase:** Feature 5 — AI Recipe Generation ✅ COMPLETE — ready for PR
 **Active Branch:** `feature/recipe-generation`
 **Blocking Issues:** None
 
@@ -36,6 +36,11 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 5 COMPLETE:** AI recipe generation via Groq Cloud Function
+  - `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
+  - `src/app/(tabs)/recipes.tsx` — generation screen (ingredient count → generate → recipe card)
+  - `src/features/recipes/index.ts` — barrel export
+  - 279 total tests, 35 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 4 COMPLETE:** Pantry management (ingredient selection + Firestore persistence)
   - `src/features/pantry/` — types, store, service, `IngredientChip`, `IngredientSearch`, barrel
   - `src/app/(tabs)/index.tsx` — full pantry screen (load, save, chips, search)
@@ -75,7 +80,7 @@
 - [x] **Feature 2:** Firebase Auth (email/password, Google Sign-In, Apple Sign-In) ✅
 - [x] **Feature 3:** Onboarding flow (Big 9 allergens, dietary preferences, disclaimer) ✅
 - [x] **Feature 4:** Pantry management — types ✅ store ✅ service ✅ ingredients ✅ UI/screen ✅
-- [ ] **Feature 5:** AI recipe generation via Groq Cloud Function
+- [x] **Feature 5:** AI recipe generation via Groq Cloud Function ✅
 - [ ] **Feature 6:** Recipe detail screen (instructions + nutrition + allergen warnings)
 - [ ] **Feature 7:** AI chatbot + voice interface (cooking assistant, recipe-scoped)
   - Text always shown; voice is additive (not a replacement)
@@ -106,31 +111,25 @@
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 5: AI Recipe Generation (Chunk C — next session start here)
+### Feature 6: Recipe Detail Screen (next session start here)
 
-**Branch:** `feature/recipe-generation` (already cut, work in progress)
+**Branch:** Cut `feature/recipe-detail` from `main` after Feature 5 PR is merged.
 
-#### Done ✅
+#### What to build
 
-1. `src/features/recipes/types/index.ts` — `GenerateRecipeInputSchema` + `GenerateRecipeInput` type
-2. `src/features/recipes/store/recipesStore.ts` — `currentRecipe`, `isLoading`, `error`, actions
-3. `src/features/recipes/hooks/useGenerateRecipe.ts` — wires pantry + profile → Cloud Function → store
-4. Tests for all three (21 tests passing), TSC clean, lint clean
-5. EAS Build workflow disabled (was failing without EXPO_TOKEN — changed trigger to `workflow_dispatch`)
+1. `src/app/(tabs)/recipe-detail.tsx` (or push-nav route) — full recipe detail view
+   - Same recipe card content as in `recipes.tsx` but as a standalone dedicated screen
+   - "Save" bookmark button (Feature 9 integration point — stub for now)
+   - "Chat with AI" button → pushes to chatbot screen (Feature 7)
+   - Allergen disclaimer + AIDisclaimer (App Store compliance)
+2. Navigation: recipe generation screen → recipe detail (push nav, pass recipe as param or read from store)
+3. Tests for the detail screen
 
-#### Remaining (Chunk C)
+#### Key reference
 
-1. `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
-2. `src/app/(tabs)/recipes.tsx` — generation screen (pantry ingredient chips → generate button → recipe card)
-3. `src/features/recipes/index.ts` — barrel export
-4. Tests for AIDisclaimer + recipes screen
-5. `npm test`, `npx tsc --noEmit`, `npm run lint` — full suite
-6. Update `CODE_CONTEXT.md` + `MEMORY.md`
-7. Commit + push + PR
-
-#### Key wiring (already exists)
-
-`Recipe` interface in `src/shared/types/index.ts` — has all fields (title, ingredients, instructions, nutrition, allergens, etc.)
+- `Recipe` interface in `src/shared/types/index.ts`
+- Recipe generation screen already displays full recipe in `recipe-card` — detail screen can reuse same layout
+- `useRecipesStore` holds `currentRecipe` — detail screen can read from it directly (no prop drilling needed)
 
 ---
 

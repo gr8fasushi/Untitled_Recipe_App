@@ -512,7 +512,7 @@ match /users/{uid} {
 
 ---
 
-## src/features/recipes/ — Feature 5 (in progress)
+## src/features/recipes/ — Feature 5 COMPLETE ✅
 
 ### types/index.ts
 
@@ -553,15 +553,52 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn;
 - Validates with `GenerateRecipeInputSchema` before calling Cloud Function
 - Calls `generateRecipeFn`; sets recipe/loading/error on `useRecipesStore`
 
-### Test mock pattern (learned this session)
+### components/AIDisclaimer.tsx
 
-Double-cast `(store as unknown as jest.Mock)` — single `as jest.Mock` fails strict TSC for Zustand stores and Firebase callables.
+```typescript
+export function AIDisclaimer(): React.JSX.Element;
+// testID: 'ai-disclaimer'
+// Static — no props. App Store required disclaimer on every recipe screen.
+```
+
+### index.ts (barrel)
+
+```typescript
+export { AIDisclaimer } from './components/AIDisclaimer';
+export { useGenerateRecipe } from './hooks/useGenerateRecipe';
+export { useRecipesStore } from './store/recipesStore';
+export { GenerateRecipeInputSchema } from './types';
+export type { GenerateRecipeInput } from './types';
+```
+
+### Test mock patterns (learned this feature)
+
+- Double-cast `(store as unknown as jest.Mock)` — single cast fails strict TSC for Zustand stores/Firebase callables.
+- `Pressable.props.disabled` is `undefined` in RNTL host element — use `accessibilityState.disabled` instead. Set it explicitly in Button mock: `accessibilityState={{ disabled: !!disabled }}`.
+- When button label matches heading text, `getByText` throws "multiple elements" — add testID to heading (`testID="recipes-heading"`) and use `getByTestId` in tests.
 
 ---
 
-## Next: Feature 5 (remaining — Chunk C)
+## src/app/(tabs)/recipes.tsx — Recipe Generation Screen
 
-- `src/features/recipes/components/AIDisclaimer.tsx` — App Store required disclaimer
-- `src/app/(tabs)/recipes.tsx` — generation screen (pantry chips → generate → recipe card)
-- `src/features/recipes/index.ts` — barrel export
-- Tests + commit + PR
+testIDs: `recipes-screen`, `recipes-heading`, `btn-generate-recipe`, `recipes-no-ingredients`,
+`recipes-loading`, `recipes-error`, `recipe-card`, `recipe-allergen-warning`, `recipe-title`,
+`recipe-description`, `recipe-ingredients-list`, `recipe-instructions-list`, `recipe-nutrition`, `ai-disclaimer`
+
+- Shows ingredient count from pantry (`usePantryStore` selector)
+- Generate button disabled when no ingredients or loading
+- Recipe card (allergen warning, title, description, meta, ingredients, instructions, nutrition)
+- `AIDisclaimer` always shown at bottom (App Store compliance)
+
+---
+
+## Test Coverage (Feature 5 additions)
+
+| File                  | Tests                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| AIDisclaimer.test.tsx | renders, heading, disclaimer text, allergen verification, healthcare mention           |
+| recipes.test.tsx      | render, heading, no-ingredients hint, disabled states, generate call, loading, error,  |
+|                       | recipe card, allergen warning, ingredients, instructions, nutrition, disclaimer always |
+
+**Feature 5 total: 49 new tests (21 Chunk B + 28 Chunk C)**
+**Grand total: 279 tests, 35 suites — all passing**
