@@ -54,16 +54,22 @@ describe('IngredientSearch', () => {
     expect(getByTestId('ingredient-search-input')).toBeTruthy();
   });
 
-  it('renders ingredient rows from search results', () => {
+  it('shows search prompt when query is empty', () => {
     const { getByTestId } = render(<IngredientSearch />);
+    expect(getByTestId('ingredient-search-prompt')).toBeTruthy();
+  });
+
+  it('does not call searchIngredients when query is empty', () => {
+    render(<IngredientSearch />);
+    expect(mockSearchIngredients).not.toHaveBeenCalled();
+  });
+
+  it('renders ingredient rows after typing a query', () => {
+    const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'chicken');
     expect(getByTestId('ingredient-row-chicken-breast')).toBeTruthy();
     expect(getByTestId('ingredient-row-salmon')).toBeTruthy();
     expect(getByTestId('ingredient-row-milk')).toBeTruthy();
-  });
-
-  it('calls searchIngredients with empty string on mount', () => {
-    render(<IngredientSearch />);
-    expect(mockSearchIngredients).toHaveBeenCalledWith('');
   });
 
   it('calls searchIngredients with typed query', () => {
@@ -72,8 +78,17 @@ describe('IngredientSearch', () => {
     expect(mockSearchIngredients).toHaveBeenCalledWith('chicken');
   });
 
+  it('hides prompt and shows results when query is typed', () => {
+    const { getByTestId, queryByTestId } = render(<IngredientSearch />);
+    expect(getByTestId('ingredient-search-prompt')).toBeTruthy();
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'sal');
+    expect(queryByTestId('ingredient-search-prompt')).toBeNull();
+    expect(getByTestId('ingredient-row-salmon')).toBeTruthy();
+  });
+
   it('calls addIngredient when an unselected row is pressed', () => {
     const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'chicken');
     fireEvent.press(getByTestId('ingredient-row-chicken-breast'));
     expect(mockAddIngredient).toHaveBeenCalledWith(chicken);
   });
@@ -81,6 +96,7 @@ describe('IngredientSearch', () => {
   it('does not call addIngredient when already-selected row is pressed', () => {
     setupStore([chicken]);
     const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'chicken');
     fireEvent.press(getByTestId('ingredient-row-chicken-breast'));
     expect(mockAddIngredient).not.toHaveBeenCalled();
   });
@@ -88,12 +104,14 @@ describe('IngredientSearch', () => {
   it('shows "Added ✓" check for selected ingredients', () => {
     setupStore([milk]);
     const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'milk');
     expect(getByTestId('ingredient-row-milk-check')).toBeTruthy();
   });
 
-  it('shows empty state when no results', () => {
+  it('shows empty state when no results for typed query', () => {
     mockSearchIngredients.mockReturnValue([]);
     const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'zzz');
     expect(getByTestId('ingredient-search-empty')).toBeTruthy();
   });
 });
