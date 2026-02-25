@@ -23,7 +23,7 @@ interface AnalyzePhotoOutput {
   ingredients: Ingredient[];
 }
 
-export const generateRecipeFn = httpsCallable<GenerateRecipeInput, Recipe>(
+export const generateRecipeFn = httpsCallable<GenerateRecipeInput, { recipes: Recipe[] }>(
   functions,
   'generateRecipe'
 );

@@ -10,13 +10,13 @@ interface UseGenerateRecipeReturn {
   generate: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  recipe: Recipe | null;
+  recipes: Recipe[];
 }
 
 export function useGenerateRecipe(): UseGenerateRecipeReturn {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const { currentRecipe, isLoading, error, setRecipe, setLoading, setError } = useRecipesStore();
+  const { recipes, isLoading, error, setRecipes, setLoading, setError } = useRecipesStore();
 
   const generate = useCallback(async () => {
     const parsed = GenerateRecipeInputSchema.safeParse({
@@ -35,14 +35,14 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
 
     try {
       const result = await generateRecipeFn(parsed.data);
-      setRecipe(result.data);
+      setRecipes(result.data.recipes);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to generate recipe';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [selectedIngredients, profile, setRecipe, setLoading, setError]);
+  }, [selectedIngredients, profile, setRecipes, setLoading, setError]);
 
-  return { generate, isLoading, error, recipe: currentRecipe };
+  return { generate, isLoading, error, recipes };
 }
