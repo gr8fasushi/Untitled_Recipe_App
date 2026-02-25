@@ -1,7 +1,12 @@
 import { useUIStore } from './uiStore';
 
 beforeEach(() => {
-  useUIStore.setState({ isLoading: false, toastMessage: null, toastType: 'info' });
+  useUIStore.setState({
+    isLoading: false,
+    toastMessage: null,
+    toastType: 'info',
+    colorScheme: 'system',
+  });
 });
 
 it('sets loading state', () => {
@@ -30,4 +35,20 @@ it('clears toast', () => {
   showToast('Error', 'error');
   clearToast();
   expect(useUIStore.getState().toastMessage).toBeNull();
+});
+
+it('defaults colorScheme to system', () => {
+  expect(useUIStore.getState().colorScheme).toBe('system');
+});
+
+it('sets colorScheme to light', () => {
+  const { setColorScheme } = useUIStore.getState();
+  setColorScheme('light');
+  expect(useUIStore.getState().colorScheme).toBe('light');
+});
+
+it('sets colorScheme to dark', () => {
+  const { setColorScheme } = useUIStore.getState();
+  setColorScheme('dark');
+  expect(useUIStore.getState().colorScheme).toBe('dark');
 });

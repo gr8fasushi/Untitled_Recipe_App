@@ -62,4 +62,34 @@ describe('IngredientChip', () => {
     );
     expect(getByTestId('ingredient-chip-remove')).toBeTruthy();
   });
+
+  it('renders ingredient without category (default colors)', () => {
+    const noCategory: PantryItem = { id: 'salt', name: 'Salt' };
+    const { getByText } = render(
+      <IngredientChip ingredient={noCategory} onRemove={jest.fn()} testID="chip-salt" />
+    );
+    expect(getByText('Salt')).toBeTruthy();
+  });
+
+  it('renders ingredient with Vegetables category', () => {
+    const veggie: PantryItem = {
+      id: 'carrot',
+      name: 'Carrot',
+      emoji: '🥕',
+      category: 'Vegetables',
+    };
+    const { getByText } = render(
+      <IngredientChip ingredient={veggie} onRemove={jest.fn()} testID="chip-carrot" />
+    );
+    expect(getByText('Carrot')).toBeTruthy();
+    expect(getByText('🥕')).toBeTruthy();
+  });
+
+  it('renders ingredient with Custom category', () => {
+    const custom: PantryItem = { id: 'truffle', name: 'Truffle', category: 'Custom' };
+    const { getByText } = render(
+      <IngredientChip ingredient={custom} onRemove={jest.fn()} testID="chip-truffle" />
+    );
+    expect(getByText('Truffle')).toBeTruthy();
+  });
 });

@@ -22,3 +22,22 @@ it('does not call onPress when disabled', () => {
   fireEvent.press(getByTestId('btn'));
   expect(onPress).not.toHaveBeenCalled();
 });
+
+it('sets accessibilityState disabled when disabled prop is true', () => {
+  const { getByTestId } = render(
+    <Button label="Disabled" onPress={() => {}} disabled testID="btn" />
+  );
+  expect(getByTestId('btn').props.accessibilityState?.disabled).toBe(true);
+});
+
+it('renders ghost variant without throwing', () => {
+  const { getByText } = render(<Button label="Ghost" onPress={() => {}} variant="ghost" />);
+  expect(getByText('Ghost')).toBeTruthy();
+});
+
+it('renders with fullWidth prop without throwing', () => {
+  const { getByTestId } = render(
+    <Button label="Full" onPress={() => {}} fullWidth testID="btn-full" />
+  );
+  expect(getByTestId('btn-full')).toBeTruthy();
+});
