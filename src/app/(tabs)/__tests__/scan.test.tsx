@@ -1,5 +1,5 @@
 import { render, fireEvent } from '@testing-library/react-native';
-import ScanScreen from './scan';
+import ScanScreen from '../scan';
 
 // --- Mocks ---
 

@@ -71,7 +71,7 @@ jest.mock('expo-router', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import RecipesScreen from './recipes';
+import RecipesScreen from '../recipes';
 
 // ---------------------------------------------------------------------------
 // Fixtures

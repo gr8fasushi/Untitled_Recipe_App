@@ -143,7 +143,7 @@ import React from 'react';
 // eslint-disable-next-line import/first
 import { render, fireEvent } from '@testing-library/react-native';
 // eslint-disable-next-line import/first
-import ProfileScreen from './profile';
+import ProfileScreen from '../profile';
 
 // ---------------------------------------------------------------------------
 // Tests

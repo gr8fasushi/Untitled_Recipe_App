@@ -10,8 +10,7 @@
     "test": "jest",
     "lint": "eslint src",
     "type-check": "tsc --noEmit",
-    "prepare": "husky",
-    "postinstall": "patch-package"
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -62,7 +61,6 @@
     "husky": "^9.1.7",
     "jest-expo": "^54.0.17",
     "lint-staged": "^16.2.7",
-    "patch-package": "^8.0.1",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "react-test-renderer": "19.1.0",

@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import WelcomeScreen from './welcome';
+import WelcomeScreen from '../welcome';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({

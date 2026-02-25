@@ -61,7 +61,7 @@ jest.mock('@/features/saved-recipes/components/SavedRecipeCard', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import SavedScreen from './saved';
+import SavedScreen from '../saved';
 
 // ---------------------------------------------------------------------------
 // Fixtures

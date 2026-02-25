@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { act } from '@testing-library/react-native';
-import AllergensScreen from './allergens';
+import AllergensScreen from '../allergens';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
 
 const mockPush = jest.fn();

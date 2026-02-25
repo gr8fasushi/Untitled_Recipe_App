@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
-import ChatScreen from './chat';
+import ChatScreen from '../chat';
 import { useChatStore } from '@/features/chat/store/chatStore';
 
 // ---------- helpers ----------

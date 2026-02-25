@@ -86,7 +86,7 @@ jest.mock('@/shared/components/ui', () => ({
 // Import screen AFTER all mocks are registered (jest.mock calls are hoisted by Babel,
 // but having it here documents the intent clearly)
 // eslint-disable-next-line import/first
-import PantryScreen from './index';
+import PantryScreen from '../index';
 
 const chicken: PantryItem = {
   id: 'chicken-breast',

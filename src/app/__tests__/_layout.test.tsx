@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
-import RootLayout from './_layout';
+import RootLayout from '../_layout';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be hoisted before imports
@@ -44,7 +44,7 @@ jest.mock('expo-router', () => ({
   ErrorBoundary: () => null,
 }));
 
-jest.mock('../../global.css', () => ({}), { virtual: true });
+jest.mock('../../../global.css', () => ({}), { virtual: true });
 
 // ---------------------------------------------------------------------------
 // Tests

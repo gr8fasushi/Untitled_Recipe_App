@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import SignUpScreen from './sign-up';
+import SignUpScreen from '../sign-up';
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();

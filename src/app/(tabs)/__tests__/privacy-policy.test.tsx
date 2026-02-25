@@ -17,7 +17,7 @@ import React from 'react';
 // eslint-disable-next-line import/first
 import { render, fireEvent } from '@testing-library/react-native';
 // eslint-disable-next-line import/first
-import PrivacyPolicyScreen from './privacy-policy';
+import PrivacyPolicyScreen from '../privacy-policy';
 
 // ---------------------------------------------------------------------------
 // Tests
