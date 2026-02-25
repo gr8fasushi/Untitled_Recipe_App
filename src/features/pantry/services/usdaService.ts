@@ -12,8 +12,6 @@ const UsdaSearchResponseSchema = z.object({
   foods: z.array(UsdaFoodSchema).default([]),
 });
 
-type UsdaFood = z.infer<typeof UsdaFoodSchema>;
-
 export interface UsdaIngredient {
   id: string;
   name: string;
@@ -93,9 +91,21 @@ export async function searchUSDA(query: string, signal?: AbortSignal): Promise<U
     throw new Error('Unexpected USDA response shape');
   }
 
-  return parsed.data.foods.map((food: UsdaFood) => ({
-    id: `usda-${food.fdcId}`,
-    name: cleanUsdaName(food.description),
-    category: mapUsdaCategory(food.foodCategory),
-  }));
+  const seen = new Set<string>();
+  const results: UsdaIngredient[] = [];
+
+  for (const food of parsed.data.foods) {
+    const name = cleanUsdaName(food.description);
+    const key = name.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      results.push({
+        id: `usda-${food.fdcId}`,
+        name,
+        category: mapUsdaCategory(food.foodCategory),
+      });
+    }
+  }
+
+  return results;
 }

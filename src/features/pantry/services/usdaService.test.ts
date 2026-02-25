@@ -90,6 +90,21 @@ const MOCK_RESPONSE = {
   ],
 };
 
+const MOCK_RESPONSE_WITH_DUPES = {
+  foods: [
+    {
+      fdcId: 169998,
+      description: 'Peppers, serrano',
+      foodCategory: 'Vegetables and Vegetable Products',
+    },
+    {
+      fdcId: 999999,
+      description: 'Peppers, serrano, raw',
+      foodCategory: 'Vegetables and Vegetable Products',
+    },
+  ],
+};
+
 describe('searchUSDA', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -143,5 +158,15 @@ describe('searchUSDA', () => {
       expect.stringContaining('api_key=DEMO_KEY'),
       expect.anything()
     );
+  });
+
+  it('deduplicates results with the same cleaned name', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => MOCK_RESPONSE_WITH_DUPES,
+    });
+    const results = await searchUSDA('serrano');
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe('Peppers, Serrano');
   });
 });
