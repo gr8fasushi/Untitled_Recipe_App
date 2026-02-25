@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { Input } from '@/shared/components/ui';
-import { searchIngredients } from '@/constants/ingredients';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
+import { useIngredientSearch } from '@/features/pantry/hooks/useIngredientSearch';
 import type { PantryItem } from '@/features/pantry/types';
 
 function getCategoryBg(category: string | undefined): string {
@@ -82,10 +82,21 @@ function IngredientRow({ item, isSelected, onPress }: IngredientRowProps): React
 export function IngredientSearch(): React.JSX.Element {
   const [query, setQuery] = useState('');
   const { selectedIngredients, addIngredient } = usePantryStore();
+  const { results, isSearching, error } = useIngredientSearch(query);
 
-  const hasQuery = query.trim().length > 0;
-  const results = hasQuery ? searchIngredients(query) : [];
+  const hasQuery = query.trim().length >= 2;
   const selectedIds = new Set(selectedIngredients.map((i) => i.id));
+
+  function handleAddCustom(): void {
+    const name = query.trim();
+    if (!name) return;
+    addIngredient({
+      id: `custom-${name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+      name,
+      category: 'Custom',
+    });
+    setQuery('');
+  }
 
   return (
     <View testID="ingredient-search" className="flex-1">
@@ -93,7 +104,7 @@ export function IngredientSearch(): React.JSX.Element {
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Search ingredients…"
+          placeholder="Search any ingredient…"
           testID="ingredient-search-input"
           autoCapitalize="none"
           returnKeyType="search"
@@ -103,10 +114,15 @@ export function IngredientSearch(): React.JSX.Element {
       {!hasQuery ? (
         <View testID="ingredient-search-prompt" className="items-center py-16 px-6">
           <Text className="text-4xl mb-3">🔍</Text>
-          <Text className="text-gray-600 text-base font-semibold">Find your ingredients</Text>
+          <Text className="text-gray-600 text-base font-semibold">Search any ingredient</Text>
           <Text className="text-gray-400 text-sm mt-1 text-center">
-            Type above to search and add to your pantry
+            Type 2+ characters to search millions of ingredients
           </Text>
+        </View>
+      ) : isSearching ? (
+        <View testID="ingredient-search-loading" className="items-center py-16">
+          <ActivityIndicator size="large" color="#ea580c" />
+          <Text className="text-gray-400 text-sm mt-3">Searching…</Text>
         </View>
       ) : (
         <FlatList
@@ -121,14 +137,52 @@ export function IngredientSearch(): React.JSX.Element {
             />
           )}
           keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            error ? (
+              <View
+                testID="ingredient-search-error"
+                className="mb-3 rounded-xl bg-amber-50 px-4 py-3"
+              >
+                <Text className="text-amber-700 text-sm">{error}</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
-            <View testID="ingredient-search-empty" className="items-center py-12">
+            <View testID="ingredient-search-empty" className="items-center py-8">
               <Text className="text-2xl mb-2">🤷</Text>
-              <Text className="text-gray-500 font-medium">No results for &quot;{query}&quot;</Text>
-              <Text className="text-gray-400 text-sm mt-1">Try a different ingredient name</Text>
+              <Text className="text-gray-500 font-medium">
+                No results for &quot;{query.trim()}&quot;
+              </Text>
+              <Text className="text-gray-400 text-sm mt-1 mb-4">
+                Add it as a custom ingredient instead
+              </Text>
+              <Pressable
+                onPress={handleAddCustom}
+                testID="btn-add-custom"
+                className="bg-purple-100 px-5 py-2.5 rounded-full"
+              >
+                <Text className="text-purple-700 font-semibold text-sm">
+                  + Add &quot;{query.trim()}&quot;
+                </Text>
+              </Pressable>
             </View>
           }
         />
+      )}
+
+      {/* Custom add — always available when user has typed something */}
+      {hasQuery && !isSearching && results.length > 0 && (
+        <View className="px-4 pb-4 pt-1">
+          <Pressable
+            onPress={handleAddCustom}
+            testID="btn-add-custom-inline"
+            className="flex-row items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-purple-300 bg-purple-50"
+          >
+            <Text className="text-purple-600 font-semibold text-sm">
+              + Add &quot;{query.trim()}&quot; as custom
+            </Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
