@@ -42,14 +42,27 @@ export function buildRecipePrompt(input: {
   ingredients: Array<{ name: string }>;
   allergens: string[];
   dietaryPreferences: string[];
+  cuisines?: string[];
+  strictIngredients?: boolean;
 }): string {
   const ingredientList = input.ingredients.map((i) => i.name).join(', ');
   const allergenList = input.allergens.length > 0 ? input.allergens.join(', ') : 'none';
   const dietList = input.dietaryPreferences.length > 0 ? input.dietaryPreferences.join(', ') : 'none';
 
+  const cuisineText =
+    input.cuisines && input.cuisines.length > 0
+      ? `Preferred cuisine(s): ${input.cuisines.join(', ')}. Tailor the recipes to these cuisines.`
+      : 'No cuisine preference — vary the cuisines across the 10 recipes.';
+
+  const strictText = input.strictIngredients
+    ? `STRICT MODE: ONLY use the exact ingredients listed as main components. Do NOT add proteins, vegetables, starches, or other main ingredients beyond what is listed. You MAY still use: salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, thyme, rosemary, olive oil, butter, water, broth, flour, sugar, vinegar.`
+    : `You may add common pantry staples (salt, pepper, olive oil, butter, herbs, spices, water, stock) — these are always assumed available.`;
+
   return `Available pantry ingredients: ${ingredientList}
 
-Choose a coherent subset of these ingredients that make a great dish together. You do NOT need to use all of them — pick the ones that belong in the same recipe. Add common pantry staples (oil, salt, pepper, herbs, stock) as needed.
+${strictText}
+
+${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}

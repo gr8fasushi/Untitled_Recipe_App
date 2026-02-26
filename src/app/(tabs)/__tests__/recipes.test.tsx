@@ -18,9 +18,17 @@ jest.mock('@/features/recipes/hooks/useGenerateRecipe', () => ({
 }));
 
 const mockSetCurrentRecipe = jest.fn();
+const mockToggleCuisine = jest.fn();
+const mockSetStrictIngredients = jest.fn();
 jest.mock('@/features/recipes/store/recipesStore', () => ({
   useRecipesStore: (selector: (s: unknown) => unknown) =>
-    selector({ setCurrentRecipe: mockSetCurrentRecipe }),
+    selector({
+      setCurrentRecipe: mockSetCurrentRecipe,
+      selectedCuisines: [],
+      toggleCuisine: mockToggleCuisine,
+      strictIngredients: false,
+      setStrictIngredients: mockSetStrictIngredients,
+    }),
 }));
 
 let mockSelectedIngredients: PantryItem[] = [];

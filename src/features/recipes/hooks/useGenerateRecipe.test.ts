@@ -75,6 +75,8 @@ describe('useGenerateRecipe', () => {
       recipes: [],
       isLoading: false,
       error: null,
+      selectedCuisines: [],
+      strictIngredients: false,
       setRecipes: mockSetRecipes,
       setLoading: mockSetLoading,
       setError: mockSetError,

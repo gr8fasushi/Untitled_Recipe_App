@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -8,12 +8,17 @@ import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { Button, PageContainer } from '@/shared/components/ui';
+import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
 export default function RecipesScreen(): React.JSX.Element {
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
   const { generate, isLoading, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
+  const toggleCuisine = useRecipesStore((s) => s.toggleCuisine);
+  const strictIngredients = useRecipesStore((s) => s.strictIngredients);
+  const setStrictIngredients = useRecipesStore((s) => s.setStrictIngredients);
   const router = useRouter();
 
   const hasIngredients = selectedIngredients.length > 0;
@@ -62,12 +67,68 @@ export default function RecipesScreen(): React.JSX.Element {
             </View>
           ) : null}
 
-          <Button
-            label={isLoading ? 'Generating…' : '🍳 Generate 10 Recipes'}
-            onPress={generate}
-            disabled={isLoading || !hasIngredients}
-            testID="btn-generate-recipe"
-          />
+          {/* Cuisine selector */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
+              Cuisine (optional — pick one or more)
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {CUISINES.map((cuisine) => {
+                const isActive = selectedCuisines.includes(cuisine.id);
+                return (
+                  <Pressable
+                    key={cuisine.id}
+                    testID={`cuisine-pill-${cuisine.id}`}
+                    onPress={() => toggleCuisine(cuisine.id)}
+                    className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
+                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text className="text-sm">{cuisine.emoji}</Text>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700'
+                      }`}
+                    >
+                      {cuisine.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Strict ingredients checkbox */}
+          <Pressable
+            testID="checkbox-strict-ingredients"
+            onPress={() => setStrictIngredients(!strictIngredients)}
+            className="flex-row items-center gap-2 py-2 mb-1"
+          >
+            <View
+              className={`w-5 h-5 rounded border-2 items-center justify-center ${
+                strictIngredients ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
+              }`}
+            >
+              {strictIngredients ? <Text className="text-white text-xs font-bold">✓</Text> : null}
+            </View>
+            <Text className="text-sm text-gray-700 font-nunito flex-1">
+              Only use my exact pantry ingredients
+            </Text>
+          </Pressable>
+          {strictIngredients ? (
+            <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
+              Basic spices (salt, pepper, oil, etc.) always assumed available
+            </Text>
+          ) : null}
+
+          <View className="mt-3">
+            <Button
+              label={isLoading ? 'Generating…' : '🍳 Generate 10 Recipes'}
+              onPress={generate}
+              disabled={isLoading || !hasIngredients}
+              testID="btn-generate-recipe"
+            />
+          </View>
 
           {error ? (
             <View testID="recipes-error" className="mt-3 rounded-xl bg-red-50 px-4 py-3">

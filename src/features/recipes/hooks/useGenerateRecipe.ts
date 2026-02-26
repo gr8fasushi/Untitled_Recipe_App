@@ -16,13 +16,24 @@ interface UseGenerateRecipeReturn {
 export function useGenerateRecipe(): UseGenerateRecipeReturn {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const { recipes, isLoading, error, setRecipes, setLoading, setError } = useRecipesStore();
+  const {
+    recipes,
+    isLoading,
+    error,
+    selectedCuisines,
+    strictIngredients,
+    setRecipes,
+    setLoading,
+    setError,
+  } = useRecipesStore();
 
   const generate = useCallback(async () => {
     const parsed = GenerateRecipeInputSchema.safeParse({
       ingredients: selectedIngredients,
       allergens: profile?.allergens ?? [],
       dietaryPreferences: profile?.dietaryPreferences ?? [],
+      cuisines: selectedCuisines.length > 0 ? selectedCuisines : undefined,
+      strictIngredients: strictIngredients || undefined,
     });
 
     if (!parsed.success) {
@@ -42,7 +53,15 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
     } finally {
       setLoading(false);
     }
-  }, [selectedIngredients, profile, setRecipes, setLoading, setError]);
+  }, [
+    selectedIngredients,
+    profile,
+    selectedCuisines,
+    strictIngredients,
+    setRecipes,
+    setLoading,
+    setError,
+  ]);
 
   return { generate, isLoading, error, recipes };
 }
