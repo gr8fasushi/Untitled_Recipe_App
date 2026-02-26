@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useChatStore } from '@/features/chat/store/chatStore';
+import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { useChat } from '@/features/chat/hooks/useChat';
 import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
@@ -11,11 +12,11 @@ import type { ChatMessage } from '@/shared/types';
 
 export default function ChatScreen(): React.JSX.Element {
   const router = useRouter();
-  const { recipeId } = useLocalSearchParams<{ recipeId?: string }>();
+  const currentRecipe = useRecipesStore((s) => s.currentRecipe);
   const { messages, isLoading, error, sendMessage } = useChat();
   const { isVoiceMuted, toggleMute } = useTextToSpeech();
   const { speak } = useTextToSpeech();
-  const setRecipeId = useChatStore((s) => s.setRecipeId);
+  const setRecipeSnapshot = useChatStore((s) => s.setRecipeSnapshot);
   const loadVoiceMuted = useChatStore((s) => s.loadVoiceMuted);
   const reset = useChatStore((s) => s.reset);
 
@@ -25,11 +26,11 @@ export default function ChatScreen(): React.JSX.Element {
   // Initialise on mount
   useEffect(() => {
     void loadVoiceMuted();
-    setRecipeId(recipeId ?? null);
+    setRecipeSnapshot(currentRecipe);
     return () => {
       reset();
     };
-  }, [loadVoiceMuted, setRecipeId, recipeId, reset]);
+  }, [loadVoiceMuted, setRecipeSnapshot, currentRecipe, reset]);
 
   // Auto-scroll + TTS on new assistant message
   useEffect(() => {

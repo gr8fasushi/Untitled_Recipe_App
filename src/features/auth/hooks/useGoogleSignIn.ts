@@ -31,8 +31,11 @@ export function useGoogleSignIn(): UseGoogleSignInReturn {
     Platform.OS === 'web' ? { preferLocalhost: true } : { scheme: 'recipeapp' }
   );
 
+  // When no client ID is set for the current platform, pass a placeholder so
+  // the hook doesn't throw during initialisation.  The `isAvailable` guard
+  // already prevents `promptAsync()` from ever being called in this state.
   const [, response, promptAsync] = Google.useAuthRequest({
-    clientId: webClientId,
+    clientId: webClientId ?? 'not-configured',
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     redirectUri,

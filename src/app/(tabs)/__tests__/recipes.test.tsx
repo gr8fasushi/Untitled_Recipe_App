@@ -3,33 +3,41 @@ import { render, fireEvent } from '@testing-library/react-native';
 import type { Recipe } from '@/shared/types';
 import type { PantryItem } from '@/features/pantry/types';
 
-// ---------------------------------------------------------------------------
-// Mocks — ALL use explicit factory functions so Jest never loads real modules.
-// ---------------------------------------------------------------------------
-
 const mockGenerate = jest.fn();
-
 let mockIsLoading = false;
 let mockError: string | null = null;
-let mockRecipe: Recipe | null = null;
+let mockRecipes: Recipe[] = [];
 
 jest.mock('@/features/recipes/hooks/useGenerateRecipe', () => ({
   useGenerateRecipe: () => ({
     generate: mockGenerate,
     isLoading: mockIsLoading,
     error: mockError,
-    recipe: mockRecipe,
+    recipes: mockRecipes,
   }),
 }));
 
-let mockSelectedIngredients: PantryItem[] = [];
+const mockSetCurrentRecipe = jest.fn();
+const mockToggleCuisine = jest.fn();
+const mockSetStrictIngredients = jest.fn();
+jest.mock('@/features/recipes/store/recipesStore', () => ({
+  useRecipesStore: (selector: (s: unknown) => unknown) =>
+    selector({
+      setCurrentRecipe: mockSetCurrentRecipe,
+      selectedCuisines: [],
+      toggleCuisine: mockToggleCuisine,
+      strictIngredients: false,
+      setStrictIngredients: mockSetStrictIngredients,
+    }),
+}));
 
+let mockSelectedIngredients: PantryItem[] = [];
 jest.mock('@/features/pantry/store/pantryStore', () => ({
   usePantryStore: (selector: (s: unknown) => unknown) =>
     selector({ selectedIngredients: mockSelectedIngredients }),
 }));
 
-jest.mock('@/shared/components/ui', () => ({
+jest.mock('@/shared/components/ui/Button', () => ({
   Button: ({
     label,
     onPress,
@@ -42,8 +50,6 @@ jest.mock('@/shared/components/ui', () => ({
     testID?: string;
   }) => {
     const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
-    // accessibilityState.disabled is the host-element prop RNTL exposes;
-    // raw `disabled` on Pressable is consumed internally and not reflected in props.
     return (
       <Pressable
         testID={testID}
@@ -57,7 +63,6 @@ jest.mock('@/shared/components/ui', () => ({
   },
 }));
 
-// AIDisclaimer has no external deps — let it render naturally
 jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   AIDisclaimer: () => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -70,12 +75,40 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
 
-// eslint-disable-next-line import/first
-import RecipesScreen from './recipes';
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }: { children: React.ReactNode }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View>{children}</View>;
+  },
+}));
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
+jest.mock('@/shared/components/ui', () => jest.requireActual('@/shared/components/ui'));
+
+jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
+  RecipeSummaryCard: ({
+    recipe,
+    onViewFull,
+    testID,
+  }: {
+    recipe: { id: string; title: string };
+    onViewFull: () => void;
+    testID?: string;
+  }) => {
+    const { View, Text, Pressable } =
+      jest.requireActual<typeof import('react-native')>('react-native');
+    return (
+      <View testID={testID}>
+        <Text>{recipe.title}</Text>
+        <Pressable testID={`btn-view-recipe-${recipe.id}`} onPress={onViewFull}>
+          <Text>View Full Recipe</Text>
+        </Pressable>
+      </View>
+    );
+  },
+}));
+
+// eslint-disable-next-line import/first
+import RecipesScreen from '../recipes';
 
 const tomato: PantryItem = { id: 'tomato', name: 'Tomato', emoji: '🍅', category: 'Produce' };
 const chicken: PantryItem = {
@@ -85,18 +118,12 @@ const chicken: PantryItem = {
   category: 'Proteins',
 };
 
-const sampleRecipe: Recipe = {
-  id: 'r1',
-  title: 'Tomato Chicken',
-  description: 'A quick and healthy dish.',
-  ingredients: [
-    { name: 'Chicken Breast', amount: '200', unit: 'g', optional: false },
-    { name: 'Tomato', amount: '2', unit: 'whole', optional: true },
-  ],
-  instructions: [
-    { stepNumber: 1, instruction: 'Season the chicken.', duration: 2 },
-    { stepNumber: 2, instruction: 'Cook on medium heat.' },
-  ],
+const makeRecipe = (id: string, title: string): Recipe => ({
+  id,
+  title,
+  description: 'Delicious dish.',
+  ingredients: [{ name: 'Chicken', amount: '200', unit: 'g', optional: false }],
+  instructions: [{ stepNumber: 1, instruction: 'Cook it.', duration: 20 }],
   nutrition: {
     calories: 350,
     protein: 40,
@@ -106,18 +133,18 @@ const sampleRecipe: Recipe = {
     sugar: 5,
     sodium: 180,
   },
-  allergens: ['gluten'],
+  allergens: [],
   dietaryTags: ['high-protein'],
   prepTime: 5,
   cookTime: 20,
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
-};
+});
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+const recipe1 = makeRecipe('r1', 'Tomato Chicken');
+const recipe2 = makeRecipe('r2', 'Chicken Stir Fry');
+const recipe3 = makeRecipe('r3', 'Chicken Soup');
 
 describe('RecipesScreen', () => {
   beforeEach(() => {
@@ -125,7 +152,7 @@ describe('RecipesScreen', () => {
     mockSelectedIngredients = [];
     mockIsLoading = false;
     mockError = null;
-    mockRecipe = null;
+    mockRecipes = [];
     mockGenerate.mockResolvedValue(undefined);
     mockRouterPush.mockReset();
   });
@@ -135,7 +162,7 @@ describe('RecipesScreen', () => {
     expect(getByTestId('recipes-screen')).toBeTruthy();
   });
 
-  it('renders the Generate Recipe heading', () => {
+  it('renders the Generate Recipes heading', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('recipes-heading')).toBeTruthy();
   });
@@ -189,9 +216,8 @@ describe('RecipesScreen', () => {
 
   it('shows error banner when an error is present', () => {
     mockError = 'Failed to generate recipe';
-    const { getByTestId, getByText } = render(<RecipesScreen />);
+    const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('recipes-error')).toBeTruthy();
-    expect(getByText('Failed to generate recipe')).toBeTruthy();
   });
 
   it('hides error banner when there is no error', () => {
@@ -199,94 +225,42 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('recipes-error')).toBeNull();
   });
 
-  it('does not show recipe card when recipe is null', () => {
+  it('does not show recipes list when recipes array is empty', () => {
     const { queryByTestId } = render(<RecipesScreen />);
-    expect(queryByTestId('recipe-card')).toBeNull();
+    expect(queryByTestId('recipes-list')).toBeNull();
   });
 
-  it('shows recipe card when a recipe is available', () => {
-    mockRecipe = sampleRecipe;
+  it('shows recipes list when recipes are available', () => {
+    mockRecipes = [recipe1, recipe2, recipe3];
     const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-card')).toBeTruthy();
+    expect(getByTestId('recipes-list')).toBeTruthy();
   });
 
-  it('shows recipe title and description', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId, getByText } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-title')).toBeTruthy();
-    expect(getByText('Tomato Chicken')).toBeTruthy();
-    expect(getByTestId('recipe-description')).toBeTruthy();
-    expect(getByText('A quick and healthy dish.')).toBeTruthy();
-  });
-
-  it('shows allergen warning when recipe has allergens', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId, getByText } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-allergen-warning')).toBeTruthy();
-    expect(getByText(/Contains: gluten/i)).toBeTruthy();
-  });
-
-  it('hides allergen warning when recipe has no allergens', () => {
-    mockRecipe = { ...sampleRecipe, allergens: [] };
-    const { queryByTestId } = render(<RecipesScreen />);
-    expect(queryByTestId('recipe-allergen-warning')).toBeNull();
-  });
-
-  it('shows the ingredients list', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId, getByText } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-ingredients-list')).toBeTruthy();
-    expect(getByText('Chicken Breast')).toBeTruthy();
-    expect(getByText(/Tomato.*optional/i)).toBeTruthy();
-  });
-
-  it('shows the instructions list', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId, getByText } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-instructions-list')).toBeTruthy();
-    expect(getByText('Season the chicken.')).toBeTruthy();
-    expect(getByText('Cook on medium heat.')).toBeTruthy();
-  });
-
-  it('shows nutrition information', () => {
-    mockRecipe = sampleRecipe;
+  it('renders a card for each recipe', () => {
+    mockRecipes = [recipe1, recipe2, recipe3];
     const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('recipe-nutrition')).toBeTruthy();
+    expect(getByTestId('recipe-card-0')).toBeTruthy();
+    expect(getByTestId('recipe-card-1')).toBeTruthy();
+    expect(getByTestId('recipe-card-2')).toBeTruthy();
   });
 
-  it('does not show recipe card while loading even if recipe exists', () => {
-    mockRecipe = sampleRecipe;
+  it('does not show recipes list while loading even if recipes exist', () => {
+    mockRecipes = [recipe1];
     mockIsLoading = true;
     const { queryByTestId } = render(<RecipesScreen />);
-    expect(queryByTestId('recipe-card')).toBeNull();
+    expect(queryByTestId('recipes-list')).toBeNull();
+  });
+
+  it('pressing View Full Recipe sets current recipe and navigates', () => {
+    mockRecipes = [recipe1, recipe2];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-view-recipe-r1'));
+    expect(mockSetCurrentRecipe).toHaveBeenCalledWith(recipe1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
   });
 
   it('always shows the AI disclaimer', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('ai-disclaimer')).toBeTruthy();
-  });
-
-  it('shows AI disclaimer even when a recipe is displayed', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('ai-disclaimer')).toBeTruthy();
-  });
-
-  it('shows View Full Recipe button when a recipe is available', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('btn-view-full-recipe')).toBeTruthy();
-  });
-
-  it('does not show View Full Recipe button when no recipe', () => {
-    const { queryByTestId } = render(<RecipesScreen />);
-    expect(queryByTestId('btn-view-full-recipe')).toBeNull();
-  });
-
-  it('pressing View Full Recipe navigates to recipe-detail', () => {
-    mockRecipe = sampleRecipe;
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('btn-view-full-recipe'));
-    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
   });
 });

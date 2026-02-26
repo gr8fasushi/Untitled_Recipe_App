@@ -34,7 +34,9 @@ export function Input({
   return (
     <View className="mb-4">
       {label !== undefined && (
-        <Text className="mb-1 text-sm font-medium text-gray-700">{label}</Text>
+        <Text className="mb-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300">
+          {label}
+        </Text>
       )}
       <TextInput
         value={value}
@@ -49,12 +51,15 @@ export function Input({
         onSubmitEditing={onSubmitEditing}
         editable={editable}
         testID={testID}
-        className={`rounded-xl border px-4 py-3 text-gray-900 bg-white ${
-          error !== undefined ? 'border-red-500' : 'border-gray-300'
+        className={`rounded-2xl border px-4 py-3.5 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 ${
+          error !== undefined ? 'border-red-400' : 'border-gray-200 dark:border-gray-700'
         } ${editable === false ? 'opacity-50' : ''}`}
       />
       {error !== undefined && (
-        <Text className="mt-1 text-sm text-red-600" testID={testID ? `${testID}-error` : undefined}>
+        <Text
+          className="mt-1.5 text-sm text-red-600"
+          testID={testID ? `${testID}-error` : undefined}
+        >
           {error}
         </Text>
       )}

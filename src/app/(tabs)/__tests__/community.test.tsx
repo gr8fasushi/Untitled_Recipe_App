@@ -56,7 +56,7 @@ jest.mock('@/features/saved-recipes/components/CommunityRecipeCard', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import CommunityScreen from './community';
+import CommunityScreen from '../community';
 
 // ---------------------------------------------------------------------------
 // Fixtures

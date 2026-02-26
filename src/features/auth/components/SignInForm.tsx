@@ -99,7 +99,7 @@ export function SignInForm({
         testID="btn-sign-in"
       />
 
-      {isLoading && <ActivityIndicator className="mt-4" testID="sign-in-loading" color="#2563eb" />}
+      {isLoading && <ActivityIndicator className="mt-4" testID="sign-in-loading" color="#ea580c" />}
 
       <View className="mt-6 flex-row justify-center">
         <Text className="text-gray-600 text-sm">Don&apos;t have an account? </Text>

@@ -50,7 +50,7 @@ import { Alert } from 'react-native';
 // eslint-disable-next-line import/first
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 // eslint-disable-next-line import/first
-import DeleteAccountScreen from './delete-account';
+import DeleteAccountScreen from '../delete-account';
 // eslint-disable-next-line import/first
 import { useAuthStore } from '@/features/auth/store/authStore';
 // eslint-disable-next-line import/first

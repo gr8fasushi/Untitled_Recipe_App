@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import DisclaimerScreen from './disclaimer';
+import DisclaimerScreen from '../disclaimer';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({

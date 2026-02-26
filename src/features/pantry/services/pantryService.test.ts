@@ -1,4 +1,4 @@
-import { savePantry, loadPantry } from './pantryService';
+import { savePantry, loadPantry, cacheIngredient } from './pantryService';
 import type { PantryItem } from '@/features/pantry/types';
 
 // ---------------------------------------------------------------------------
@@ -122,6 +122,47 @@ describe('pantryService', () => {
       mockGetDoc.mockRejectedValue(new Error('Permission denied'));
 
       await expect(loadPantry('user-123')).rejects.toThrow('Permission denied');
+    });
+  });
+
+  describe('cacheIngredient', () => {
+    const serrano: PantryItem = {
+      id: 'usda-169998',
+      name: 'Peppers, Serrano',
+      category: 'Vegetables',
+      emoji: '🌶️',
+    };
+
+    it('writes to shared ingredients collection with merge', async () => {
+      mockSetDoc.mockResolvedValue(undefined);
+
+      await cacheIngredient(serrano);
+
+      expect(mockDoc).toHaveBeenCalledWith({}, 'ingredients', 'usda-169998');
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        'DOC_REF',
+        {
+          id: 'usda-169998',
+          name: 'Peppers, Serrano',
+          category: 'Vegetables',
+          emoji: '🌶️',
+          cachedAt: 'SERVER_TIMESTAMP',
+        },
+        { merge: true }
+      );
+    });
+
+    it('uses null for missing optional fields', async () => {
+      mockSetDoc.mockResolvedValue(undefined);
+      const bare: PantryItem = { id: 'usda-000', name: 'Something' };
+
+      await cacheIngredient(bare);
+
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        'DOC_REF',
+        expect.objectContaining({ category: null, emoji: null }),
+        { merge: true }
+      );
     });
   });
 });

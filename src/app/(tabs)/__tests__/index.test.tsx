@@ -8,6 +8,13 @@ import type { PantryItem } from '@/features/pantry/types';
 // in firebase/firestore ESM before the transform runs → SyntaxError.
 // ---------------------------------------------------------------------------
 
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }: { children: React.ReactNode }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View>{children}</View>;
+  },
+}));
+
 const mockLoadPantry = jest.fn();
 const mockSavePantry = jest.fn();
 jest.mock('@/features/pantry/services/pantryService', () => ({
@@ -81,12 +88,16 @@ jest.mock('@/shared/components/ui', () => ({
       </Pressable>
     );
   },
+  PageContainer: ({ children }: { children: React.ReactNode }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View>{children}</View>;
+  },
 }));
 
 // Import screen AFTER all mocks are registered (jest.mock calls are hoisted by Babel,
 // but having it here documents the intent clearly)
 // eslint-disable-next-line import/first
-import PantryScreen from './index';
+import PantryScreen from '../index';
 
 const chicken: PantryItem = {
   id: 'chicken-breast',
@@ -186,6 +197,7 @@ describe('PantryScreen', () => {
   });
 
   it('sets error when save fails', async () => {
+    mockSelectedIngredients = [chicken]; // Save button requires at least one ingredient
     mockSavePantry.mockRejectedValue(new Error('Write denied'));
     const { getByTestId } = render(<PantryScreen />);
     await waitFor(() => expect(mockLoadPantry).toHaveBeenCalled());

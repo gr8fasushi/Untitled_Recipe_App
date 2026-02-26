@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { act } from '@testing-library/react-native';
-import DietaryScreen from './dietary';
+import DietaryScreen from '../dietary';
 import { useOnboardingStore } from '@/features/onboarding/store/onboardingStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
 

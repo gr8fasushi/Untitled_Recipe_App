@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import Index from './index';
+import Index from '../index';
 import type { UserProfile } from '@/shared/types';
 
 // ---------------------------------------------------------------------------

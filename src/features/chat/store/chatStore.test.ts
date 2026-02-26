@@ -1,4 +1,5 @@
 import { useChatStore } from './chatStore';
+import type { Recipe } from '@/shared/types';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -18,12 +19,36 @@ const mockMessage = {
   timestamp: '2024-01-01T00:00:00.000Z',
 };
 
+const mockRecipe: Recipe = {
+  id: 'recipe-1',
+  title: 'Chicken Stir Fry',
+  description: 'A quick chicken dish.',
+  ingredients: [{ name: 'Chicken', amount: '200', unit: 'g', optional: false }],
+  instructions: [{ stepNumber: 1, instruction: 'Cook chicken.' }],
+  nutrition: {
+    calories: 300,
+    protein: 25,
+    carbohydrates: 10,
+    fat: 8,
+    fiber: 2,
+    sugar: 1,
+    sodium: 400,
+  },
+  allergens: [],
+  dietaryTags: [],
+  prepTime: 10,
+  cookTime: 15,
+  servings: 2,
+  difficulty: 'easy',
+  generatedAt: '2024-01-01T00:00:00.000Z',
+};
+
 beforeEach(() => {
   useChatStore.setState({
     messages: [],
     isLoading: false,
     error: null,
-    recipeId: null,
+    recipeSnapshot: null,
     isVoiceMuted: false,
   });
   AsyncStorage.setItem.mockClear();
@@ -73,16 +98,16 @@ describe('chatStore', () => {
     });
   });
 
-  describe('setRecipeId', () => {
-    it('sets recipeId', () => {
-      useChatStore.getState().setRecipeId('recipe-123');
-      expect(useChatStore.getState().recipeId).toBe('recipe-123');
+  describe('setRecipeSnapshot', () => {
+    it('sets recipeSnapshot', () => {
+      useChatStore.getState().setRecipeSnapshot(mockRecipe);
+      expect(useChatStore.getState().recipeSnapshot).toEqual(mockRecipe);
     });
 
-    it('clears recipeId when null', () => {
-      useChatStore.setState({ recipeId: 'recipe-123' });
-      useChatStore.getState().setRecipeId(null);
-      expect(useChatStore.getState().recipeId).toBeNull();
+    it('clears recipeSnapshot when null', () => {
+      useChatStore.setState({ recipeSnapshot: mockRecipe });
+      useChatStore.getState().setRecipeSnapshot(null);
+      expect(useChatStore.getState().recipeSnapshot).toBeNull();
     });
   });
 
@@ -127,19 +152,19 @@ describe('chatStore', () => {
   });
 
   describe('reset', () => {
-    it('clears messages, loading, error, and recipeId', () => {
+    it('clears messages, loading, error, and recipeSnapshot', () => {
       useChatStore.setState({
         messages: [mockMessage],
         isLoading: true,
         error: 'oops',
-        recipeId: 'abc',
+        recipeSnapshot: mockRecipe,
       });
       useChatStore.getState().reset();
       const state = useChatStore.getState();
       expect(state.messages).toHaveLength(0);
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.recipeId).toBeNull();
+      expect(state.recipeSnapshot).toBeNull();
     });
 
     it('does not reset isVoiceMuted on reset', () => {

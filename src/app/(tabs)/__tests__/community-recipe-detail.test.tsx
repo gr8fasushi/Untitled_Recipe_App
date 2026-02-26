@@ -67,7 +67,7 @@ jest.mock('@/shared/components/ui', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import CommunityRecipeDetailScreen from './community-recipe-detail';
+import CommunityRecipeDetailScreen from '../community-recipe-detail';
 
 // ---------------------------------------------------------------------------
 // Fixtures

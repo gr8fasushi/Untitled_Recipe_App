@@ -12,11 +12,33 @@ export const GenerateRecipeInputSchema = z.object({
   ingredients: z.array(IngredientSchema).min(1).max(30),
   allergens: z.array(z.string()).max(9),
   dietaryPreferences: z.array(z.string()).max(10),
+  cuisines: z.array(z.string().max(50)).max(14).optional(),
+  strictIngredients: z.boolean().optional(),
+});
+
+const RecipeIngredientSnapshotSchema = z.object({
+  name: z.string().max(100),
+  amount: z.string().max(50),
+  unit: z.string().max(50),
+  optional: z.boolean(),
+});
+
+const RecipeStepSnapshotSchema = z.object({
+  stepNumber: z.number().int().positive(),
+  instruction: z.string().max(1000),
+});
+
+const RecipeSnapshotSchema = z.object({
+  title: z.string().max(200),
+  description: z.string().max(500),
+  ingredients: z.array(RecipeIngredientSnapshotSchema).max(30),
+  instructions: z.array(RecipeStepSnapshotSchema).max(30),
+  allergens: z.array(z.string().max(50)).max(9),
 });
 
 export const ChatInputSchema = z.object({
   message: z.string().min(1).max(500),
-  recipeId: z.string().optional(),
+  recipeSnapshot: RecipeSnapshotSchema.optional(),
   history: z
     .array(
       z.object({

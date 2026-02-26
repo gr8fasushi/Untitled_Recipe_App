@@ -15,12 +15,36 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 const mockChatFn = chatFn as unknown as jest.Mock;
 
+const mockRecipe = {
+  id: 'recipe-1',
+  title: 'Chicken Stir Fry',
+  description: 'A quick dish.',
+  ingredients: [{ name: 'Chicken', amount: '200', unit: 'g', optional: false }],
+  instructions: [{ stepNumber: 1, instruction: 'Cook chicken.' }],
+  nutrition: {
+    calories: 300,
+    protein: 25,
+    carbohydrates: 10,
+    fat: 8,
+    fiber: 2,
+    sugar: 1,
+    sodium: 400,
+  },
+  allergens: [],
+  dietaryTags: [],
+  prepTime: 10,
+  cookTime: 15,
+  servings: 2,
+  difficulty: 'easy' as const,
+  generatedAt: '2024-01-01T00:00:00.000Z',
+};
+
 beforeEach(() => {
   useChatStore.setState({
     messages: [],
     isLoading: false,
     error: null,
-    recipeId: 'recipe-1',
+    recipeSnapshot: mockRecipe,
     isVoiceMuted: false,
   });
   mockChatFn.mockClear();
@@ -106,7 +130,7 @@ describe('useChat', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it('includes recipeId from store in the call', async () => {
+  it('includes recipeSnapshot from store in the call', async () => {
     mockChatFn.mockResolvedValueOnce({ data: { reply: 'OK' } });
     const { result } = renderHook(() => useChat());
 
@@ -114,6 +138,10 @@ describe('useChat', () => {
       await result.current.sendMessage('Substitution?');
     });
 
-    expect(mockChatFn).toHaveBeenCalledWith(expect.objectContaining({ recipeId: 'recipe-1' }));
+    expect(mockChatFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipeSnapshot: expect.objectContaining({ title: 'Chicken Stir Fry' }),
+      })
+    );
   });
 });

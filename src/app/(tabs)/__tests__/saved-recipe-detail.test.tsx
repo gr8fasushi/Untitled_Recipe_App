@@ -119,7 +119,7 @@ jest.mock('@/shared/components/ui', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import SavedRecipeDetailScreen from './saved-recipe-detail';
+import SavedRecipeDetailScreen from '../saved-recipe-detail';
 
 // ---------------------------------------------------------------------------
 // Fixtures

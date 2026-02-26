@@ -8,6 +8,14 @@ jest.mock('@/shared/services/firebase/functions.service', () => ({
 
 const mockChatFn = chatFn as unknown as jest.Mock;
 
+const mockSnapshot = {
+  title: 'Chicken Stir Fry',
+  description: 'A quick dish.',
+  ingredients: [{ name: 'Chicken', amount: '200', unit: 'g', optional: false }],
+  instructions: [{ stepNumber: 1, instruction: 'Cook chicken.' }],
+  allergens: [],
+};
+
 beforeEach(() => {
   mockChatFn.mockClear();
 });
@@ -17,27 +25,27 @@ describe('sendChatMessage', () => {
 
   it('returns the reply string from the Cloud Function', async () => {
     mockChatFn.mockResolvedValueOnce({ data: { reply: 'Sure, here is how...' } });
-    const result = await sendChatMessage('How do I cook this?', history, 'recipe-1');
+    const result = await sendChatMessage('How do I cook this?', history, mockSnapshot);
     expect(result).toBe('Sure, here is how...');
   });
 
-  it('passes message, history, and recipeId to chatFn', async () => {
+  it('passes message, history, and recipeSnapshot to chatFn', async () => {
     mockChatFn.mockResolvedValueOnce({ data: { reply: 'OK' } });
-    await sendChatMessage('What can I substitute?', history, 'recipe-abc');
+    await sendChatMessage('What can I substitute?', history, mockSnapshot);
     expect(mockChatFn).toHaveBeenCalledWith({
       message: 'What can I substitute?',
       history,
-      recipeId: 'recipe-abc',
+      recipeSnapshot: mockSnapshot,
     });
   });
 
-  it('works without a recipeId', async () => {
+  it('works without a recipeSnapshot', async () => {
     mockChatFn.mockResolvedValueOnce({ data: { reply: 'General tip' } });
     await sendChatMessage('General question', [], undefined);
     expect(mockChatFn).toHaveBeenCalledWith({
       message: 'General question',
       history: [],
-      recipeId: undefined,
+      recipeSnapshot: undefined,
     });
   });
 

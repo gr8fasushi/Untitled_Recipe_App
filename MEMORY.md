@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-24 — Feature 11 COMPLETE (658 tests, 71 suites — all passing)
+> Last updated: 2026-02-26 — recipe snapshot chat, z.coerce, MeatTemperatureCard (724 tests, 75 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 11 — Delete Account ✅ COMPLETE
-**Active Branch:** `feature/delete-account`
-**Blocking Issues:** None — ready to PR and merge
+**Phase:** UX Improvements + Chat/Recipe polish ✅ COMPLETE
+**Active Branch:** `feature/ux-improvements`
+**Blocking Issues:** None — Cloud Functions need to be deployed for cuisine/strict/recipeSnapshot changes to take effect
 
 ---
 
@@ -36,6 +36,12 @@
   - `.firebaserc` updated with real project IDs
   - `GROQ_API_KEY` secret set on both projects ✅
   - `GEMINI_API_KEY` secret set on both projects ✅
+- [x] **Feature 12 COMPLETE:** Privacy Policy Screen (mandatory for both app stores)
+  - `src/app/(tabs)/privacy-policy.tsx` — full screen replacing stub; inline policy content in ScrollView (9 sections)
+  - Sections: Introduction, Data We Collect, How We Use Your Data, Third-Party Services, Data Security, Data Retention & Deletion, Children's Privacy, Changes to Policy, Contact Us
+  - No external dependencies — inline text only (App Store compliance, no WebView required)
+  - `src/app/(tabs)/privacy-policy.test.tsx` — 11 tests: render, back nav, scrollable content, all section headings
+  - 669 total tests, 72 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 11 COMPLETE:** Delete Account (mandatory for both app stores)
   - `src/app/(tabs)/delete-account.tsx` — full screen replacing stub; Alert confirm → `deleteUserAccount(uid)` → auth listener auto-redirects
   - Handles `auth/requires-recent-login` + generic errors with `getAuthErrorMessage`
@@ -162,30 +168,74 @@
   - Sign Out, Delete Account stub nav, Privacy Policy stub nav, app version
   - 646 tests, 70 suites — all passing, TypeScript clean, lint clean
 - [x] **Feature 11:** Delete account (mandatory for both app stores) ✅
-- [ ] **Feature 12:** Privacy policy screen + link
+- [x] **Feature 12:** Privacy policy screen + link ✅
 - [ ] **Feature 13:** Web deployment (Vercel)
 - [ ] **Feature 14:** App Store submission prep + compliance review
 
 ---
 
+## What Was Done in Chat/Recipe Polish (commit 88dcc23)
+
+- **Chat recipeSnapshot:** Chat now passes full Recipe object (not just ID) → AI has full context (title, desc, ingredients, instructions, allergens) in the prompt
+- **Chat screen:** reads `currentRecipe` from `recipesStore` instead of URL param
+- **chatPrompts.ts:** builds rich structured recipe context block
+- **generateRecipe.ts:** `z.coerce.number()` on all numeric fields — handles Llama returning strings; max_tokens bumped to 16000
+- **Error handling:** Both Cloud Functions wrap Groq call in try/catch → `HttpsError('unavailable')`
+- **MeatTemperatureCard:** new component — auto-detects meat/seafood in ingredients, shows USDA safe temps; 15 tests
+- **Lint fix:** `jest.requireMock()` replaces `require()` in IngredientSearch.test.tsx
+
+## What Was Done in UX Overhaul (commits edf54f9 + bd50734)
+
+All on branch `feature/ux-improvements`:
+
+- **CI fix:** `global.fetch` → `globalThis.fetch as typeof fetch` in usdaService.test.ts
+- **Diacritic normalization:** "jalapen" now finds "Jalapeño" — NFD normalize in commonIngredients.ts + usdaService.ts
+- **Nunito font:** `@expo-google-fonts/nunito` installed, loaded in `_layout.tsx`, configured in `tailwind.config.js`
+- **Tab restructure:** 4 visible tabs (Home, Pantry, Saved, Profile) — dark charcoal bar, Ionicons, Nunito labels
+- **Home screen:** `src/app/(tabs)/home.tsx` — 2×2 intent tiles with time-aware greeting
+- **Search Recipes:** `src/app/(tabs)/recipe-search.tsx` — Firestore prefix search + AI fallback
+- **RecipeSummaryCard:** Extracted to `src/features/recipes/components/RecipeSummaryCard.tsx` (shared)
+- **Gradient headers:** All tab screens (pantry, recipes, saved, profile, community) — max-w-2xl constrained
+- **10 recipes:** Cloud Function prompts + schema updated (max 10, max_tokens 12000)
+- **Cuisine selection:** `src/constants/cuisines.ts` (14 cuisines), multi-select pills in recipes.tsx
+- **Strict ingredients:** Checkbox in recipes.tsx — limits AI to exact pantry items
+- **Scan in Pantry:** Camera + gallery scan buttons directly in pantry.tsx; auto-adds detected ingredients
+- **Find Recipes CTA:** Green button in pantry when ingredients are selected → navigates to recipes
+- **Store:** `recipesStore.ts` now has `selectedCuisines`, `toggleCuisine`, `strictIngredients`, `setStrictIngredients`
+- **Cloud Function:** `validate.ts` + `recipePrompts.ts` updated for cuisines + strictIngredients
+
+### Pending: Deploy Cloud Functions
+
+Run after merging to main or whenever ready for production cuisine/strict features:
+
+```bash
+firebase use staging
+firebase deploy --only functions:generateRecipe
+```
+
 ## Next Session: Exactly What To Do
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 12: Privacy Policy Screen (start here — branch `feature/privacy`)
+### Option A: Merge UX branch + deploy Cloud Functions
 
-Create from `feature/delete-account` after PR is merged.
+1. PR `feature/ux-improvements` → `main`
+2. `firebase deploy --only functions:generateRecipe` (for cuisine + strict ingredients in prompt)
+
+### Option B: Feature 13: Web Deployment (Vercel) (branch `feature/web-deploy`)
+
+Create from `feature/ux-improvements` (or after it merges to main).
 
 Scope:
 
-- Full `privacy-policy.tsx` screen replacing stub (currently shows placeholder)
-- Display privacy policy content (inline text or WebView linking to hosted URL)
-- Options: (a) inline markdown-style text, or (b) `WebView` pointing to a hosted URL
-- Recommendation: use inline text for App Store compliance (no external dependency)
-- Back button navigation
-- Tests: render, back nav, content visible
+- Verify Expo web build works (`npx expo export --platform web`)
+- Connect GitHub repo to Vercel (auto-deploy on push to main)
+- Set environment variables in Vercel dashboard (Firebase config)
+- Confirm web app loads and auth works on deployed URL
+- Update README with live URL
+- Tests: ensure existing tests still pass (no web-specific changes needed)
 
-**Note:** `privacy-policy.tsx` stub already exists at `src/app/(tabs)/privacy-policy.tsx`.
+**Note:** NativeWind v4 web support requires `@expo/metro-config` with CSS enabled — already configured in `metro.config.js`.
 
 ---
 
@@ -240,7 +290,7 @@ Scope:
 ### Apple App Store
 
 - [x] Apple Sign-In implemented (Feature 2) ✅
-- [ ] Privacy policy URL live and linked in-app (Feature 12)
+- [x] Privacy policy screen linked in-app (Feature 12) ✅ — inline content, no hosted URL required
 - [x] Account deletion flow working (Feature 11) ✅
 - [ ] AI disclaimer on every recipe screen (Feature 5)
 - [ ] Allergen disclaimer on onboarding + recipes (Feature 3 + 6) — onboarding part next
@@ -252,7 +302,7 @@ Scope:
 
 ### Google Play Store
 
-- [ ] Privacy policy URL live
+- [x] Privacy policy screen linked in-app ✅
 - [x] Account deletion flow working ✅
 - [ ] Data Safety section completed in Play Console
 - [ ] Content rating questionnaire completed

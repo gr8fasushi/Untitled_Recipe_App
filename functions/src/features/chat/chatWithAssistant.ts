@@ -20,19 +20,25 @@ export const chatWithAssistant = onCall(
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
       })),
-      { role: 'user', content: buildChatPrompt(input.message) },
+      { role: 'user', content: buildChatPrompt(input.message, input.recipeSnapshot) },
     ];
 
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages,
-      temperature: 0.5,
-      max_tokens: 512,
-    });
+    let reply: string;
+    try {
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        temperature: 0.5,
+        max_tokens: 512,
+      });
+      reply = response.choices[0]?.message?.content ?? '';
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Groq API error';
+      throw new HttpsError('unavailable', `AI service error: ${msg}`);
+    }
 
-    const reply = response.choices[0]?.message?.content;
     if (!reply) {
-      throw new HttpsError('internal', 'No response from AI model');
+      throw new HttpsError('unavailable', 'No response from AI model');
     }
 
     return { reply };

@@ -65,7 +65,7 @@ jest.mock('@/features/saved-recipes/hooks/useSaveRecipe', () => ({
 }));
 
 // eslint-disable-next-line import/first
-import RecipeDetailScreen from './recipe-detail';
+import RecipeDetailScreen from '../recipe-detail';
 
 // ---------------------------------------------------------------------------
 // Fixtures

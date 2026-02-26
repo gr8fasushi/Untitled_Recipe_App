@@ -19,25 +19,25 @@ const RecipeSchema = z.object({
   ),
   instructions: z.array(
     z.object({
-      stepNumber: z.number(),
+      stepNumber: z.coerce.number(),
       instruction: z.string(),
-      duration: z.number().nullable().optional(),
+      duration: z.coerce.number().nullable().optional(),
     })
   ),
   nutrition: z.object({
-    calories: z.number(),
-    protein: z.number(),
-    carbohydrates: z.number(),
-    fat: z.number(),
-    fiber: z.number(),
-    sugar: z.number(),
-    sodium: z.number(),
+    calories: z.coerce.number(),
+    protein: z.coerce.number(),
+    carbohydrates: z.coerce.number(),
+    fat: z.coerce.number(),
+    fiber: z.coerce.number(),
+    sugar: z.coerce.number(),
+    sodium: z.coerce.number(),
   }),
   allergens: z.array(z.string()),
   dietaryTags: z.array(z.string()),
-  prepTime: z.number(),
-  cookTime: z.number(),
-  servings: z.number(),
+  prepTime: z.coerce.number(),
+  cookTime: z.coerce.number(),
+  servings: z.coerce.number(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
 });
 
@@ -50,20 +50,26 @@ export const generateRecipe = onCall(
 
     const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
 
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: RECIPE_SYSTEM_PROMPT },
-        { role: 'user', content: buildRecipePrompt(input) },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-      max_tokens: 2048,
-    });
+    let content: string;
+    try {
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: RECIPE_SYSTEM_PROMPT },
+          { role: 'user', content: buildRecipePrompt(input) },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+        max_tokens: 16000,
+      });
+      content = response.choices[0]?.message?.content ?? '';
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Groq API error';
+      throw new HttpsError('unavailable', `AI service error: ${msg}`);
+    }
 
-    const content = response.choices[0]?.message?.content;
     if (!content) {
-      throw new HttpsError('internal', 'No response from AI model');
+      throw new HttpsError('unavailable', 'No response from AI model');
     }
 
     let parsed: unknown;
@@ -73,15 +79,18 @@ export const generateRecipe = onCall(
       throw new HttpsError('internal', 'Invalid JSON from AI model');
     }
 
-    const validated = RecipeSchema.safeParse(parsed);
+    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).min(1).max(5) });
+    const validated = ResponseSchema.safeParse(parsed);
     if (!validated.success) {
       throw new HttpsError('internal', 'AI response did not match expected schema');
     }
 
     return {
-      ...validated.data,
-      id: crypto.randomUUID(),
-      generatedAt: new Date().toISOString(),
+      recipes: validated.data.recipes.map((r) => ({
+        ...r,
+        id: crypto.randomUUID(),
+        generatedAt: new Date().toISOString(),
+      })),
     };
   }
 );

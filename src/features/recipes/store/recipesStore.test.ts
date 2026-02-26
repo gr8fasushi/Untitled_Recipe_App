@@ -33,24 +33,40 @@ describe('useRecipesStore', () => {
     });
   });
 
-  it('starts with null recipe, not loading, no error', () => {
+  it('starts with empty recipes, null currentRecipe, not loading, no error', () => {
     const state = useRecipesStore.getState();
+    expect(state.recipes).toEqual([]);
     expect(state.currentRecipe).toBeNull();
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
   });
 
-  it('setRecipe stores the recipe', () => {
+  it('setRecipes stores the recipes array', () => {
     act(() => {
-      useRecipesStore.getState().setRecipe(mockRecipe);
+      useRecipesStore.getState().setRecipes([mockRecipe]);
+    });
+    expect(useRecipesStore.getState().recipes).toEqual([mockRecipe]);
+  });
+
+  it('setRecipes([]) clears the recipes', () => {
+    act(() => {
+      useRecipesStore.getState().setRecipes([mockRecipe]);
+      useRecipesStore.getState().setRecipes([]);
+    });
+    expect(useRecipesStore.getState().recipes).toEqual([]);
+  });
+
+  it('setCurrentRecipe stores the selected recipe', () => {
+    act(() => {
+      useRecipesStore.getState().setCurrentRecipe(mockRecipe);
     });
     expect(useRecipesStore.getState().currentRecipe).toEqual(mockRecipe);
   });
 
-  it('setRecipe(null) clears the recipe', () => {
+  it('setCurrentRecipe(null) clears the current recipe', () => {
     act(() => {
-      useRecipesStore.getState().setRecipe(mockRecipe);
-      useRecipesStore.getState().setRecipe(null);
+      useRecipesStore.getState().setCurrentRecipe(mockRecipe);
+      useRecipesStore.getState().setCurrentRecipe(null);
     });
     expect(useRecipesStore.getState().currentRecipe).toBeNull();
   });
@@ -83,12 +99,14 @@ describe('useRecipesStore', () => {
 
   it('reset returns all state to initial values', () => {
     act(() => {
-      useRecipesStore.getState().setRecipe(mockRecipe);
+      useRecipesStore.getState().setRecipes([mockRecipe]);
+      useRecipesStore.getState().setCurrentRecipe(mockRecipe);
       useRecipesStore.getState().setLoading(true);
       useRecipesStore.getState().setError('oops');
       useRecipesStore.getState().reset();
     });
     const state = useRecipesStore.getState();
+    expect(state.recipes).toEqual([]);
     expect(state.currentRecipe).toBeNull();
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();

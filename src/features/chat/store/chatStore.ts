@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { ChatMessage } from '@/shared/types';
+import type { ChatMessage, Recipe } from '@/shared/types';
 
 const VOICE_MUTED_KEY = '@recipeapp/voice_muted';
 
@@ -8,12 +8,12 @@ interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
-  recipeId: string | null;
+  recipeSnapshot: Recipe | null;
   isVoiceMuted: boolean;
   addMessage: (message: ChatMessage) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setRecipeId: (id: string | null) => void;
+  setRecipeSnapshot: (recipe: Recipe | null) => void;
   setVoiceMuted: (muted: boolean) => void;
   loadVoiceMuted: () => Promise<void>;
   reset: () => void;
@@ -23,7 +23,7 @@ export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
   error: null,
-  recipeId: null,
+  recipeSnapshot: null,
   isVoiceMuted: false,
 
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
@@ -32,7 +32,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setError: (error) => set({ error }),
 
-  setRecipeId: (id) => set({ recipeId: id }),
+  setRecipeSnapshot: (recipe) => set({ recipeSnapshot: recipe }),
 
   setVoiceMuted: (muted) => {
     set({ isVoiceMuted: muted });
@@ -50,5 +50,5 @@ export const useChatStore = create<ChatState>((set) => ({
     }
   },
 
-  reset: () => set({ messages: [], isLoading: false, error: null, recipeId: null }),
+  reset: () => set({ messages: [], isLoading: false, error: null, recipeSnapshot: null }),
 }));

@@ -30,7 +30,7 @@ const mockRecipe: Recipe = {
   generatedAt: '2026-01-01T00:00:00Z',
 };
 
-const mockSetRecipe = jest.fn();
+const mockSetRecipes = jest.fn();
 const mockSetLoading = jest.fn();
 const mockSetError = jest.fn();
 
@@ -72,20 +72,24 @@ describe('useGenerateRecipe', () => {
     );
 
     (useRecipesStore as unknown as jest.Mock).mockReturnValue({
-      currentRecipe: null,
+      recipes: [],
       isLoading: false,
       error: null,
-      setRecipe: mockSetRecipe,
+      selectedCuisines: [],
+      strictIngredients: false,
+      setRecipes: mockSetRecipes,
       setLoading: mockSetLoading,
       setError: mockSetError,
     });
 
-    (generateRecipeFn as unknown as jest.Mock).mockResolvedValue({ data: mockRecipe });
+    (generateRecipeFn as unknown as jest.Mock).mockResolvedValue({
+      data: { recipes: [mockRecipe] },
+    });
   });
 
   it('returns initial state', () => {
     const { result } = renderHook(() => useGenerateRecipe());
-    expect(result.current.recipe).toBeNull();
+    expect(result.current.recipes).toEqual([]);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(typeof result.current.generate).toBe('function');
@@ -112,12 +116,12 @@ describe('useGenerateRecipe', () => {
     expect(mockSetLoading).toHaveBeenNthCalledWith(2, false);
   });
 
-  it('sets recipe on success', async () => {
+  it('sets recipes on success', async () => {
     const { result } = renderHook(() => useGenerateRecipe());
     await act(async () => {
       await result.current.generate();
     });
-    expect(mockSetRecipe).toHaveBeenCalledWith(mockRecipe);
+    expect(mockSetRecipes).toHaveBeenCalledWith([mockRecipe]);
   });
 
   it('sets error and still calls setLoading(false) when generateRecipeFn throws', async () => {

@@ -23,7 +23,7 @@ export function useChat(): UseChatReturn {
   const messages = useChatStore((s) => s.messages);
   const isLoading = useChatStore((s) => s.isLoading);
   const error = useChatStore((s) => s.error);
-  const recipeId = useChatStore((s) => s.recipeId);
+  const recipeSnapshot = useChatStore((s) => s.recipeSnapshot);
   const addMessage = useChatStore((s) => s.addMessage);
   const setLoading = useChatStore((s) => s.setLoading);
   const setError = useChatStore((s) => s.setError);
@@ -42,7 +42,18 @@ export function useChat(): UseChatReturn {
         const history = useChatStore
           .getState()
           .messages.map((m) => ({ role: m.role, content: m.content }));
-        const reply = await sendChatMessage(trimmed, history, recipeId ?? undefined);
+
+        const snapshot = recipeSnapshot
+          ? {
+              title: recipeSnapshot.title,
+              description: recipeSnapshot.description,
+              ingredients: recipeSnapshot.ingredients,
+              instructions: recipeSnapshot.instructions,
+              allergens: recipeSnapshot.allergens,
+            }
+          : undefined;
+
+        const reply = await sendChatMessage(trimmed, history, snapshot);
         addMessage(buildMessage('assistant', reply));
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Failed to get a response.';
@@ -51,7 +62,7 @@ export function useChat(): UseChatReturn {
         setLoading(false);
       }
     },
-    [addMessage, setLoading, setError, recipeId]
+    [addMessage, setLoading, setError, recipeSnapshot]
   );
 
   return { messages, isLoading, error, sendMessage };

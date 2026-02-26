@@ -8,9 +8,14 @@ interface GenerateRecipeInput {
   dietaryPreferences: string[];
 }
 
+type RecipeSnapshot = Pick<
+  Recipe,
+  'title' | 'description' | 'ingredients' | 'instructions' | 'allergens'
+>;
+
 interface ChatInput {
   message: string;
-  recipeId?: string;
+  recipeSnapshot?: RecipeSnapshot;
   history: Pick<ChatMessage, 'role' | 'content'>[];
 }
 
@@ -23,7 +28,7 @@ interface AnalyzePhotoOutput {
   ingredients: Ingredient[];
 }
 
-export const generateRecipeFn = httpsCallable<GenerateRecipeInput, Recipe>(
+export const generateRecipeFn = httpsCallable<GenerateRecipeInput, { recipes: Recipe[] }>(
   functions,
   'generateRecipe'
 );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import ForgotPasswordScreen from './forgot-password';
+import ForgotPasswordScreen from '../forgot-password';
 
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
