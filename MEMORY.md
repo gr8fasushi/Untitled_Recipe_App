@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-25 — UX overhaul + cuisine/strict/scan features COMPLETE (709 tests, 74 suites — all passing)
+> Last updated: 2026-02-26 — recipe snapshot chat, z.coerce, MeatTemperatureCard (724 tests, 75 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** UX Improvements ✅ COMPLETE (all features from plan implemented)
+**Phase:** UX Improvements + Chat/Recipe polish ✅ COMPLETE
 **Active Branch:** `feature/ux-improvements`
-**Blocking Issues:** None — Cloud Functions need to be deployed for cuisine/strict changes to take effect
+**Blocking Issues:** None — Cloud Functions need to be deployed for cuisine/strict/recipeSnapshot changes to take effect
 
 ---
 
@@ -173,6 +173,16 @@
 - [ ] **Feature 14:** App Store submission prep + compliance review
 
 ---
+
+## What Was Done in Chat/Recipe Polish (commit 88dcc23)
+
+- **Chat recipeSnapshot:** Chat now passes full Recipe object (not just ID) → AI has full context (title, desc, ingredients, instructions, allergens) in the prompt
+- **Chat screen:** reads `currentRecipe` from `recipesStore` instead of URL param
+- **chatPrompts.ts:** builds rich structured recipe context block
+- **generateRecipe.ts:** `z.coerce.number()` on all numeric fields — handles Llama returning strings; max_tokens bumped to 16000
+- **Error handling:** Both Cloud Functions wrap Groq call in try/catch → `HttpsError('unavailable')`
+- **MeatTemperatureCard:** new component — auto-detects meat/seafood in ingredients, shows USDA safe temps; 15 tests
+- **Lint fix:** `jest.requireMock()` replaces `require()` in IngredientSearch.test.tsx
 
 ## What Was Done in UX Overhaul (commits edf54f9 + bd50734)
 
