@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-24 — Feature 12 COMPLETE (669 tests, 72 suites — all passing)
+> Last updated: 2026-02-25 — UX overhaul + cuisine/strict/scan features COMPLETE (709 tests, 74 suites — all passing)
 
 ---
 
 ## Current Status
 
-**Phase:** Feature 12 — Privacy Policy Screen ✅ COMPLETE
-**Active Branch:** `feature/privacy`
-**Blocking Issues:** None — ready to PR and merge
+**Phase:** UX Improvements ✅ COMPLETE (all features from plan implemented)
+**Active Branch:** `feature/ux-improvements`
+**Blocking Issues:** None — Cloud Functions need to be deployed for cuisine/strict changes to take effect
 
 ---
 
@@ -174,13 +174,47 @@
 
 ---
 
+## What Was Done in UX Overhaul (commits edf54f9 + bd50734)
+
+All on branch `feature/ux-improvements`:
+
+- **CI fix:** `global.fetch` → `globalThis.fetch as typeof fetch` in usdaService.test.ts
+- **Diacritic normalization:** "jalapen" now finds "Jalapeño" — NFD normalize in commonIngredients.ts + usdaService.ts
+- **Nunito font:** `@expo-google-fonts/nunito` installed, loaded in `_layout.tsx`, configured in `tailwind.config.js`
+- **Tab restructure:** 4 visible tabs (Home, Pantry, Saved, Profile) — dark charcoal bar, Ionicons, Nunito labels
+- **Home screen:** `src/app/(tabs)/home.tsx` — 2×2 intent tiles with time-aware greeting
+- **Search Recipes:** `src/app/(tabs)/recipe-search.tsx` — Firestore prefix search + AI fallback
+- **RecipeSummaryCard:** Extracted to `src/features/recipes/components/RecipeSummaryCard.tsx` (shared)
+- **Gradient headers:** All tab screens (pantry, recipes, saved, profile, community) — max-w-2xl constrained
+- **10 recipes:** Cloud Function prompts + schema updated (max 10, max_tokens 12000)
+- **Cuisine selection:** `src/constants/cuisines.ts` (14 cuisines), multi-select pills in recipes.tsx
+- **Strict ingredients:** Checkbox in recipes.tsx — limits AI to exact pantry items
+- **Scan in Pantry:** Camera + gallery scan buttons directly in pantry.tsx; auto-adds detected ingredients
+- **Find Recipes CTA:** Green button in pantry when ingredients are selected → navigates to recipes
+- **Store:** `recipesStore.ts` now has `selectedCuisines`, `toggleCuisine`, `strictIngredients`, `setStrictIngredients`
+- **Cloud Function:** `validate.ts` + `recipePrompts.ts` updated for cuisines + strictIngredients
+
+### Pending: Deploy Cloud Functions
+
+Run after merging to main or whenever ready for production cuisine/strict features:
+
+```bash
+firebase use staging
+firebase deploy --only functions:generateRecipe
+```
+
 ## Next Session: Exactly What To Do
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Feature 13: Web Deployment (Vercel) (start here — branch `feature/web-deploy`)
+### Option A: Merge UX branch + deploy Cloud Functions
 
-Create from `feature/privacy` after PR is merged.
+1. PR `feature/ux-improvements` → `main`
+2. `firebase deploy --only functions:generateRecipe` (for cuisine + strict ingredients in prompt)
+
+### Option B: Feature 13: Web Deployment (Vercel) (branch `feature/web-deploy`)
+
+Create from `feature/ux-improvements` (or after it merges to main).
 
 Scope:
 
