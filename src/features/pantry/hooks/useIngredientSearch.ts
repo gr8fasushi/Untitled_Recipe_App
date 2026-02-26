@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { searchUSDA } from '../services/usdaService';
+import { searchLocalIngredients } from '../data/commonIngredients';
 import type { PantryItem } from '../types';
 
 const DEBOUNCE_MS = 350;
@@ -31,6 +32,16 @@ export function useIngredientSearch(query: string): UseIngredientSearchResult {
       return;
     }
 
+    // 1. Try local list first — instant, no network
+    const local = searchLocalIngredients(trimmed);
+    if (local.length > 0) {
+      setResults(local);
+      setIsSearching(false);
+      setError(null);
+      return;
+    }
+
+    // 2. Nothing in local list — fall back to USDA API with debounce
     setIsSearching(true);
     setError(null);
 

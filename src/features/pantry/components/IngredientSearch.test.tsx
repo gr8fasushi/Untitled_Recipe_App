@@ -15,6 +15,15 @@ const mockUseIngredientSearch = searchHook.useIngredientSearch as jest.MockedFun
   typeof searchHook.useIngredientSearch
 >;
 
+// Mock pantry service — cacheIngredient is fire-and-forget
+jest.mock('@/features/pantry/services/pantryService', () => ({
+  cacheIngredient: jest.fn().mockResolvedValue(undefined),
+}));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mockCacheIngredient = (
+  require('@/features/pantry/services/pantryService') as { cacheIngredient: jest.Mock }
+).cacheIngredient;
+
 const chicken: PantryItem = { id: 'usda-123', name: 'Chicken Breast', category: 'Proteins' };
 const salmon: PantryItem = { id: 'usda-456', name: 'Salmon', category: 'Proteins' };
 const milk: PantryItem = { id: 'usda-789', name: 'Milk', category: 'Dairy' };
@@ -133,5 +142,26 @@ describe('IngredientSearch', () => {
     const { getByTestId } = render(<IngredientSearch />);
     fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
     expect(getByTestId('btn-add-custom-inline')).toBeTruthy();
+  });
+
+  it('calls cacheIngredient when a usda-sourced ingredient is added', () => {
+    setupHook({ results: [chicken] });
+    const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
+    fireEvent.press(getByTestId('ingredient-row-usda-123'));
+    expect(mockCacheIngredient).toHaveBeenCalledWith(chicken);
+  });
+
+  it('does not call cacheIngredient when a local-sourced ingredient is added', () => {
+    const localChicken: PantryItem = {
+      id: 'local-chicken-breast',
+      name: 'Chicken Breast',
+      category: 'Proteins',
+    };
+    setupHook({ results: [localChicken] });
+    const { getByTestId } = render(<IngredientSearch />);
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
+    fireEvent.press(getByTestId('ingredient-row-local-chicken-breast'));
+    expect(mockCacheIngredient).not.toHaveBeenCalled();
   });
 });

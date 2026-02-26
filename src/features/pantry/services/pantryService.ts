@@ -24,3 +24,20 @@ export async function loadPantry(uid: string): Promise<PantryItem[]> {
 
   return parsed.data.ingredients;
 }
+
+// Cache a USDA-sourced ingredient in the shared ingredients collection so
+// future users find it without hitting the USDA API.
+export async function cacheIngredient(item: PantryItem): Promise<void> {
+  const ref = doc(db, 'ingredients', item.id);
+  await setDoc(
+    ref,
+    {
+      id: item.id,
+      name: item.name,
+      category: item.category ?? null,
+      emoji: item.emoji ?? null,
+      cachedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}

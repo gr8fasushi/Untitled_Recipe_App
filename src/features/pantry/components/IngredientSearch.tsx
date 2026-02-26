@@ -3,6 +3,7 @@ import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native
 import { Input } from '@/shared/components/ui';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useIngredientSearch } from '@/features/pantry/hooks/useIngredientSearch';
+import { cacheIngredient } from '@/features/pantry/services/pantryService';
 import type { PantryItem } from '@/features/pantry/types';
 
 function getCategoryBg(category: string | undefined): string {
@@ -87,6 +88,13 @@ export function IngredientSearch(): React.JSX.Element {
   const hasQuery = query.trim().length >= 2;
   const selectedIds = new Set(selectedIngredients.map((i) => i.id));
 
+  function handleAdd(item: PantryItem): void {
+    addIngredient(item);
+    if (item.id.startsWith('usda-')) {
+      void cacheIngredient(item);
+    }
+  }
+
   function handleAddCustom(): void {
     const name = query.trim();
     if (!name) return;
@@ -133,7 +141,7 @@ export function IngredientSearch(): React.JSX.Element {
             <IngredientRow
               item={item}
               isSelected={selectedIds.has(item.id)}
-              onPress={() => addIngredient(item)}
+              onPress={() => handleAdd(item)}
             />
           )}
           keyboardShouldPersistTaps="handled"
