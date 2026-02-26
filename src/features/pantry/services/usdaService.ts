@@ -96,7 +96,7 @@ export async function searchUSDA(query: string, signal?: AbortSignal): Promise<U
 
   for (const food of parsed.data.foods) {
     const name = cleanUsdaName(food.description);
-    const key = name.toLowerCase();
+    const key = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
       results.push({

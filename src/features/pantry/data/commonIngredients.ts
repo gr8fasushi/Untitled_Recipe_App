@@ -1118,13 +1118,22 @@ export const COMMON_INGREDIENTS: PantryItem[] = [
   { id: 'local-miso-soup-base', name: 'Miso Soup Base', category: 'Pantry Staples', emoji: '🫙' },
 ];
 
+function normalizeForSearch(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 export function searchLocalIngredients(query: string): PantryItem[] {
-  const q = query.toLowerCase().trim();
+  const q = normalizeForSearch(query.trim());
   if (q.length < 2) return [];
-  return COMMON_INGREDIENTS.filter((i) => i.name.toLowerCase().includes(q))
+  return COMMON_INGREDIENTS.filter((i) => normalizeForSearch(i.name).includes(q))
     .sort((a, b) => {
-      const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-      const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const aNorm = normalizeForSearch(a.name);
+      const bNorm = normalizeForSearch(b.name);
+      const aStarts = aNorm.startsWith(q) ? 0 : 1;
+      const bStarts = bNorm.startsWith(q) ? 0 : 1;
       return aStarts - bStarts || a.name.localeCompare(b.name);
     })
     .slice(0, 8);

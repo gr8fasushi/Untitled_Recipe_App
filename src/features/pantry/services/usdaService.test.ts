@@ -73,7 +73,7 @@ describe('mapUsdaCategory', () => {
 // searchUSDA — fetch integration (mocked)
 // ---------------------------------------------------------------------------
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch as typeof fetch;
 
 const MOCK_RESPONSE = {
   foods: [

@@ -1,4 +1,5 @@
 import { FlatList, Pressable, Text, View, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes';
@@ -27,10 +28,24 @@ export default function SavedScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="saved-screen">
-      {/* Header */}
-      <View className="px-4 pt-4 pb-2">
-        <Text className="text-2xl font-bold text-gray-900">Saved Recipes</Text>
+    <SafeAreaView className="flex-1 bg-gray-50" testID="saved-screen">
+      {/* Gradient header */}
+      <View className="w-full items-center bg-primary-700">
+        <View className="w-full max-w-2xl">
+          <LinearGradient
+            colors={['#c2410c', '#ea580c', '#fb923c']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View className="px-6 pt-5 pb-6">
+              <Text className="text-3xl mb-1">🔖</Text>
+              <Text className="text-2xl font-nunito-bold text-white">Saved Recipes</Text>
+              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+                Your bookmarked collection
+              </Text>
+            </View>
+          </LinearGradient>
+        </View>
       </View>
 
       {/* Rating filter pills */}

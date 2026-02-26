@@ -1,5 +1,11 @@
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
+import {
+  Nunito_400Regular,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+} from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import '../../global.css';
@@ -17,6 +23,10 @@ export const unstable_settings = {
 export default function RootLayout(): React.JSX.Element | null {
   const [loaded, error] = useFonts({
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
   });
 
   const isInitialized = useAuthStore((s) => s.isInitialized);
@@ -28,7 +38,7 @@ export default function RootLayout(): React.JSX.Element | null {
     if (error) throw error;
   }, [error]);
 
-  // Auth state listener — fires once on mount, then on every auth change
+  // Auth state listener
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(async (firebaseUser) => {
       setUser(firebaseUser);
@@ -43,7 +53,7 @@ export default function RootLayout(): React.JSX.Element | null {
     return unsubscribe;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Only hide SplashScreen when BOTH fonts are loaded AND Firebase auth is resolved
+  // Only hide SplashScreen when BOTH fonts loaded AND Firebase auth resolved
   useEffect(() => {
     if (loaded && isInitialized) {
       void SplashScreen.hideAsync();

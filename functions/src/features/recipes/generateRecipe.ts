@@ -58,7 +58,7 @@ export const generateRecipe = onCall(
       ],
       response_format: { type: 'json_object' },
       temperature: 0.7,
-      max_tokens: 8192,
+      max_tokens: 12000,
     });
 
     const content = response.choices[0]?.message?.content;
@@ -73,7 +73,7 @@ export const generateRecipe = onCall(
       throw new HttpsError('internal', 'Invalid JSON from AI model');
     }
 
-    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).min(1).max(5) });
+    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).min(1).max(10) });
     const validated = ResponseSchema.safeParse(parsed);
     if (!validated.success) {
       throw new HttpsError('internal', 'AI response did not match expected schema');

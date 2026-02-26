@@ -29,7 +29,7 @@ jest.mock('@/features/pantry/store/pantryStore', () => ({
     selector({ selectedIngredients: mockSelectedIngredients }),
 }));
 
-jest.mock('@/shared/components/ui', () => ({
+jest.mock('@/shared/components/ui/Button', () => ({
   Button: ({
     label,
     onPress,
@@ -65,6 +65,38 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
+}));
+
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }: { children: React.ReactNode }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View>{children}</View>;
+  },
+}));
+
+jest.mock('@/shared/components/ui', () => jest.requireActual('@/shared/components/ui'));
+
+jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
+  RecipeSummaryCard: ({
+    recipe,
+    onViewFull,
+    testID,
+  }: {
+    recipe: { id: string; title: string };
+    onViewFull: () => void;
+    testID?: string;
+  }) => {
+    const { View, Text, Pressable } =
+      jest.requireActual<typeof import('react-native')>('react-native');
+    return (
+      <View testID={testID}>
+        <Text>{recipe.title}</Text>
+        <Pressable testID={`btn-view-recipe-${recipe.id}`} onPress={onViewFull}>
+          <Text>View Full Recipe</Text>
+        </Pressable>
+      </View>
+    );
+  },
 }));
 
 // eslint-disable-next-line import/first

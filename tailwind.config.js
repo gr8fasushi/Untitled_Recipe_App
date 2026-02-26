@@ -5,6 +5,12 @@ module.exports = {
   darkMode: 'media',
   theme: {
     extend: {
+      fontFamily: {
+        nunito: ['Nunito_400Regular'],
+        'nunito-semibold': ['Nunito_600SemiBold'],
+        'nunito-bold': ['Nunito_700Bold'],
+        'nunito-extrabold': ['Nunito_800ExtraBold'],
+      },
       colors: {
         primary: {
           50: '#fff7ed',
