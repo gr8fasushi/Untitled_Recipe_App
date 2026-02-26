@@ -12,8 +12,11 @@ import { useRouter } from 'expo-router';
 // ---------- mocks ----------
 
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: jest.fn().mockReturnValue({ recipeId: 'recipe-xyz' }),
   useRouter: jest.fn().mockReturnValue({ back: jest.fn(), push: jest.fn() }),
+}));
+
+jest.mock('@/features/recipes/store/recipesStore', () => ({
+  useRecipesStore: jest.fn().mockReturnValue(null),
 }));
 
 jest.mock('@/features/chat/store/chatStore', () => ({
@@ -69,7 +72,7 @@ function buildStoreMock(overrides = {}) {
       isLoading: false,
       error: null,
       isVoiceMuted: false,
-      setRecipeId: jest.fn(),
+      setRecipeSnapshot: jest.fn(),
       loadVoiceMuted: jest.fn().mockResolvedValue(undefined),
       reset: jest.fn(),
       ...overrides,

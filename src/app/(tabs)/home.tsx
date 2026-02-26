@@ -59,26 +59,24 @@ export default function HomeScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50" testID="home-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header */}
-        <View className="w-full items-center bg-primary-700">
-          <View className="w-full max-w-2xl">
-            <LinearGradient
-              colors={['#c2410c', '#ea580c', '#fb923c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View className="px-6 pt-6 pb-8">
-                <Text className="text-3xl mb-1">🍽️</Text>
-                <Text className="text-2xl font-nunito-bold text-white">
-                  {greeting}
-                  {name ? `, ${name}` : ''}!
-                </Text>
-                <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                  What would you like to cook today?
-                </Text>
-              </View>
-            </LinearGradient>
+        <LinearGradient
+          colors={['#c2410c', '#ea580c', '#fb923c']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
+            <View className="w-full max-w-2xl px-6 pt-6 pb-8">
+              <Text className="text-3xl mb-1">🍽️</Text>
+              <Text className="text-2xl font-nunito-bold text-white">
+                {greeting}
+                {name ? `, ${name}` : ''}!
+              </Text>
+              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+                What would you like to cook today?
+              </Text>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <PageContainer className="px-4 mt-5">
           {/* Row 1 */}

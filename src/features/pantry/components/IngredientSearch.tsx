@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
-import { Input } from '@/shared/components/ui';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useIngredientSearch } from '@/features/pantry/hooks/useIngredientSearch';
 import { cacheIngredient } from '@/features/pantry/services/pantryService';
@@ -82,6 +81,7 @@ function IngredientRow({ item, isSelected, onPress }: IngredientRowProps): React
 
 export function IngredientSearch(): React.JSX.Element {
   const [query, setQuery] = useState('');
+  const textInputRef = useRef<TextInput>(null);
   const { selectedIngredients, addIngredient } = usePantryStore();
   const { results, isSearching, error } = useIngredientSearch(query);
 
@@ -93,6 +93,8 @@ export function IngredientSearch(): React.JSX.Element {
     if (item.id.startsWith('usda-')) {
       void cacheIngredient(item);
     }
+    setQuery('');
+    textInputRef.current?.focus();
   }
 
   function handleAddCustom(): void {
@@ -104,18 +106,22 @@ export function IngredientSearch(): React.JSX.Element {
       category: 'Custom',
     });
     setQuery('');
+    textInputRef.current?.focus();
   }
 
   return (
     <View testID="ingredient-search" className="flex-1">
       <View className="px-4 pt-4 pb-2">
-        <Input
+        <TextInput
+          ref={textInputRef}
           value={query}
           onChangeText={setQuery}
           placeholder="Search any ingredient…"
+          placeholderTextColor="#9ca3af"
           testID="ingredient-search-input"
           autoCapitalize="none"
           returnKeyType="search"
+          className="rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-base text-gray-900"
         />
       </View>
 

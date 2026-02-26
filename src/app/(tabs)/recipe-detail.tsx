@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
+import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
 import { Button } from '@/shared/components/ui';
 import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
 
@@ -114,6 +115,9 @@ export default function RecipeDetailScreen(): React.JSX.Element {
                 </View>
               ))}
             </View>
+
+            {/* Safe meat temperatures */}
+            <MeatTemperatureCard ingredients={recipe.ingredients} testID="detail-meat-temps" />
 
             {/* Nutrition */}
             <Text className="text-lg font-bold text-gray-900 mb-2">Nutrition per serving</Text>

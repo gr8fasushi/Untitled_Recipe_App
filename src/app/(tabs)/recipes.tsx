@@ -32,27 +32,25 @@ export default function RecipesScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50" testID="recipes-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header */}
-        <View className="w-full items-center bg-primary-700">
-          <View className="w-full max-w-2xl">
-            <LinearGradient
-              colors={['#c2410c', '#ea580c', '#fb923c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View className="px-6 pt-5 pb-6">
-                <Text className="text-3xl mb-1">🍳</Text>
-                <Text testID="recipes-heading" className="text-2xl font-nunito-bold text-white">
-                  Generate Recipes
-                </Text>
-                <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                  {hasIngredients
-                    ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
-                    : 'Add ingredients in the Pantry tab first'}
-                </Text>
-              </View>
-            </LinearGradient>
+        <LinearGradient
+          colors={['#c2410c', '#ea580c', '#fb923c']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
+            <View className="w-full max-w-2xl px-6 pt-5 pb-6">
+              <Text className="text-3xl mb-1">🍳</Text>
+              <Text testID="recipes-heading" className="text-2xl font-nunito-bold text-white">
+                Generate Recipes
+              </Text>
+              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+                {hasIngredients
+                  ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
+                  : 'Add ingredients in the Pantry tab first'}
+              </Text>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <PageContainer className="px-4 mt-4">
           {!hasIngredients ? (
@@ -123,7 +121,7 @@ export default function RecipesScreen(): React.JSX.Element {
 
           <View className="mt-3">
             <Button
-              label={isLoading ? 'Generating…' : '🍳 Generate 10 Recipes'}
+              label={isLoading ? 'Generating…' : '🍳 Generate 5 Recipes'}
               onPress={generate}
               disabled={isLoading || !hasIngredients}
               testID="btn-generate-recipe"
@@ -139,7 +137,7 @@ export default function RecipesScreen(): React.JSX.Element {
           {isLoading ? (
             <View testID="recipes-loading" className="mt-8 items-center justify-center">
               <ActivityIndicator size="large" color="#ea580c" />
-              <Text className="mt-3 font-nunito text-gray-400">Generating 10 recipe ideas…</Text>
+              <Text className="mt-3 font-nunito text-gray-400">Generating 5 recipe ideas…</Text>
             </View>
           ) : null}
 

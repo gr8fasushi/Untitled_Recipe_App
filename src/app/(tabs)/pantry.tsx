@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,7 +10,7 @@ import { loadPantry, savePantry } from '@/features/pantry/services/pantryService
 import { useScan } from '@/features/scan/hooks/useScan';
 import { IngredientChip } from '@/features/pantry/components/IngredientChip';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
-import { Button, PageContainer } from '@/shared/components/ui';
+import { PageContainer } from '@/shared/components/ui';
 
 export default function PantryScreen(): React.JSX.Element {
   const { user } = useAuthStore();
@@ -25,6 +25,7 @@ export default function PantryScreen(): React.JSX.Element {
     addIngredient,
   } = usePantryStore();
   const router = useRouter();
+  const isLoaded = useRef(false);
 
   const { takePhoto, pickFromGallery, isAnalyzing, accumulatedIngredients, clearAll } = useScan();
 
@@ -38,6 +39,7 @@ export default function PantryScreen(): React.JSX.Element {
 
   const handleLoad = useCallback(async (): Promise<void> => {
     if (!user) return;
+    isLoaded.current = false;
     setLoading(true);
     setError(null);
     try {
@@ -48,6 +50,7 @@ export default function PantryScreen(): React.JSX.Element {
       setError('Failed to load pantry. Please try again.');
     } finally {
       setLoading(false);
+      isLoaded.current = true;
     }
   }, [user, setLoading, setError, clearPantry, addIngredient]);
 
@@ -55,18 +58,16 @@ export default function PantryScreen(): React.JSX.Element {
     void handleLoad();
   }, [handleLoad]);
 
-  const handleSave = async (): Promise<void> => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await savePantry(user.uid, selectedIngredients);
-    } catch {
-      setError('Failed to save pantry. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Auto-save whenever ingredients change (after initial load)
+  useEffect(() => {
+    if (!isLoaded.current || !user) return;
+    const timer = setTimeout(() => {
+      void savePantry(user.uid, selectedIngredients).catch(() => {
+        setError('Auto-save failed. Your changes may not be saved.');
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [selectedIngredients, user, setError]);
 
   const ingredientCount = selectedIngredients.length;
   const subtitle =
@@ -76,50 +77,50 @@ export default function PantryScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="pantry-screen">
-      {/* Gradient header — constrained to max-w-2xl on web */}
-      <View className="w-full items-center bg-primary-700">
-        <View className="w-full max-w-2xl">
-          <LinearGradient
-            colors={['#c2410c', '#ea580c', '#fb923c']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View className="px-6 pt-5 pb-6">
-              {/* Title row */}
-              <View className="flex-row items-center justify-between mb-1">
-                <View className="flex-row items-center gap-3">
-                  <Text className="text-3xl">🥘</Text>
-                  <Text className="text-2xl font-nunito-bold text-white">My Pantry</Text>
-                </View>
-                <Button
-                  label={isLoading ? 'Saving…' : 'Save'}
-                  onPress={handleSave}
-                  disabled={isLoading || ingredientCount === 0}
-                  variant="secondary"
-                  testID="btn-save-pantry"
-                />
+      {/* Gradient header */}
+      <LinearGradient
+        colors={['#c2410c', '#ea580c', '#fb923c']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View className="items-center w-full">
+          <View className="w-full max-w-2xl px-6 pt-5 pb-6">
+            {/* Title row */}
+            <View className="flex-row items-center justify-between mb-1">
+              <View className="flex-row items-center gap-3">
+                <Text className="text-3xl">🥘</Text>
+                <Text className="text-2xl font-nunito-bold text-white">My Pantry</Text>
               </View>
-
-              {/* Subtitle */}
-              <Text className="text-orange-200 text-sm ml-12 font-nunito">{subtitle}</Text>
-
-              {/* Selected ingredient chips */}
               {ingredientCount > 0 ? (
-                <View testID="pantry-chips" className="mt-4 flex-row flex-wrap">
-                  {selectedIngredients.map((ingredient) => (
-                    <IngredientChip
-                      key={ingredient.id}
-                      ingredient={ingredient}
-                      onRemove={() => removeIngredient(ingredient.id)}
-                      testID={`chip-${ingredient.id}`}
-                    />
-                  ))}
-                </View>
+                <Pressable
+                  testID="btn-clear-pantry"
+                  onPress={clearPantry}
+                  className="px-3 py-1.5 rounded-full border border-orange-300 active:opacity-75"
+                >
+                  <Text className="text-xs font-nunito-bold text-orange-100">Clear all</Text>
+                </Pressable>
               ) : null}
             </View>
-          </LinearGradient>
+
+            {/* Subtitle */}
+            <Text className="text-orange-200 text-sm ml-12 font-nunito">{subtitle}</Text>
+
+            {/* Selected ingredient chips */}
+            {ingredientCount > 0 ? (
+              <View testID="pantry-chips" className="mt-4 flex-row flex-wrap">
+                {selectedIngredients.map((ingredient) => (
+                  <IngredientChip
+                    key={ingredient.id}
+                    ingredient={ingredient}
+                    onRemove={() => removeIngredient(ingredient.id)}
+                    testID={`chip-${ingredient.id}`}
+                  />
+                ))}
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Loading state (initial load only) */}
       {isLoading && ingredientCount === 0 ? (

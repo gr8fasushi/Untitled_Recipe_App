@@ -19,9 +19,8 @@ const mockUseIngredientSearch = searchHook.useIngredientSearch as jest.MockedFun
 jest.mock('@/features/pantry/services/pantryService', () => ({
   cacheIngredient: jest.fn().mockResolvedValue(undefined),
 }));
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const mockCacheIngredient = (
-  require('@/features/pantry/services/pantryService') as { cacheIngredient: jest.Mock }
+  jest.requireMock('@/features/pantry/services/pantryService') as { cacheIngredient: jest.Mock }
 ).cacheIngredient;
 
 const chicken: PantryItem = { id: 'usda-123', name: 'Chicken Breast', category: 'Proteins' };
