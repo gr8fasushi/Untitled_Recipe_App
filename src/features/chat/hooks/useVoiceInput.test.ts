@@ -155,7 +155,7 @@ describe('useVoiceInput', () => {
     await act(async () => {});
 
     act(() => {
-      triggerEvent('error', { code: 'network' });
+      triggerEvent('error', { error: 'network', message: 'network error' });
     });
 
     expect(result.current.error).toBe('Voice recognition error. Please try again.');
@@ -168,7 +168,7 @@ describe('useVoiceInput', () => {
     await act(async () => {});
 
     act(() => {
-      triggerEvent('error', { code: 'no-speech' });
+      triggerEvent('error', { error: 'no-speech', message: 'no speech detected' });
     });
 
     expect(result.current.error).toBeNull();
