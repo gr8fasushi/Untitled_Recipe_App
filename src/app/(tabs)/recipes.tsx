@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
-import { Button, PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
@@ -22,6 +22,7 @@ export default function RecipesScreen(): React.JSX.Element {
   const router = useRouter();
 
   const hasIngredients = selectedIngredients.length > 0;
+  const isWeb = Platform.OS === 'web';
 
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);
@@ -30,20 +31,49 @@ export default function RecipesScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="recipes-screen">
+      <BackgroundDecor items={DECOR_SETS.recipes} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Gradient header */}
+        {/* Gradient header — deep red/orange cooking theme */}
         <LinearGradient
-          colors={['#c2410c', '#ea580c', '#fb923c']}
+          colors={['#7c2d12', '#c2410c', '#fb923c']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View className="items-center w-full">
-            <View className="w-full max-w-2xl px-6 pt-5 pb-6">
+            <View
+              className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+            >
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+                >
+                  🍳
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+                >
+                  🔥
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+                >
+                  🥄
+                </Text>
+              </View>
               <Text className="text-3xl mb-1">🍳</Text>
-              <Text testID="recipes-heading" className="text-2xl font-nunito-bold text-white">
+              <Text
+                testID="recipes-heading"
+                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
                 Generate Recipes
               </Text>
-              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+              <Text
+                className={`text-orange-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
                 {hasIngredients
                   ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
                   : 'Add ingredients in the Pantry tab first'}
@@ -143,9 +173,18 @@ export default function RecipesScreen(): React.JSX.Element {
 
           {recipes.length > 0 && !isLoading ? (
             <View testID="recipes-list" className="mt-6">
-              <Text className="text-base font-nunito-semibold text-gray-700 mb-3">
-                {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
-              </Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-nunito-semibold text-gray-700">
+                  {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
+                </Text>
+                <Pressable
+                  testID="btn-back-to-pantry"
+                  onPress={() => router.push('/(tabs)/pantry')}
+                  className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-accent-50 border border-accent-200"
+                >
+                  <Text className="text-xs font-nunito-bold text-accent-700">← Pantry</Text>
+                </Pressable>
+              </View>
               {recipes.map((recipe, index) => (
                 <RecipeSummaryCard
                   key={recipe.id}

@@ -1,9 +1,9 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -54,24 +54,53 @@ export default function HomeScreen(): React.JSX.Element {
   const profile = useAuthStore((s) => s.profile);
   const greeting = getGreeting();
   const name = profile?.displayName ?? '';
+  const isWeb = Platform.OS === 'web';
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="home-screen">
+      <BackgroundDecor items={DECOR_SETS.home} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Gradient header */}
+        {/* Gradient header — amber/warm gold theme */}
         <LinearGradient
-          colors={['#c2410c', '#ea580c', '#fb923c']}
+          colors={['#92400e', '#b45309', '#f59e0b']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View className="items-center w-full">
-            <View className="w-full max-w-2xl px-6 pt-6 pb-8">
+            <View
+              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+            >
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 100, opacity: 0.1, top: -10, right: 10 }}
+                >
+                  🍽️
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 75, opacity: 0.08, top: 20, right: 105 }}
+                >
+                  🥘
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 85, opacity: 0.08, top: -5, right: 185 }}
+                >
+                  🍴
+                </Text>
+              </View>
               <Text className="text-3xl mb-1">🍽️</Text>
-              <Text className="text-2xl font-nunito-bold text-white">
+              <Text
+                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
                 {greeting}
                 {name ? `, ${name}` : ''}!
               </Text>
-              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+              <Text
+                className={`text-amber-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
                 What would you like to cook today?
               </Text>
             </View>

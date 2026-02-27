@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -27,7 +27,15 @@ export default function PantryScreen(): React.JSX.Element {
   const router = useRouter();
   const isLoaded = useRef(false);
 
-  const { takePhoto, pickFromGallery, isAnalyzing, accumulatedIngredients, clearAll } = useScan();
+  const {
+    takePhoto,
+    pickFromGallery,
+    isAnalyzing,
+    status: scanStatus,
+    error: scanError,
+    accumulatedIngredients,
+    clearAll,
+  } = useScan();
 
   // Auto-add scanned ingredients to pantry when scan completes
   useEffect(() => {
@@ -74,36 +82,68 @@ export default function PantryScreen(): React.JSX.Element {
     ingredientCount > 0
       ? `${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''} ready`
       : 'Search or scan below to add ingredients';
+  const isWeb = Platform.OS === 'web';
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="pantry-screen">
-      {/* Gradient header */}
+      {/* Gradient header — emerald/green fresh ingredients theme */}
       <LinearGradient
-        colors={['#c2410c', '#ea580c', '#fb923c']}
+        colors={['#064e3b', '#065f46', '#10b981']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
-          <View className="w-full max-w-2xl px-6 pt-5 pb-6">
+          <View
+            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+          >
+            {/* Emoji silhouettes */}
+            <View
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              pointerEvents="none"
+            >
+              <Text
+                style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+              >
+                🥦
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+              >
+                🥕
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+              >
+                🍅
+              </Text>
+            </View>
             {/* Title row */}
             <View className="flex-row items-center justify-between mb-1">
               <View className="flex-row items-center gap-3">
                 <Text className="text-3xl">🥘</Text>
-                <Text className="text-2xl font-nunito-bold text-white">My Pantry</Text>
+                <Text
+                  className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+                >
+                  My Pantry
+                </Text>
               </View>
               {ingredientCount > 0 ? (
                 <Pressable
                   testID="btn-clear-pantry"
                   onPress={clearPantry}
-                  className="px-3 py-1.5 rounded-full border border-orange-300 active:opacity-75"
+                  className="px-3 py-1.5 rounded-full border border-emerald-300 active:opacity-75"
                 >
-                  <Text className="text-xs font-nunito-bold text-orange-100">Clear all</Text>
+                  <Text className="text-xs font-nunito-bold text-emerald-100">Clear all</Text>
                 </Pressable>
               ) : null}
             </View>
 
             {/* Subtitle */}
-            <Text className="text-orange-200 text-sm ml-12 font-nunito">{subtitle}</Text>
+            <Text
+              className={`text-emerald-200 ${isWeb ? 'text-base' : 'text-sm'} ml-12 font-nunito-semibold`}
+            >
+              {subtitle}
+            </Text>
 
             {/* Selected ingredient chips */}
             {ingredientCount > 0 ? (
@@ -178,6 +218,26 @@ export default function PantryScreen(): React.JSX.Element {
             <View testID="scan-analyzing" className="mx-4 mt-2 rounded-xl bg-orange-50 px-4 py-2">
               <Text className="text-xs font-nunito text-orange-700 text-center">
                 Scanning photo for ingredients…
+              </Text>
+            </View>
+          ) : null}
+
+          {scanError ? (
+            <View
+              testID="scan-error"
+              className="mx-4 mt-2 rounded-xl bg-red-50 px-4 py-2 border border-red-100"
+            >
+              <Text className="text-xs font-nunito text-red-700 text-center">{scanError}</Text>
+            </View>
+          ) : null}
+
+          {scanStatus === 'done' && accumulatedIngredients.length === 0 && !isAnalyzing ? (
+            <View
+              testID="scan-empty"
+              className="mx-4 mt-2 rounded-xl bg-yellow-50 px-4 py-2 border border-yellow-100"
+            >
+              <Text className="text-xs font-nunito text-yellow-700 text-center">
+                No ingredients detected. Try a clearer photo or add ingredients manually.
               </Text>
             </View>
           ) : null}

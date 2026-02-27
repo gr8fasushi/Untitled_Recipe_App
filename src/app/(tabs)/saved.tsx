@@ -1,26 +1,37 @@
-import { FlatList, Pressable, Text, View, ActivityIndicator } from 'react-native';
+import { FlatList, Platform, Pressable, Text, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
+import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
 const RATING_FILTERS: { label: string; value: number | null }[] = [
   { label: 'All', value: null },
-  { label: '6+', value: 6 },
-  { label: '7+', value: 7 },
-  { label: '8+', value: 8 },
-  { label: '9+', value: 9 },
-  { label: '10', value: 10 },
+  { label: '★ 6+', value: 6 },
+  { label: '★ 7+', value: 7 },
+  { label: '★ 8+', value: 8 },
+  { label: '★ 9+', value: 9 },
+  { label: '★ 10', value: 10 },
 ];
 
 export default function SavedScreen(): React.JSX.Element {
   const router = useRouter();
   const setCurrentSavedRecipe = useSavedRecipesStore((s) => s.setCurrentSavedRecipe);
-  const { isLoading, error, ratingFilter, setRatingFilter, filteredRecipes, deleteRecipe } =
-    useSavedRecipes();
+  const {
+    isLoading,
+    error,
+    savedRecipes,
+    ratingFilter,
+    setRatingFilter,
+    filteredRecipes,
+    deleteRecipe,
+  } = useSavedRecipes();
+
+  const hasRecipes = savedRecipes.length > 0;
+  const isWeb = Platform.OS === 'web';
 
   function handleCardPress(item: SavedRecipe): void {
     setCurrentSavedRecipe(item);
@@ -29,53 +40,89 @@ export default function SavedScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="saved-screen">
-      {/* Gradient header */}
-      <View className="w-full items-center bg-primary-700">
-        <View className="w-full max-w-2xl">
-          <LinearGradient
-            colors={['#c2410c', '#ea580c', '#fb923c']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+      <BackgroundDecor items={DECOR_SETS.saved} />
+      {/* Gradient header — full width gradient, content constrained inside */}
+      <LinearGradient
+        colors={['#3b0764', '#6d28d9', '#a78bfa']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View className="items-center w-full">
+          <View
+            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
           >
-            <View className="px-6 pt-5 pb-6">
-              <Text className="text-3xl mb-1">🔖</Text>
-              <Text className="text-2xl font-nunito-bold text-white">Saved Recipes</Text>
-              <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                Your bookmarked collection
-              </Text>
-            </View>
-          </LinearGradient>
-        </View>
-      </View>
-
-      {/* Rating filter pills */}
-      <View className="flex-row px-4 pb-3 gap-2 flex-wrap">
-        {RATING_FILTERS.map(({ label, value }) => {
-          const isActive = ratingFilter === value;
-          const testIDKey = value === null ? 'filter-all' : `filter-${value}`;
-          return (
-            <Pressable
-              key={label}
-              testID={testIDKey}
-              onPress={() => setRatingFilter(value)}
-              className={`px-3 py-1.5 rounded-full border ${
-                isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
-              }`}
+            {/* Emoji silhouettes */}
+            <View
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              pointerEvents="none"
             >
               <Text
-                className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-600'}`}
+                style={{ position: 'absolute', fontSize: 90, opacity: 0.1, top: -8, right: 16 }}
               >
-                {label}
+                🔖
               </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+              <Text
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 20, right: 100 }}
+              >
+                ⭐
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 180 }}
+              >
+                ❤️
+              </Text>
+            </View>
+            <Text className="text-3xl mb-1">🔖</Text>
+            <Text
+              testID="saved-heading"
+              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+            >
+              Saved Recipes
+            </Text>
+            <Text
+              className={`text-violet-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+            >
+              Your bookmarked collection
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Rating filter pills — only shown when there are recipes */}
+      {hasRecipes && (
+        <View className="px-4 pt-3 pb-2">
+          <Text className="text-xs font-nunito-bold text-gray-500 mb-2 uppercase tracking-wide">
+            Filter by Rating
+          </Text>
+          <View className="flex-row gap-2 flex-wrap">
+            {RATING_FILTERS.map(({ label, value }) => {
+              const isActive = ratingFilter === value;
+              const testIDKey = value === null ? 'filter-all' : `filter-${value}`;
+              return (
+                <Pressable
+                  key={label}
+                  testID={testIDKey}
+                  onPress={() => setRatingFilter(value)}
+                  className={`px-3 py-1.5 rounded-full border ${
+                    isActive ? 'bg-violet-600 border-violet-600' : 'bg-white border-gray-200'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-600'}`}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
 
       {/* Loading */}
       {isLoading && (
         <View testID="saved-loading" className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#6d28d9" />
         </View>
       )}
 

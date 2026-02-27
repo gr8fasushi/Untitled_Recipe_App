@@ -1,7 +1,7 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-const MAX_REQUESTS_PER_HOUR = 10;
+const MAX_REQUESTS_PER_HOUR = 30;
 
 /**
  * Enforces per-user rate limits using Firestore counters.

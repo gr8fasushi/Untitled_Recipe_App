@@ -1,8 +1,9 @@
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
+import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { AllergenCard } from '@/features/onboarding/components/AllergenCard';
@@ -10,6 +11,15 @@ import { DietaryPreferenceCard } from '@/features/onboarding/components/DietaryP
 import { DisclaimerCard } from '@/features/onboarding/components/DisclaimerCard';
 import { BIG_9_ALLERGENS, DIETARY_PREFERENCES } from '@/constants/allergens';
 import { useProfileSettings } from '@/features/profile/hooks/useProfileSettings';
+import { VoicePicker } from '@/features/profile/components/VoicePicker';
+import { useUIStore } from '@/stores/uiStore';
+import type { ColorSchemePreference } from '@/stores/uiStore';
+
+const APPEARANCE_OPTIONS: { label: string; value: ColorSchemePreference; emoji: string }[] = [
+  { label: 'Light', value: 'light', emoji: '☀️' },
+  { label: 'Dark', value: 'dark', emoji: '🌙' },
+  { label: 'System', value: 'system', emoji: '⚙️' },
+];
 
 export default function ProfileScreen(): React.JSX.Element {
   const {
@@ -29,20 +39,53 @@ export default function ProfileScreen(): React.JSX.Element {
 
   const router = useRouter();
   const version = (Constants.expoConfig?.version as string | undefined) ?? '1.0.0';
+  const isWeb = Platform.OS === 'web';
+  const colorScheme = useUIStore((s) => s.colorScheme);
+  const setColorScheme = useUIStore((s) => s.setColorScheme);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="profile-screen">
-      {/* Gradient header */}
+      <BackgroundDecor items={DECOR_SETS.profile} />
+      {/* Gradient header — navy/blue account theme */}
       <LinearGradient
-        colors={['#c2410c', '#ea580c', '#fb923c']}
+        colors={['#1e3a8a', '#1d4ed8', '#60a5fa']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
-          <View className="w-full max-w-2xl px-6 pt-5 pb-6">
+          <View
+            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+          >
+            {/* Emoji silhouettes */}
+            <View
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              pointerEvents="none"
+            >
+              <Text
+                style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+              >
+                👤
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+              >
+                ⚙️
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+              >
+                🔒
+              </Text>
+            </View>
             <Text className="text-3xl mb-1">👤</Text>
-            <Text className="text-2xl font-nunito-bold text-white">Profile</Text>
-            <Text className="text-orange-200 text-sm mt-1 font-nunito">
+            <Text
+              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+            >
+              Profile
+            </Text>
+            <Text
+              className={`text-blue-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+            >
               Manage your account and preferences
             </Text>
           </View>
@@ -101,6 +144,44 @@ export default function ProfileScreen(): React.JSX.Element {
                 testID={`card-dietary-${pref.id}`}
               />
             ))}
+          </View>
+
+          {/* Appearance section */}
+          <View className="px-4 pt-6">
+            <Text className="mb-4 text-lg font-bold text-gray-900">Appearance</Text>
+            <View className="flex-row gap-2">
+              {APPEARANCE_OPTIONS.map(({ label, value, emoji }) => {
+                const isActive = colorScheme === value;
+                return (
+                  <Pressable
+                    key={value}
+                    testID={`btn-appearance-${value}`}
+                    onPress={() => setColorScheme(value)}
+                    className={`flex-1 items-center py-3 px-2 rounded-xl border ${
+                      isActive ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text className="text-xl mb-1">{emoji}</Text>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-600'
+                      }`}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Voice section */}
+          <View className="px-4 pt-6">
+            <Text className="mb-2 text-lg font-bold text-gray-900">AI Voice</Text>
+            <Text className="text-sm text-gray-500 font-nunito mb-3">
+              Choose the voice used when reading recipe instructions aloud.
+            </Text>
+            <VoicePicker />
           </View>
 
           {/* Disclaimer + Save */}
