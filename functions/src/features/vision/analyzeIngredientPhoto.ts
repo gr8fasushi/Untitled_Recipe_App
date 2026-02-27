@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { authenticate } from '../../shared/middleware/authenticate';
@@ -23,6 +24,7 @@ export const analyzeIngredientPhoto = onCall(
     const uid = authenticate(request);
     await checkRateLimit(uid, 'analyzePhoto');
     const input = validateAnalyzePhotoInput(request.data);
+    logger.info('analyzeIngredientPhoto', { uid, mimeType: input.mimeType });
 
     const genAI = new GoogleGenerativeAI(process.env['GEMINI_API_KEY'] ?? '');
     const model = genAI.getGenerativeModel({

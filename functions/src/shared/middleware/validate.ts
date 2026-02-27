@@ -10,11 +10,19 @@ const IngredientSchema = z.object({
 
 export const GenerateRecipeInputSchema = z.object({
   ingredients: z.array(IngredientSchema).min(1).max(30),
-  allergens: z.array(z.string()).max(9),
-  dietaryPreferences: z.array(z.string()).max(10),
+  allergens: z.array(z.string()).max(9).nullable().optional(),
+  dietaryPreferences: z.array(z.string()).max(10).nullable().optional(),
   cuisines: z.array(z.string().max(50)).max(14).nullable().optional(),
   strictIngredients: z.boolean().nullable().optional(),
 });
+
+export interface GenerateRecipeInput {
+  ingredients: Array<{ id: string; name: string; emoji?: string; category?: string }>;
+  allergens: string[];
+  dietaryPreferences: string[];
+  cuisines?: string[] | null;
+  strictIngredients?: boolean | null;
+}
 
 const RecipeIngredientSnapshotSchema = z.object({
   name: z.string().max(100),
@@ -65,8 +73,14 @@ function validateInput<T>(schema: z.ZodType<T>, data: unknown): T {
   return result.data;
 }
 
-export const validateGenerateRecipeInput = (data: unknown): z.infer<typeof GenerateRecipeInputSchema> =>
-  validateInput(GenerateRecipeInputSchema, data);
+export function validateGenerateRecipeInput(data: unknown): GenerateRecipeInput {
+  const raw = validateInput(GenerateRecipeInputSchema, data);
+  return {
+    ...raw,
+    allergens: raw.allergens ?? [],
+    dietaryPreferences: raw.dietaryPreferences ?? [],
+  };
+}
 
 export const validateChatInput = (data: unknown): z.infer<typeof ChatInputSchema> =>
   validateInput(ChatInputSchema, data);

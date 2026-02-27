@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import Groq from 'groq-sdk';
 import { z } from 'zod';
 import { authenticate } from '../../shared/middleware/authenticate';
@@ -47,6 +48,7 @@ export const generateRecipe = onCall(
     const uid = authenticate(request);
     await checkRateLimit(uid, 'generateRecipe');
     const input = validateGenerateRecipeInput(request.data);
+    logger.info('generateRecipe', { uid, ingredientCount: input.ingredients.length, allergenCount: input.allergens.length, cuisineCount: (input.cuisines ?? []).length, strictIngredients: input.strictIngredients ?? false });
 
     const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
 
