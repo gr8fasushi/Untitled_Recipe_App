@@ -20,29 +20,11 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('@/shared/components/ui', () => ({
-  Button: ({
-    label,
-    onPress,
-    disabled,
-    testID,
-  }: {
-    label: string;
-    onPress: () => void;
-    disabled?: boolean;
-    testID?: string;
-  }) => {
-    const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
-    return (
-      <Pressable
-        testID={testID}
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityState={{ disabled: !!disabled }}
-      >
-        <Text>{label}</Text>
-      </Pressable>
-    );
+  BackgroundDecor: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="background-decor" />;
   },
+  DECOR_SETS: { recipes: [] },
 }));
 
 jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
@@ -169,7 +151,7 @@ describe('RecipeDetailScreen — with recipe', () => {
 
   it('shows the recipe title', () => {
     const { getByTestId, getByText } = render(<RecipeDetailScreen />);
-    expect(getByTestId('detail-title')).toBeTruthy();
+    expect(getByTestId('detail-title-hero')).toBeTruthy();
     expect(getByText('Tomato Chicken')).toBeTruthy();
   });
 
@@ -214,15 +196,15 @@ describe('RecipeDetailScreen — with recipe', () => {
     expect(getByTestId('btn-save-recipe')).toBeTruthy();
   });
 
-  it('Save Recipe button shows "Save Recipe" when not saved', () => {
+  it('Save Recipe button shows "🔖 Save Recipe" when not saved', () => {
     const { getByText } = render(<RecipeDetailScreen />);
-    expect(getByText('Save Recipe')).toBeTruthy();
+    expect(getByText('🔖 Save Recipe')).toBeTruthy();
   });
 
-  it('Save Recipe button shows "Saved ✓" when saved', () => {
+  it('Save Recipe button shows "🔖 Saved" when saved', () => {
     mockIsSaved = true;
     const { getByText } = render(<RecipeDetailScreen />);
-    expect(getByText('Saved ✓')).toBeTruthy();
+    expect(getByText('🔖 Saved')).toBeTruthy();
   });
 
   it('Save Recipe button is disabled while saving', () => {
