@@ -6,28 +6,30 @@ with full allergen management, nutritional information, and an AI cooking assist
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
+| Layer                   | Technology                        |
+| ----------------------- | --------------------------------- |
 | App (iOS, Android, Web) | Expo (React Native) + Expo Router |
-| Language | TypeScript (strict) |
-| Styling | NativeWind (Tailwind CSS) |
-| State Management | Zustand |
-| Authentication | Firebase Auth |
-| Database | Cloud Firestore |
-| Backend | Firebase Cloud Functions (Gen 2) |
-| AI — Recipes + Chat | Groq API (Llama 3.3 70B) |
-| AI — Food Vision | Google Gemini 2.0 Flash |
-| Web Deployment | Vercel |
+| Language                | TypeScript (strict)               |
+| Styling                 | NativeWind (Tailwind CSS)         |
+| State Management        | Zustand                           |
+| Authentication          | Firebase Auth                     |
+| Database                | Cloud Firestore                   |
+| Backend                 | Firebase Cloud Functions (Gen 2)  |
+| AI — Recipes + Chat     | Groq API (Llama 3.3 70B)          |
+| AI — Food Vision        | Google Gemini 2.0 Flash           |
+| Web Deployment          | Vercel                            |
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - Expo CLI (`npm install -g expo-cli`)
 - Firebase CLI (`npm install -g firebase-tools`)
 - Expo Go app on your phone (for development)
 
 ### Setup
+
 ```bash
 git clone https://github.com/gr8fasushi/Untitled_Recipe_App.git
 cd Untitled_Recipe_App
@@ -49,6 +51,26 @@ src/
 ├── constants/    # App-wide constants (allergens, theme, config)
 └── stores/       # Global Zustand stores
 functions/        # Firebase Cloud Functions (AI calls live here)
+```
+
+## Web Deployment (Vercel)
+
+The app is deployed to Vercel from the `main` branch automatically.
+
+### One-time Vercel setup (browser required)
+
+1. Go to [vercel.com/new](https://vercel.com/new) → Import from GitHub
+2. Select this repository
+3. Framework Preset: **Other** (vercel.json handles the config)
+4. Add environment variable: `EXPO_PUBLIC_FIREBASE_ENV` = `staging` (or `production`)
+5. Click **Deploy**
+
+Vercel auto-detects `vercel.json` — no extra configuration needed.
+
+### Build locally
+
+```bash
+npx expo export --platform web   # outputs to dist/
 ```
 
 ## Security

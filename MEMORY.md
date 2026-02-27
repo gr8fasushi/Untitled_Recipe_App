@@ -2,15 +2,15 @@
 
 > Read this FIRST at the start of every Claude session.
 > Update this LAST before committing at the end of every session.
-> Last updated: 2026-02-26 — recipe snapshot chat, z.coerce, MeatTemperatureCard (724 tests, 75 suites — all passing)
+> Last updated: 2026-02-26 — null recipe fix fully deployed; starting Feature 13 (Vercel web deploy)
 
 ---
 
 ## Current Status
 
-**Phase:** UX Improvements + Chat/Recipe polish ✅ COMPLETE
-**Active Branch:** `feature/ux-improvements`
-**Blocking Issues:** None — Cloud Functions need to be deployed for cuisine/strict/recipeSnapshot changes to take effect
+**Phase:** Feature 13 — Web Deployment (Vercel)
+**Active Branch:** `feature/web-deploy` (branch from main)
+**Blocking Issues:** None — Firebase Extensions API 403 resolved. All fixes committed (9ce99bf) and deployed to staging.
 
 ---
 
@@ -174,6 +174,17 @@
 
 ---
 
+## ✅ RESOLVED: Firebase Extensions API 403 (2026-02-26)
+
+All fixes committed (commit `9ce99bf`) and deployed to staging:
+
+- `validate.ts`: cuisines + strictIngredients accept `null` (Firebase Callable serializes `undefined` → `null`)
+- `recipePrompts.ts`: type signature accepts `string[] | null` and `boolean | null`
+- `generateRecipe.ts`: output schema null coercion for optional/allergens/dietaryTags
+- 715 tests pass, TypeScript clean
+
+---
+
 ## What Was Done in Chat/Recipe Polish (commit 88dcc23)
 
 - **Chat recipeSnapshot:** Chat now passes full Recipe object (not just ID) → AI has full context (title, desc, ingredients, instructions, allergens) in the prompt
@@ -217,25 +228,30 @@ firebase deploy --only functions:generateRecipe
 
 > **TIP:** Read `CODE_CONTEXT.md` instead of individual source files — it has all exports/interfaces.
 
-### Option A: Merge UX branch + deploy Cloud Functions
+### Feature 13: Web Deployment (Vercel) — NEEDS BROWSER STEP (branch `feature/web-deploy` → committed)
 
-1. PR `feature/ux-improvements` → `main`
-2. `firebase deploy --only functions:generateRecipe` (for cuisine + strict ingredients in prompt)
+Code is complete and pushed. One manual browser step remaining:
 
-### Option B: Feature 13: Web Deployment (Vercel) (branch `feature/web-deploy`)
+1. Go to vercel.com/new → Import from GitHub → select `Untitled_Recipe_App`
+2. Framework Preset: **Other** (vercel.json handles config)
+3. Add env var: `EXPO_PUBLIC_FIREBASE_ENV` = `staging`
+4. Click Deploy → confirm app loads
+5. Copy the `.vercel.app` URL → add to README → final commit on main
 
-Create from `feature/ux-improvements` (or after it merges to main).
+**Already done:**
 
-Scope:
+- `vercel.json` created: `buildCommand`, `outputDirectory=dist`, `cleanUrls`, `rewrites` fallback
+- Web build tested locally: 45 routes pre-rendered, no errors
+- README updated with Vercel setup instructions
+- 715 tests pass, TypeScript clean
 
-- Verify Expo web build works (`npx expo export --platform web`)
-- Connect GitHub repo to Vercel (auto-deploy on push to main)
-- Set environment variables in Vercel dashboard (Firebase config)
-- Confirm web app loads and auth works on deployed URL
-- Update README with live URL
-- Tests: ensure existing tests still pass (no web-specific changes needed)
+### Feature 14: App Store Submission Prep
 
-**Note:** NativeWind v4 web support requires `@expo/metro-config` with CSS enabled — already configured in `metro.config.js`.
+- AI disclaimer on every recipe screen
+- Allergen disclaimer audit
+- Error boundaries on all tab screens
+- Privacy Nutrition Labels for App Store Connect
+- TestFlight beta test
 
 ---
 
