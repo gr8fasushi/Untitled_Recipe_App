@@ -44,6 +44,7 @@ export function buildRecipePrompt(input: {
   dietaryPreferences: string[];
   cuisines?: string[] | null;
   strictIngredients?: boolean | null;
+  excludeTitles?: string[] | null;
 }): string {
   const ingredientList = input.ingredients.map((i) => i.name).join(', ');
   const allergenList = input.allergens.length > 0 ? input.allergens.join(', ') : 'none';
@@ -58,6 +59,11 @@ export function buildRecipePrompt(input: {
     ? `STRICT MODE: ONLY use the exact ingredients listed as main components. Do NOT add proteins, vegetables, starches, or other main ingredients beyond what is listed. You MAY still use: salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, thyme, rosemary, olive oil, butter, water, broth, flour, sugar, vinegar.`
     : `You may add common pantry staples (salt, pepper, olive oil, butter, herbs, spices, water, stock) — these are always assumed available.`;
 
+  const excludeText =
+    input.excludeTitles && input.excludeTitles.length > 0
+      ? `\nDO NOT generate any of these recipes — they have already been shown to the user:\n${input.excludeTitles.map((t) => `- ${t}`).join('\n')}\nCreate 5 completely different recipes instead.`
+      : '';
+
   return `Available pantry ingredients: ${ingredientList}
 
 ${strictText}
@@ -66,6 +72,6 @@ ${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}
-
+${excludeText}
 Return valid JSON only. CRITICAL REMINDER: The "recipes" array MUST contain EXACTLY 5 recipes — not 3, not 4, always 5.`;
 }

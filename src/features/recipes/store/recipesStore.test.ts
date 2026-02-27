@@ -168,4 +168,52 @@ describe('useRecipesStore', () => {
     });
     expect(useRecipesStore.getState().strictIngredients).toBe(false);
   });
+
+  describe('appendRecipes', () => {
+    it('appends recipes to an empty list', () => {
+      act(() => {
+        useRecipesStore.getState().appendRecipes([mockRecipe]);
+      });
+      expect(useRecipesStore.getState().recipes).toEqual([mockRecipe]);
+    });
+
+    it('appends recipes after existing recipes', () => {
+      const second: Recipe = { ...mockRecipe, id: 'r2', title: 'Garlic Bread' };
+      act(() => {
+        useRecipesStore.getState().setRecipes([mockRecipe]);
+        useRecipesStore.getState().appendRecipes([second]);
+      });
+      expect(useRecipesStore.getState().recipes).toHaveLength(2);
+      expect(useRecipesStore.getState().recipes[1]).toEqual(second);
+    });
+
+    it('deduplicates by title (case-insensitive)', () => {
+      const duplicate: Recipe = { ...mockRecipe, id: 'r2', title: 'TOMATO PASTA' };
+      act(() => {
+        useRecipesStore.getState().setRecipes([mockRecipe]);
+        useRecipesStore.getState().appendRecipes([duplicate]);
+      });
+      expect(useRecipesStore.getState().recipes).toHaveLength(1);
+    });
+
+    it('deduplicates by title with extra whitespace', () => {
+      const duplicate: Recipe = { ...mockRecipe, id: 'r2', title: '  Tomato Pasta  ' };
+      act(() => {
+        useRecipesStore.getState().setRecipes([mockRecipe]);
+        useRecipesStore.getState().appendRecipes([duplicate]);
+      });
+      expect(useRecipesStore.getState().recipes).toHaveLength(1);
+    });
+
+    it('filters only duplicates from a mixed batch', () => {
+      const unique: Recipe = { ...mockRecipe, id: 'r2', title: 'Garlic Soup' };
+      const duplicate: Recipe = { ...mockRecipe, id: 'r3', title: 'Tomato Pasta' };
+      act(() => {
+        useRecipesStore.getState().setRecipes([mockRecipe]);
+        useRecipesStore.getState().appendRecipes([unique, duplicate]);
+      });
+      expect(useRecipesStore.getState().recipes).toHaveLength(2);
+      expect(useRecipesStore.getState().recipes[1]).toEqual(unique);
+    });
+  });
 });

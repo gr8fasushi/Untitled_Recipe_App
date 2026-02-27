@@ -1,7 +1,7 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 13 (Vercel web deploy) — COMPLETE. 715 tests, 75 suites, all passing.
+> Last updated: Feature 13 (Vercel web deploy + Load More + back nav fix) — COMPLETE. 747 tests, 75 suites, all passing.
 > Current branch: `feature/web-deploy`
 
 ---
@@ -486,12 +486,15 @@ interface RecipesState {
   recipes: Recipe[];
   currentRecipe: Recipe | null;
   isLoading: boolean;
+  isLoadingMore: boolean;           // true while loadMore CF call is in-flight
   error: string | null;
-  selectedCuisines: string[];       // NEW: multi-select cuisine filter
-  strictIngredients: boolean;       // NEW: only use exact pantry items
+  selectedCuisines: string[];
+  strictIngredients: boolean;
   setRecipes: (recipes: Recipe[]) => void;
+  appendRecipes: (newRecipes: Recipe[]) => void;  // dedupes by title (case-insensitive)
   setCurrentRecipe: (recipe: Recipe | null) => void;
   setLoading: (loading: boolean) => void;
+  setLoadingMore: (loading: boolean) => void;
   setError: (error: string | null) => void;
   toggleCuisine: (id: string) => void;
   clearCuisines: () => void;
@@ -506,13 +509,16 @@ export const useRecipesStore: Zustand store<RecipesState>;
 ```typescript
 interface UseGenerateRecipeReturn {
   generate: () => Promise<void>;
+  loadMore: () => Promise<void>; // appends 5 more; passes excludeTitles to CF for AI-level dedup
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
   recipes: Recipe[];
 }
 export function useGenerateRecipe(): UseGenerateRecipeReturn;
 // Reads profile.allergens/dietaryPreferences (defaults to [] if null)
 // Sends selectedCuisines (omitted if empty), strictIngredients (omitted if false)
+// loadMore: sends excludeTitles=[current recipe titles]; calls appendRecipes (not setRecipes)
 // Client-side Zod parse before calling Cloud Function
 ```
 

@@ -17,7 +17,7 @@ export default function RecipeDetailScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
-          <Pressable testID="btn-back" onPress={() => router.back()}>
+          <Pressable testID="btn-back" onPress={() => router.push('/(tabs)/recipes')}>
             <Text className="text-lg text-primary-600 font-medium">← Back</Text>
           </Pressable>
           <Text className="ml-3 text-lg font-bold text-gray-900">Recipe Detail</Text>

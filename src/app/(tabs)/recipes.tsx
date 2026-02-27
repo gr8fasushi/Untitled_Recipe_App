@@ -13,7 +13,7 @@ import type { Recipe } from '@/shared/types';
 
 export default function RecipesScreen(): React.JSX.Element {
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const { generate, isLoading, error, recipes } = useGenerateRecipe();
+  const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
   const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
   const toggleCuisine = useRecipesStore((s) => s.toggleCuisine);
@@ -154,6 +154,22 @@ export default function RecipesScreen(): React.JSX.Element {
                   testID={`recipe-card-${index}`}
                 />
               ))}
+              <View className="mt-4">
+                {isLoadingMore ? (
+                  <View className="items-center py-4">
+                    <ActivityIndicator size="small" color="#ea580c" />
+                    <Text className="mt-2 font-nunito text-gray-400 text-sm">Loading 5 more…</Text>
+                  </View>
+                ) : (
+                  <Button
+                    label="Load 5 More Recipes"
+                    onPress={loadMore}
+                    variant="ghost"
+                    disabled={!hasIngredients}
+                    testID="btn-load-more"
+                  />
+                )}
+              </View>
             </View>
           ) : null}
 

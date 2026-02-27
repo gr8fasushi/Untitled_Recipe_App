@@ -118,4 +118,23 @@ describe('GenerateRecipeInputSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts optional excludeTitles array', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      excludeTitles: ['Tomato Pasta', 'Garlic Bread'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts missing excludeTitles (undefined)', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+    });
+    expect(result.success).toBe(true);
+  });
 });

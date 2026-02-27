@@ -140,10 +140,10 @@ describe('RecipeDetailScreen — empty state', () => {
     expect(getByTestId('btn-back')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to /(tabs)/recipes', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipes');
   });
 });
 
