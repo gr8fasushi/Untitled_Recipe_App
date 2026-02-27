@@ -58,6 +58,13 @@ export function useScan(): UseScanReturn {
   );
 
   const takePhoto = useCallback(async (): Promise<void> => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    if (cameraStatus !== 'granted') {
+      setError('Camera permission is required to take photos.');
+      setStatus('error');
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       base64: true,
@@ -74,6 +81,13 @@ export function useScan(): UseScanReturn {
   }, [runScan]);
 
   const pickFromGallery = useCallback(async (): Promise<void> => {
+    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (libraryStatus !== 'granted') {
+      setError('Photo library permission is required to pick images.');
+      setStatus('error');
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       base64: true,

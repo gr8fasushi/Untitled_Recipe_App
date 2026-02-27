@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { fetchUserProfile, updateUserProfile } from '@/features/auth/services/authService';
+import { updateUserProfile } from '@/features/auth/services/authService';
 import { useCompleteOnboarding } from './useCompleteOnboarding';
 import { useOnboardingStore } from '../store/onboardingStore';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -10,14 +10,12 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
 }));
 
-// Mock authService
+// Mock authService — fetchUserProfile no longer called after completing onboarding
 jest.mock('@/features/auth/services/authService', () => ({
   updateUserProfile: jest.fn(),
-  fetchUserProfile: jest.fn(),
 }));
 
 const mockUpdateUserProfile = updateUserProfile as jest.Mock;
-const mockFetchUserProfile = fetchUserProfile as jest.Mock;
 
 const mockUser = { uid: 'user-123', email: 'test@example.com' };
 
@@ -25,9 +23,9 @@ const mockProfile = {
   uid: 'user-123',
   email: 'test@example.com',
   displayName: null,
-  allergens: ['peanuts', 'milk'],
-  dietaryPreferences: ['vegan'],
-  onboardingComplete: true,
+  allergens: [],
+  dietaryPreferences: [],
+  onboardingComplete: false,
   createdAt: new Date(),
 };
 
@@ -60,10 +58,9 @@ describe('useCompleteOnboarding', () => {
   });
 
   it('calls updateUserProfile with correct data', async () => {
-    // Set up user in auth store
     useAuthStore.getState().setUser(mockUser as never);
+    useAuthStore.getState().setProfile(mockProfile);
 
-    // Set up selections in onboarding store
     act(() => {
       useOnboardingStore.getState().toggleAllergen('peanuts');
       useOnboardingStore.getState().toggleAllergen('milk');
@@ -71,7 +68,6 @@ describe('useCompleteOnboarding', () => {
     });
 
     mockUpdateUserProfile.mockResolvedValue(undefined);
-    mockFetchUserProfile.mockResolvedValue(mockProfile);
 
     const { result } = renderHook(() => useCompleteOnboarding());
 
@@ -86,10 +82,16 @@ describe('useCompleteOnboarding', () => {
     });
   });
 
-  it('fetches fresh profile and updates auth store after saving', async () => {
+  it('updates auth store directly with onboardingComplete:true after saving', async () => {
     useAuthStore.getState().setUser(mockUser as never);
+    useAuthStore.getState().setProfile(mockProfile);
+
+    act(() => {
+      useOnboardingStore.getState().toggleAllergen('peanuts');
+      useOnboardingStore.getState().toggleDietaryPreference('vegan');
+    });
+
     mockUpdateUserProfile.mockResolvedValue(undefined);
-    mockFetchUserProfile.mockResolvedValue(mockProfile);
 
     const { result } = renderHook(() => useCompleteOnboarding());
 
@@ -97,14 +99,16 @@ describe('useCompleteOnboarding', () => {
       await result.current.completeOnboarding();
     });
 
-    expect(mockFetchUserProfile).toHaveBeenCalledWith('user-123');
-    expect(useAuthStore.getState().profile).toEqual(mockProfile);
+    const updatedProfile = useAuthStore.getState().profile;
+    expect(updatedProfile?.onboardingComplete).toBe(true);
+    expect(updatedProfile?.allergens).toEqual(['peanuts']);
+    expect(updatedProfile?.dietaryPreferences).toEqual(['vegan']);
   });
 
-  it('navigates to root after successful save', async () => {
+  it('navigates to home tab after successful save', async () => {
     useAuthStore.getState().setUser(mockUser as never);
+    useAuthStore.getState().setProfile(mockProfile);
     mockUpdateUserProfile.mockResolvedValue(undefined);
-    mockFetchUserProfile.mockResolvedValue(mockProfile);
 
     const { result } = renderHook(() => useCompleteOnboarding());
 
@@ -112,7 +116,7 @@ describe('useCompleteOnboarding', () => {
       await result.current.completeOnboarding();
     });
 
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/home');
   });
 
   it('sets error and clears loading on failure', async () => {
@@ -132,13 +136,13 @@ describe('useCompleteOnboarding', () => {
 
   it('clears error before attempting save', async () => {
     useAuthStore.getState().setUser(mockUser as never);
-    // Pre-set an error
+    useAuthStore.getState().setProfile(mockProfile);
+
     act(() => {
       useOnboardingStore.getState().setError('previous error');
     });
 
     mockUpdateUserProfile.mockResolvedValue(undefined);
-    mockFetchUserProfile.mockResolvedValue(mockProfile);
 
     const { result } = renderHook(() => useCompleteOnboarding());
 

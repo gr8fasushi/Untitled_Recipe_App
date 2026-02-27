@@ -64,9 +64,9 @@ it('redirects to onboarding when onboardingComplete is false', () => {
   expect(getByTestId('redirect--onboarding-welcome')).toBeTruthy();
 });
 
-it('redirects to tabs when user is set and onboardingComplete is true', () => {
+it('redirects to home tab when user is set and onboardingComplete is true', () => {
   mockUser = { uid: 'u1' };
   mockProfile = { onboardingComplete: true };
   const { getByTestId } = render(<Index />);
-  expect(getByTestId('redirect--tabs')).toBeTruthy();
+  expect(getByTestId('redirect--tabs-home')).toBeTruthy();
 });

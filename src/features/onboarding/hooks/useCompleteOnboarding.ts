@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { fetchUserProfile, updateUserProfile } from '@/features/auth/services/authService';
+import { updateUserProfile } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 
@@ -20,6 +20,7 @@ export function useCompleteOnboarding(): UseCompleteOnboardingReturn {
   const setError = useOnboardingStore((s) => s.setError);
 
   const user = useAuthStore((s) => s.user);
+  const profile = useAuthStore((s) => s.profile);
   const setProfile = useAuthStore((s) => s.setProfile);
 
   async function completeOnboarding(): Promise<void> {
@@ -38,11 +39,19 @@ export function useCompleteOnboarding(): UseCompleteOnboardingReturn {
         onboardingComplete: true,
       });
 
-      const freshProfile = await fetchUserProfile(user.uid);
-      setProfile(freshProfile);
+      // Update store directly — avoids a re-fetch that could return stale data
+      setProfile(
+        profile
+          ? {
+              ...profile,
+              allergens: selectedAllergens,
+              dietaryPreferences,
+              onboardingComplete: true,
+            }
+          : null
+      );
 
-      // index.tsx detects onboardingComplete:true and redirects to /(tabs)
-      router.replace('/');
+      router.replace('/(tabs)/home');
     } catch {
       setError('Failed to save your preferences. Please try again.');
     } finally {

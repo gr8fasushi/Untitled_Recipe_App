@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseVoiceInputReturn {
   isListening: boolean;
@@ -11,54 +10,78 @@ interface UseVoiceInputReturn {
   clearTranscript: () => void;
 }
 
+// expo-speech-recognition is a native module not available in Expo Go.
+// Load it lazily so the app doesn't crash when the native module is absent.
+function loadSpeechModule(): typeof import('expo-speech-recognition') | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-speech-recognition') as typeof import('expo-speech-recognition');
+  } catch {
+    return null;
+  }
+}
+
 export function useVoiceInput(): UseVoiceInputReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
 
+  // Hold a stable ref to the module so hooks below can use it.
+  const speechRef = useRef(loadSpeechModule());
+  const speech = speechRef.current;
+
   useEffect(() => {
+    if (!speech) return;
     try {
-      setIsAvailable(ExpoSpeechRecognitionModule.isRecognitionAvailable());
+      setIsAvailable(speech.ExpoSpeechRecognitionModule.isRecognitionAvailable());
     } catch {
       setIsAvailable(false);
     }
-  }, []);
+  }, [speech]);
 
-  useSpeechRecognitionEvent('result', (event) => {
+  // Conditionally subscribe to events only when the module is available.
+  const onResult = useCallback((event: { results: { transcript: string }[]; isFinal: boolean }) => {
     const text = event.results[0]?.transcript ?? '';
     setTranscript(text);
-    if (event.isFinal) {
-      setIsListening(false);
-    }
-  });
+    if (event.isFinal) setIsListening(false);
+  }, []);
 
-  useSpeechRecognitionEvent('error', (event) => {
-    const code = (event as { code?: string }).code;
-    // Ignore "no-speech" — not an error worth surfacing
-    if (code !== 'no-speech') {
+  const onError = useCallback((event: { code?: string }) => {
+    if (event.code !== 'no-speech') {
       setError('Voice recognition error. Please try again.');
     }
     setIsListening(false);
-  });
+  }, []);
+
+  useEffect(() => {
+    if (!speech) return;
+    const resultSub = speech.ExpoSpeechRecognitionModule.addListener('result', onResult);
+    const errorSub = speech.ExpoSpeechRecognitionModule.addListener('error', onError);
+    return () => {
+      resultSub.remove();
+      errorSub.remove();
+    };
+  }, [speech, onResult, onError]);
 
   const startListening = useCallback(async () => {
-    if (!isAvailable) return;
+    if (!isAvailable || !speech) return;
     setError(null);
     setTranscript('');
     try {
-      await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true });
+      await speech.ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      speech.ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true });
       setIsListening(true);
     } catch {
       setError('Microphone permission denied.');
     }
-  }, [isAvailable]);
+  }, [isAvailable, speech]);
 
   const stopListening = useCallback(() => {
-    ExpoSpeechRecognitionModule.stop();
+    if (!speech) return;
+    speech.ExpoSpeechRecognitionModule.stop();
     setIsListening(false);
-  }, []);
+  }, [speech]);
 
   const clearTranscript = useCallback(() => setTranscript(''), []);
 

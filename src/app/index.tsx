@@ -19,5 +19,5 @@ export default function Index(): React.JSX.Element {
     return <Redirect href="/(onboarding)/welcome" />;
   }
 
-  return <Redirect href="/(tabs)" />;
+  return <Redirect href="/(tabs)/home" />;
 }

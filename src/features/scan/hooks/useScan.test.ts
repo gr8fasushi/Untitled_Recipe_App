@@ -6,6 +6,8 @@ import { useScan } from './useScan';
 jest.mock('expo-image-picker', () => ({
   launchCameraAsync: jest.fn(),
   launchImageLibraryAsync: jest.fn(),
+  requestCameraPermissionsAsync: jest.fn(),
+  requestMediaLibraryPermissionsAsync: jest.fn(),
 }));
 
 jest.mock('@/features/scan/services/scanService', () => ({
@@ -29,6 +31,8 @@ jest.mock('expo-router', () => ({
 const ImagePicker = jest.requireMock('expo-image-picker') as {
   launchCameraAsync: jest.Mock;
   launchImageLibraryAsync: jest.Mock;
+  requestCameraPermissionsAsync: jest.Mock;
+  requestMediaLibraryPermissionsAsync: jest.Mock;
 };
 
 const { analyzePhoto } = jest.requireMock('@/features/scan/services/scanService') as {
@@ -75,6 +79,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   useScanStore.mockReturnValue(makeScanStore());
   usePantryStore.mockReturnValue({ addIngredient: mockAddIngredient });
+  // Default: permissions granted
+  ImagePicker.requestCameraPermissionsAsync.mockResolvedValue({ status: 'granted' });
+  ImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ status: 'granted' });
 });
 
 // --- Tests ---
@@ -169,6 +176,21 @@ describe('useScan', () => {
       expect(analyzePhoto).toHaveBeenCalledWith('abc123', 'image/jpeg');
     });
 
+    it('sets error when camera permission is denied', async () => {
+      ImagePicker.requestCameraPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
+      const storeState = makeScanStore();
+      useScanStore.mockReturnValue(storeState);
+      const { result } = renderHook(() => useScan());
+      await act(async () => {
+        await result.current.takePhoto();
+      });
+      expect(ImagePicker.launchCameraAsync).not.toHaveBeenCalled();
+      expect(storeState.setError).toHaveBeenCalledWith(
+        'Camera permission is required to take photos.'
+      );
+      expect(storeState.setStatus).toHaveBeenCalledWith('error');
+    });
+
     it('sets error state when analyzePhoto throws', async () => {
       ImagePicker.launchCameraAsync.mockResolvedValueOnce({
         canceled: false,
@@ -201,6 +223,21 @@ describe('useScan', () => {
         quality: 0.7,
         exif: false,
       });
+    });
+
+    it('sets error when media library permission is denied', async () => {
+      ImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
+      const storeState = makeScanStore();
+      useScanStore.mockReturnValue(storeState);
+      const { result } = renderHook(() => useScan());
+      await act(async () => {
+        await result.current.pickFromGallery();
+      });
+      expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled();
+      expect(storeState.setError).toHaveBeenCalledWith(
+        'Photo library permission is required to pick images.'
+      );
+      expect(storeState.setStatus).toHaveBeenCalledWith('error');
     });
 
     it('is a no-op when user cancels', async () => {

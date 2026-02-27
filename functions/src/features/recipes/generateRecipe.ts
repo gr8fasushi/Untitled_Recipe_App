@@ -14,7 +14,7 @@ const RecipeSchema = z.object({
       name: z.string(),
       amount: z.string(),
       unit: z.string(),
-      optional: z.boolean().default(false),
+      optional: z.boolean().nullish().transform(v => v ?? false),
     })
   ),
   instructions: z.array(
@@ -33,8 +33,8 @@ const RecipeSchema = z.object({
     sugar: z.coerce.number(),
     sodium: z.coerce.number(),
   }),
-  allergens: z.array(z.string()),
-  dietaryTags: z.array(z.string()),
+  allergens: z.array(z.string()).nullish().transform(v => v ?? []),
+  dietaryTags: z.array(z.string()).nullish().transform(v => v ?? []),
   prepTime: z.coerce.number(),
   cookTime: z.coerce.number(),
   servings: z.coerce.number(),
@@ -79,7 +79,7 @@ export const generateRecipe = onCall(
       throw new HttpsError('internal', 'Invalid JSON from AI model');
     }
 
-    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).min(1).max(5) });
+    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).length(5) });
     const validated = ResponseSchema.safeParse(parsed);
     if (!validated.success) {
       throw new HttpsError('internal', 'AI response did not match expected schema');

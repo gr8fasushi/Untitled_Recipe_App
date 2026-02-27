@@ -6,14 +6,19 @@ jest.mock('expo-speech-recognition', () => {
   const handlers: Record<string, ((...args: unknown[]) => void)[]> = {};
   return {
     ExpoSpeechRecognitionModule: {
-      isRecognitionAvailable: jest.fn(), // sync: returns boolean
-      requestPermissionsAsync: jest.fn(), // async
+      isRecognitionAvailable: jest.fn(),
+      requestPermissionsAsync: jest.fn(),
       start: jest.fn(),
       stop: jest.fn(),
-    },
-    useSpeechRecognitionEvent: (event: string, handler: (...args: unknown[]) => void) => {
-      if (!handlers[event]) handlers[event] = [];
-      handlers[event].push(handler);
+      addListener: jest.fn((event: string, handler: (...args: unknown[]) => void) => {
+        if (!handlers[event]) handlers[event] = [];
+        handlers[event].push(handler);
+        return {
+          remove: () => {
+            handlers[event] = (handlers[event] ?? []).filter((h) => h !== handler);
+          },
+        };
+      }),
     },
     __handlers: handlers,
   };
@@ -25,6 +30,7 @@ const SpeechRecognitionMock = jest.requireMock('expo-speech-recognition') as {
     requestPermissionsAsync: jest.Mock;
     start: jest.Mock;
     stop: jest.Mock;
+    addListener: jest.Mock;
   };
   __handlers: Record<string, ((...args: unknown[]) => void)[]>;
 };
@@ -40,29 +46,33 @@ beforeEach(() => {
   mockModule.requestPermissionsAsync.mockClear();
   mockModule.start.mockClear();
   mockModule.stop.mockClear();
+  mockModule.addListener.mockClear();
   Object.keys(SpeechRecognitionMock.__handlers).forEach(
     (k) => delete SpeechRecognitionMock.__handlers[k]
   );
 });
 
 describe('useVoiceInput', () => {
-  it('sets isAvailable=true when recognition is available', () => {
+  it('sets isAvailable=true when recognition is available', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
     expect(result.current.isAvailable).toBe(true);
   });
 
-  it('sets isAvailable=false when recognition is not available', () => {
+  it('sets isAvailable=false when recognition is not available', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(false);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
     expect(result.current.isAvailable).toBe(false);
   });
 
-  it('sets isAvailable=false when availability check throws', () => {
+  it('sets isAvailable=false when availability check throws', async () => {
     mockModule.isRecognitionAvailable.mockImplementationOnce(() => {
       throw new Error('unavailable');
     });
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
     expect(result.current.isAvailable).toBe(false);
   });
 
@@ -70,6 +80,7 @@ describe('useVoiceInput', () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     mockModule.requestPermissionsAsync.mockResolvedValueOnce({ granted: true });
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     await act(async () => {
       await result.current.startListening();
@@ -82,6 +93,7 @@ describe('useVoiceInput', () => {
   it('does nothing on startListening when not available', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(false);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     await act(async () => {
       await result.current.startListening();
@@ -94,6 +106,7 @@ describe('useVoiceInput', () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     mockModule.requestPermissionsAsync.mockResolvedValueOnce({ granted: true });
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     await act(async () => {
       await result.current.startListening();
@@ -106,9 +119,10 @@ describe('useVoiceInput', () => {
     expect(result.current.isListening).toBe(false);
   });
 
-  it('updates transcript on result event', () => {
+  it('updates transcript on result event', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     act(() => {
       triggerEvent('result', { results: [{ transcript: 'hello world' }], isFinal: false });
@@ -121,6 +135,7 @@ describe('useVoiceInput', () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     mockModule.requestPermissionsAsync.mockResolvedValueOnce({ granted: true });
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     await act(async () => {
       await result.current.startListening();
@@ -134,9 +149,10 @@ describe('useVoiceInput', () => {
     expect(result.current.transcript).toBe('done');
   });
 
-  it('sets error on recognition error (non-no-speech)', () => {
+  it('sets error on recognition error (non-no-speech)', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     act(() => {
       triggerEvent('error', { code: 'network' });
@@ -146,9 +162,10 @@ describe('useVoiceInput', () => {
     expect(result.current.isListening).toBe(false);
   });
 
-  it('does not set error for no-speech code', () => {
+  it('does not set error for no-speech code', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     act(() => {
       triggerEvent('error', { code: 'no-speech' });
@@ -157,9 +174,10 @@ describe('useVoiceInput', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('clears transcript on clearTranscript', () => {
+  it('clears transcript on clearTranscript', async () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     act(() => {
       triggerEvent('result', { results: [{ transcript: 'hello' }], isFinal: false });
@@ -175,6 +193,7 @@ describe('useVoiceInput', () => {
     mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
     mockModule.requestPermissionsAsync.mockRejectedValueOnce(new Error('denied'));
     const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
 
     await act(async () => {
       await result.current.startListening();

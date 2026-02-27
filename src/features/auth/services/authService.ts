@@ -13,7 +13,7 @@ import {
   type UserCredential,
   type Unsubscribe,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/shared/services/firebase/firebase.config';
 import type { UserProfile } from '@/shared/types';
 
@@ -113,7 +113,7 @@ export async function updateUserProfile(
   uid: string,
   data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>
 ): Promise<void> {
-  await updateDoc(doc(db, 'users', uid), data);
+  await setDoc(doc(db, 'users', uid), data, { merge: true });
 }
 
 export async function deleteUserAccount(uid: string): Promise<void> {

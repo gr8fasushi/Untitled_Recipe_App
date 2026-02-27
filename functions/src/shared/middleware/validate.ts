@@ -12,8 +12,8 @@ export const GenerateRecipeInputSchema = z.object({
   ingredients: z.array(IngredientSchema).min(1).max(30),
   allergens: z.array(z.string()).max(9),
   dietaryPreferences: z.array(z.string()).max(10),
-  cuisines: z.array(z.string().max(50)).max(14).optional(),
-  strictIngredients: z.boolean().optional(),
+  cuisines: z.array(z.string().max(50)).max(14).nullable().optional(),
+  strictIngredients: z.boolean().nullable().optional(),
 });
 
 const RecipeIngredientSnapshotSchema = z.object({
