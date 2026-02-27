@@ -1,18 +1,73 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 11 (Delete Account) — COMPLETE. 658 tests, 71 suites, all passing.
+> Last updated: Feature 13 (Vercel web deploy) — COMPLETE. 715 tests, 75 suites, all passing.
+> Current branch: `feature/web-deploy`
 
 ---
 
 ## Branch History
 
-- `main` — includes features 1–10 (merged)
-- `feature/delete-account` — **current** — Feature 11 COMPLETE, PR ready to merge
+- `main` — features 1–12 merged (auth, onboarding, pantry, recipes, chat, scan, saved-recipes, profile, delete-account, privacy-policy, UX overhaul)
+- `feature/web-deploy` — **current** — Feature 13 complete (vercel.json, README, CF null fix + logging)
+
+---
+
+## App Routes Overview (`src/app/`)
+
+```
+src/app/
+├── _layout.tsx          — root layout, auth listener, SplashScreen gate, Nunito font load
+├── index.tsx            — three-way redirect: no user → /(auth) | no onboarding → /(onboarding) | → /(tabs)
+├── chat.tsx             — AI chat screen (push-nav from recipe-detail, not a tab)
+├── (auth)/
+│   ├── _layout.tsx
+│   ├── sign-in.tsx
+│   ├── sign-up.tsx
+│   └── forgot-password.tsx
+├── (onboarding)/
+│   ├── _layout.tsx
+│   ├── welcome.tsx
+│   ├── disclaimer.tsx
+│   ├── allergens.tsx
+│   └── dietary.tsx
+└── (tabs)/
+    ├── _layout.tsx          — tab bar config (4 visible: Home, Pantry, Saved, Profile)
+    ├── home.tsx             — 2×2 intent tiles, time-aware greeting
+    ├── index.tsx            — pantry screen (ingredient selection, save, scan buttons)
+    ├── recipes.tsx          — recipe generation (cuisine pills, strict toggle, generate CTA)
+    ├── recipe-detail.tsx    — hidden route; full recipe view
+    ├── recipe-search.tsx    — Firestore prefix search + AI fallback
+    ├── saved.tsx            — saved recipes list (filter pills by rating)
+    ├── saved-recipe-detail.tsx — hidden route
+    ├── community.tsx        — 6th tab (community shared recipes)
+    ├── community-recipe-detail.tsx — hidden route
+    ├── profile.tsx          — profile/settings screen
+    ├── delete-account.tsx   — hidden route; account deletion flow
+    └── privacy-policy.tsx   — hidden route; inline privacy policy (9 sections)
+```
 
 ---
 
 ## src/shared/components/ui/
+
+### Button.tsx
+
+```typescript
+interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  testID?: string;
+}
+export function Button(props: ButtonProps): React.JSX.Element;
+```
+
+- Canonical pattern for all buttons; `testID` required on Pressable + label
+- `accessibilityState={{ disabled: !!disabled }}` — use this in tests (not `element.props.disabled`)
 
 ### Input.tsx
 
@@ -35,13 +90,138 @@ interface InputProps {
 export function Input(props: InputProps): React.JSX.Element;
 ```
 
-- NativeWind styled; red border on `error` prop; error testID = `${testID}-error`
+- Red border on `error` prop; error testID = `${testID}-error`
 
 ### index.ts exports
 
 ```typescript
 export { Button } from './Button';
 export { Input } from './Input';
+```
+
+---
+
+## src/shared/services/firebase/
+
+### firebase.config.ts
+
+```typescript
+export const firebaseApp: FirebaseApp;
+export const auth: Auth;
+export const db: Firestore;
+export const functions: Functions; // region: 'us-central1'
+
+// Env: process.env['EXPO_PUBLIC_FIREBASE_ENV'] — defaults to 'local'
+// local:      demo-recipeapp (emulators: auth:9099, firestore:8080, functions:5001)
+// staging:    recipeapp-staging-e2d31
+// production: recipeapp-prod-aa25c
+```
+
+### functions.service.ts
+
+```typescript
+interface GenerateRecipeInput {
+  ingredients: Ingredient[];
+  allergens: string[];
+  dietaryPreferences: string[];
+  // NOTE: cuisines and strictIngredients are also sent at runtime (type is stale)
+}
+
+type RecipeSnapshot = Pick<
+  Recipe,
+  'title' | 'description' | 'ingredients' | 'instructions' | 'allergens'
+>;
+
+interface ChatInput {
+  message: string;
+  recipeSnapshot?: RecipeSnapshot;
+  history: Pick<ChatMessage, 'role' | 'content'>[];
+}
+
+interface AnalyzePhotoInput {
+  imageBase64: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+}
+
+interface AnalyzePhotoOutput {
+  ingredients: Ingredient[];
+}
+
+export const generateRecipeFn = httpsCallable<GenerateRecipeInput, { recipes: Recipe[] }>(
+  functions,
+  'generateRecipe'
+);
+export const chatFn = httpsCallable<ChatInput, { reply: string }>(functions, 'chatWithAssistant');
+export const analyzePhotoFn = httpsCallable<AnalyzePhotoInput, AnalyzePhotoOutput>(
+  functions,
+  'analyzeIngredientPhoto'
+);
+```
+
+---
+
+## src/shared/types/index.ts
+
+```typescript
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string | null;
+  allergens: string[];
+  dietaryPreferences: string[];
+  onboardingComplete: boolean;
+  createdAt: Date;
+}
+
+export interface Ingredient {
+  id: string;
+  name: string;
+  emoji?: string;
+  category?: string;
+}
+
+export interface Recipe {
+  id: string;
+  title: string;
+  description: string;
+  ingredients: RecipeIngredient[];
+  instructions: RecipeStep[];
+  nutrition: NutritionInfo;
+  allergens: string[];
+  dietaryTags: string[];
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  generatedAt: string;
+}
+
+export interface RecipeIngredient {
+  name: string;
+  amount: string;
+  unit: string;
+  optional: boolean;
+}
+export interface RecipeStep {
+  stepNumber: number;
+  instruction: string;
+  duration?: number;
+}
+export interface NutritionInfo {
+  calories: number;
+  protein: number;
+  carbohydrates: number;
+  fat: number;
+  fiber: number;
+  sugar: number;
+  sodium: number;
+}
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
 ```
 
 ---
@@ -63,157 +243,90 @@ export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 
 ```typescript
 export function getAuthErrorMessage(code: string): string;
-export async function signInWithEmail(email, password): Promise<UserCredential>;
-export async function signUpWithEmail(email, password, displayName): Promise<UserCredential>;
-// sequence: createUserWithEmailAndPassword → updateProfile → createUserProfile(uid, {...})
-export async function sendPasswordReset(email): Promise<void>;
+export async function signInWithEmail(email: string, password: string): Promise<UserCredential>;
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  displayName: string
+): Promise<UserCredential>;
+export async function sendPasswordReset(email: string): Promise<void>;
 export async function signOutUser(): Promise<void>;
-export async function signInWithGoogleCredential(idToken): Promise<UserCredential>;
-export async function signInWithAppleCredential(identityToken, rawNonce): Promise<UserCredential>;
-export async function createUserProfile(uid, data: Omit<UserProfile, 'uid'>): Promise<void>;
-export async function fetchUserProfile(uid): Promise<UserProfile | null>;
-export async function updateUserProfile(uid, data: Partial<UserProfile>): Promise<void>;
-export async function deleteUserAccount(uid): Promise<void>; // deleteDoc THEN deleteUser
-export function subscribeToAuthState(callback: (user: User | null) => Promise<void>): Unsubscribe;
+export async function signInWithGoogleCredential(idToken: string): Promise<UserCredential>;
+export async function signInWithAppleCredential(
+  identityToken: string,
+  rawNonce: string
+): Promise<UserCredential>;
+export async function createUserProfile(uid: string, data: Omit<UserProfile, 'uid'>): Promise<void>;
+export async function fetchUserProfile(uid: string): Promise<UserProfile | null>;
+// ⚠️ Returns snap.data() as UserProfile — runtime values may differ from TS type
+export async function updateUserProfile(
+  uid: string,
+  data: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>
+): Promise<void>;
+export async function deleteUserAccount(uid: string): Promise<void>; // deletes Firestore doc then Auth user
+export function subscribeToAuthState(callback: (user: User | null) => void): Unsubscribe;
 ```
 
 ### store/authStore.ts
 
 ```typescript
 interface AuthState {
-  isInitialized: boolean;    // false until first onAuthStateChanged fires
+  isInitialized: boolean;
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
-  setInitialized: (v: boolean) => void;
-  setUser: (u: User | null) => void;
-  setProfile: (p: UserProfile | null) => void;
-  setLoading: (v: boolean) => void;
-  setError: (e: string | null) => void;
+  setInitialized: (initialized: boolean) => void;
+  setUser: (user: User | null) => void;
+  setProfile: (profile: UserProfile | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   reset: () => void;
 }
-export const useAuthStore = create<AuthState>(...)
+export const useAuthStore: Zustand store<AuthState>;
 ```
 
 ### hooks/useGoogleSignIn.ts
 
 ```typescript
 interface UseGoogleSignInReturn {
-  signIn: () => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
-  isAvailable: boolean; // false when EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID unset
+  signInWithGoogle: () => Promise<void>;
+  isAvailable: boolean;
 }
 export function useGoogleSignIn(): UseGoogleSignInReturn;
+// Fetches or creates UserProfile on first Google sign-in
 ```
-
-- Uses `Google.useAuthRequest` (hook level — cannot be moved to service)
-- `WebBrowser.maybeCompleteAuthSession()` called at module level
-- Platform redirectUri: `preferLocalhost` for web, `scheme: 'recipeapp'` for native
 
 ### hooks/useAppleSignIn.ts
 
 ```typescript
 interface UseAppleSignInReturn {
-  signIn: () => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
-  isAvailable: boolean; // Platform.OS === 'ios' && AppleAuthentication.isAvailableAsync()
+  signInWithApple: () => Promise<void>;
+  isAvailable: boolean;
 }
 export function useAppleSignIn(): UseAppleSignInReturn;
+// iOS only; uses Crypto nonce; fetches or creates UserProfile on first Apple sign-in
 ```
 
-- Raw nonce: `Crypto.getRandomValues` → hex → SHA256 hash passed to Apple
-- Catches `ERR_REQUEST_CANCELED` silently
-
-### components/SocialSignInButton.tsx
+### index.ts exports
 
 ```typescript
-interface SocialSignInButtonProps {
-  provider: 'google' | 'apple';
-  onPress: () => void;
-  isLoading?: boolean;
-  testID?: string;
-}
-export function SocialSignInButton(props): React.JSX.Element | null;
+export { useAuthStore } from './store/authStore';
+export { useGoogleSignIn } from './hooks/useGoogleSignIn';
+export { useAppleSignIn } from './hooks/useAppleSignIn';
+export {
+  getAuthErrorMessage,
+  signInWithEmail,
+  signUpWithEmail,
+  sendPasswordReset,
+  signOutUser,
+  fetchUserProfile,
+  updateUserProfile,
+  deleteUserAccount,
+  createUserProfile,
+  subscribeToAuthState,
+} from './services/authService';
 ```
-
-- `provider='apple'`: renders `AppleAuthenticationButton` (iOS only, returns null on Android/web)
-- `provider='google'`: custom Pressable + AntDesign "google" icon
-
-### components/SignInForm.tsx
-
-```typescript
-interface SignInFormProps {
-  onSuccess: () => void;
-}
-export function SignInForm({ onSuccess }: SignInFormProps): React.JSX.Element;
-```
-
-testIDs: `input-email`, `input-password`, `btn-sign-in`, `link-forgot-password`, `link-sign-up`, `sign-in-general-error`
-
-### components/SignUpForm.tsx
-
-```typescript
-interface SignUpFormProps {
-  onSuccess: () => void;
-}
-export function SignUpForm({ onSuccess }: SignUpFormProps): React.JSX.Element;
-```
-
-testIDs: `input-display-name`, `input-email`, `input-password`, `input-confirm-password`, `btn-sign-up`, `link-sign-in`, `sign-up-general-error`
-
-### components/ForgotPasswordForm.tsx
-
-```typescript
-export function ForgotPasswordForm(): React.JSX.Element;
-```
-
-- After success: shows in-place confirmation (no navigation)
-  testIDs: `input-email`, `btn-send-reset`, `btn-back`, `forgot-password-success`, `forgot-password-error`
-
-### index.ts (barrel)
-
-```typescript
-export * from './components/SignInForm';
-export * from './components/SignUpForm';
-export * from './components/ForgotPasswordForm';
-export * from './components/SocialSignInButton';
-export * from './hooks/useGoogleSignIn';
-export * from './hooks/useAppleSignIn';
-export * from './services/authService';
-export * from './store/authStore';
-export * from './types';
-```
-
----
-
-## src/app/ — Route Files
-
-### \_layout.tsx (modified)
-
-- Holds SplashScreen until `loaded && isInitialized`
-- `subscribeToAuthState` listener: sets user → fetches profile → `setInitialized(true)`
-- Returns `null` until both fonts and auth state ready (prevents flash)
-
-### index.tsx (three-way redirect)
-
-```typescript
-if (!isInitialized) return <View />;
-if (!user) return <Redirect href="/(auth)/sign-in" />;
-if (!profile?.onboardingComplete) return <Redirect href="/(onboarding)/welcome" />;
-return <Redirect href="/(tabs)" />;
-```
-
-### (auth)/sign-in.tsx
-
-- Renders `SignInForm`, `SocialSignInButton` (Google + Apple)
-- `onSuccess` → `router.replace('/')`
-
-### (auth)/sign-up.tsx / forgot-password.tsx
-
-- Thin wrappers rendering their respective form components
 
 ---
 
@@ -222,8 +335,8 @@ return <Redirect href="/(tabs)" />;
 ### types/index.ts
 
 ```typescript
-export const OnboardingPreferencesSchema; // z.object({ allergens: string[], dietaryPreferences: string[] })
-export type OnboardingPreferences = z.infer<typeof OnboardingPreferencesSchema>;
+export const OnboardingSchema; // z.object({ allergens: z.array(z.string()), dietaryPreferences: z.array(z.string()) })
+export type OnboardingInput = z.infer<typeof OnboardingSchema>;
 ```
 
 ### store/onboardingStore.ts
@@ -231,16 +344,12 @@ export type OnboardingPreferences = z.infer<typeof OnboardingPreferencesSchema>;
 ```typescript
 interface OnboardingState {
   selectedAllergens: string[];
-  dietaryPreferences: string[];
-  isLoading: boolean;
-  error: string | null;
-  toggleAllergen: (id: string) => void;         // add if absent, remove if present
+  selectedDietaryPreferences: string[];
+  toggleAllergen: (id: string) => void;
   toggleDietaryPreference: (id: string) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
   reset: () => void;
 }
-export const useOnboardingStore = create<OnboardingState>(...)
+export const useOnboardingStore: Zustand store<OnboardingState>;
 ```
 
 ### hooks/useCompleteOnboarding.ts
@@ -252,134 +361,37 @@ interface UseCompleteOnboardingReturn {
   error: string | null;
 }
 export function useCompleteOnboarding(): UseCompleteOnboardingReturn;
+// Saves allergens + dietaryPreferences + onboardingComplete=true to Firestore, updates authStore profile
 ```
 
-- Reads `selectedAllergens` + `dietaryPreferences` from onboardingStore
-- Reads `user.uid` from authStore
-- Calls `updateUserProfile(uid, { allergens, dietaryPreferences, onboardingComplete: true })`
-- Fetches fresh profile → `setProfile()` on authStore → `router.replace('/')`
-
-### components/AllergenCard.tsx
+### components
 
 ```typescript
-interface AllergenCardProps {
-  allergen: Allergen; // from @/constants/allergens
-  isSelected: boolean;
+export function AllergenCard(props: {
+  allergen: Allergen;
+  selected: boolean;
   onToggle: () => void;
   testID?: string;
-}
-export function AllergenCard(props): React.JSX.Element;
-```
-
-### components/DietaryPreferenceCard.tsx
-
-```typescript
-interface DietaryPreferenceCardProps {
-  preference: { id: string; name: string; icon: string };
-  isSelected: boolean;
+}): React.JSX.Element;
+export function DietaryPreferenceCard(props: {
+  preference: DietaryPreference;
+  selected: boolean;
   onToggle: () => void;
   testID?: string;
-}
-export function DietaryPreferenceCard(props): React.JSX.Element;
+}): React.JSX.Element;
+export function DisclaimerCard(props: { testID?: string }): React.JSX.Element;
+// DisclaimerCard: allergen disclaimer — shown on onboarding + recipe screens
 ```
 
-### components/DisclaimerCard.tsx
+### index.ts exports
 
 ```typescript
-export function DisclaimerCard(): React.JSX.Element;
-// No props — static App Store allergen disclaimer content
-// testID: 'disclaimer-card'
-```
-
-### index.ts (barrel)
-
-```typescript
-export { AllergenCard, DietaryPreferenceCard, DisclaimerCard } from './components/*';
-export { useCompleteOnboarding } from './hooks/useCompleteOnboarding';
+export { AllergenCard } from './components/AllergenCard';
+export { DietaryPreferenceCard } from './components/DietaryPreferenceCard';
+export { DisclaimerCard } from './components/DisclaimerCard';
 export { useOnboardingStore } from './store/onboardingStore';
-export { OnboardingPreferencesSchema } from './types';
-export type { OnboardingPreferences } from './types';
+export { useCompleteOnboarding } from './hooks/useCompleteOnboarding';
 ```
-
----
-
-## src/app/(onboarding)/ — Onboarding Screens
-
-Flow: `welcome → disclaimer → allergens → dietary → router.replace('/') → index.tsx → /(tabs)`
-
-| Screen           | testIDs                                                                                           | Navigates to                 |
-| ---------------- | ------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `welcome.tsx`    | `btn-get-started`                                                                                 | `/(onboarding)/disclaimer`   |
-| `disclaimer.tsx` | `btn-i-understand`, `progress-indicator`                                                          | `/(onboarding)/allergens`    |
-| `allergens.tsx`  | `card-allergen-{id}`, `btn-continue-allergens`, `btn-none-apply`, `progress-indicator`            | `/(onboarding)/dietary`      |
-| `dietary.tsx`    | `card-dietary-{id}`, `btn-finish-setup`, `dietary-loading`, `dietary-error`, `progress-indicator` | calls `completeOnboarding()` |
-
-`_layout.tsx`: `gestureEnabled: false` on `welcome` (no back swipe to auth screens).
-
----
-
-## firestore.rules (deployed)
-
-```
-match /users/{uid} {
-  allow read:   if request.auth.uid == uid;
-  allow create: if request.auth.uid == uid && validateUserProfile(request.resource.data);
-  allow update: if request.auth.uid == uid
-                  && request.resource.data.uid == resource.data.uid
-                  && request.resource.data.createdAt == resource.data.createdAt
-                  && validateUserProfile(request.resource.data);
-  allow delete: if request.auth.uid == uid;
-}
-```
-
----
-
-## eslint.config.js — Key Overrides
-
-All resolver-dependent `import/*` rules disabled (resolver crashes on `@/` aliases):
-`import/no-unresolved`, `import/namespace`, `import/named`, `import/default`,
-`import/export`, `import/no-named-as-default`, `import/no-named-as-default-member`,
-`import/no-duplicates` — all `'off'`.
-
----
-
-## Test Coverage (Feature 2)
-
-| File                        | Tests                                        |
-| --------------------------- | -------------------------------------------- |
-| Input.test.tsx              | renders, label, error state, secureTextEntry |
-| authService.test.ts         | all 11 exports including error mapping       |
-| authStore.test.ts           | all actions, reset, loading states           |
-| useGoogleSignIn.test.ts     | success, error, unavailable, cancel          |
-| useAppleSignIn.test.ts      | success, cancel, error, iOS-only guard       |
-| SocialSignInButton.test.tsx | google/apple render, loading, iOS guard      |
-| SignInForm.test.tsx         | validation, submit, error display, links     |
-| SignUpForm.test.tsx         | validation, password match, submit           |
-| ForgotPasswordForm.test.tsx | submit, success state, back button           |
-| sign-in.test.tsx            | form + socials render, success redirect      |
-| sign-up.test.tsx            | form render, success redirect                |
-| forgot-password.test.tsx    | form render                                  |
-| index.test.tsx              | 3-way redirect logic                         |
-| \_layout.test.tsx           | auth listener, profile fetch, SplashScreen   |
-
-**Feature 2 total: 120 tests, 16 suites**
-
-### Feature 3: Onboarding (added)
-
-| File                           | Tests                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| onboardingStore.test.ts        | toggle add/remove, duplicate guard, setLoading, setError, reset           |
-| AllergenCard.test.tsx          | render, press, checkmark, accessibility                                   |
-| DietaryPreferenceCard.test.tsx | render, press, checkmark, accessibility                                   |
-| DisclaimerCard.test.tsx        | renders, heading, medical disclaimer                                      |
-| useCompleteOnboarding.test.ts  | no user guard, updateUserProfile call, profile refresh, navigation, error |
-| welcome.test.tsx               | render, app name, tagline, navigation                                     |
-| disclaimer.test.tsx            | render, disclaimer card, progress, navigation                             |
-| allergens.test.tsx             | all 9 cards, toggle, clear-all, navigation                                |
-| dietary.test.tsx               | all 9 cards, finish button, loading/error states                          |
-
-**Feature 3 total: 62 new tests**
-**Grand total: 182 tests, 25 suites — all passing**
 
 ---
 
@@ -388,9 +400,10 @@ All resolver-dependent `import/*` rules disabled (resolver crashes on `@/` alias
 ### types/index.ts
 
 ```typescript
-export const IngredientSchema: z.ZodObject<...>;  // { id, name, emoji?, category? }
-export const PantrySchema: z.ZodObject<...>;       // { ingredients: IngredientSchema[], updatedAt: string }
+export const IngredientSchema: z.ZodObject<{ id, name, emoji?, category? }>;
+export const PantrySchema: z.ZodObject<{ updatedAt, items: z.array(IngredientSchema) }>;
 export type PantryItem = z.infer<typeof IngredientSchema>;
+  // { id: string; name: string; emoji?: string; category?: string }
 export type Pantry = z.infer<typeof PantrySchema>;
 ```
 
@@ -401,123 +414,68 @@ interface PantryState {
   selectedIngredients: PantryItem[];
   isLoading: boolean;
   error: string | null;
-  addIngredient: (ingredient: PantryItem) => void; // no-op if id already present
+  addIngredient: (ingredient: PantryItem) => void;  // de-dupes by .id
   removeIngredient: (id: string) => void;
   clearPantry: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
 }
-export const usePantryStore: StoreApi<PantryState>;
+export const usePantryStore: Zustand store<PantryState>;
 ```
 
 ### services/pantryService.ts
 
 ```typescript
-// Firestore path: users/{uid}/pantry/items
 export async function savePantry(uid: string, ingredients: PantryItem[]): Promise<void>;
+// Saves to users/{uid}/pantry/items with serverTimestamp
 export async function loadPantry(uid: string): Promise<PantryItem[]>;
-// loadPantry returns [] if doc missing or Zod validation fails
+// Returns [] if doc doesn't exist or fails Zod validation
+export async function cacheIngredient(item: PantryItem): Promise<void>;
+// Stores in ingredients/{id} collection for USDA cache sharing
 ```
 
-### components/IngredientChip.tsx
+### components
 
 ```typescript
-interface IngredientChipProps {
+export function IngredientChip(props: {
   ingredient: PantryItem;
   onRemove: () => void;
   testID?: string;
-}
-export function IngredientChip(props: IngredientChipProps): React.JSX.Element;
+}): React.JSX.Element;
+export function IngredientSearch(props: {
+  onAdd: (item: PantryItem) => void;
+  addedIngredients: PantryItem[];
+  testID?: string;
+}): React.JSX.Element;
+// IngredientSearch: real-time search with USDA API + common ingredients fallback. De-dupes against addedIngredients.
 ```
 
-- Rounded chip: emoji + name + × remove button
-- Remove button testID: `${testID ?? 'ingredient-chip'}-remove`
-- `accessibilityLabel`: `Remove ${ingredient.name}`
-
-### components/IngredientSearch.tsx
-
-```typescript
-export function IngredientSearch(): React.JSX.Element;
-// No props — reads usePantryStore() and calls searchIngredients(query)
-```
-
-- Search input testID: `ingredient-search-input`
-- Each result row testID: `ingredient-row-${item.id}`
-- Check indicator testID: `ingredient-row-${item.id}-check` (shown when already added)
-- Empty state testID: `ingredient-search-empty`
-- Disabled (no-op press) when ingredient already in selectedIngredients
-
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
 export { IngredientChip } from './components/IngredientChip';
 export { IngredientSearch } from './components/IngredientSearch';
 export { usePantryStore } from './store/pantryStore';
-export { savePantry, loadPantry } from './services/pantryService';
+export { savePantry, loadPantry, cacheIngredient } from './services/pantryService';
 export { IngredientSchema, PantrySchema } from './types';
 export type { PantryItem, Pantry } from './types';
 ```
 
 ---
 
-## src/app/(tabs)/index.tsx — Pantry Screen
-
-testIDs: `pantry-screen`, `btn-save-pantry`, `pantry-error`, `pantry-loading`, `pantry-chips`, `pantry-empty`, `chip-${ingredient.id}`
-
-- Loads pantry from Firestore on mount (`loadPantry`)
-- Saves on "Save" button press (`savePantry`)
-- Shows `IngredientChip` for each selected ingredient (horizontal scroll)
-- Shows `IngredientSearch` below chips
-- Shows loading indicator only during initial load with no ingredients
-
----
-
-## src/constants/ingredients.ts
-
-```typescript
-export const INGREDIENT_CATEGORIES: readonly string[];  // 9 categories
-export type IngredientCategory = ...;
-export const INGREDIENTS: PantryItem[];                 // ~100 items
-export function getIngredientsByCategory(category: IngredientCategory): PantryItem[];
-export function searchIngredients(query: string): PantryItem[];  // empty query returns all
-```
-
----
-
-## firestore.rules (pantry subcollection added)
-
-```
-match /users/{uid} {
-  // ... existing user rules ...
-
-  match /pantry/{doc} {
-    allow read, write: if request.auth != null && request.auth.uid == uid;
-  }
-}
-```
-
----
-
-## Test Coverage (Feature 4 additions)
-
-| File                      | Tests                                                                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| IngredientChip.test.tsx   | render, emoji, no-emoji, onRemove, accessibility, default testID                                                                                  |
-| IngredientSearch.test.tsx | input, rows, search query, add, already-added disabled, check shown, empty state                                                                  |
-| (tabs)/index.test.tsx     | render, save btn, empty state, load on mount, clearPantry+addIngredient, error banner, loading, chips, search, savePantry, load error, save error |
-
-**Feature 4 total: 26 new tests**
-**Grand total: 230 tests, 30 suites — all passing**
-
----
-
-## src/features/recipes/ — Feature 5 COMPLETE ✅
+## src/features/recipes/
 
 ### types/index.ts
 
 ```typescript
-export const GenerateRecipeInputSchema; // z.object({ ingredients (min 1), allergens, dietaryPreferences })
+export const GenerateRecipeInputSchema: z.ZodObject<{
+  ingredients: PantryItem[] (min 1),
+  allergens: string[],
+  dietaryPreferences: string[],
+  cuisines?: string[],
+  strictIngredients?: boolean,
+}>;
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 ```
 
@@ -525,15 +483,22 @@ export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 
 ```typescript
 interface RecipesState {
+  recipes: Recipe[];
   currentRecipe: Recipe | null;
   isLoading: boolean;
   error: string | null;
-  setRecipe: (recipe: Recipe | null) => void;
+  selectedCuisines: string[];       // NEW: multi-select cuisine filter
+  strictIngredients: boolean;       // NEW: only use exact pantry items
+  setRecipes: (recipes: Recipe[]) => void;
+  setCurrentRecipe: (recipe: Recipe | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  toggleCuisine: (id: string) => void;
+  clearCuisines: () => void;
+  setStrictIngredients: (value: boolean) => void;
   reset: () => void;
 }
-export const useRecipesStore = create<RecipesState>(...)
+export const useRecipesStore: Zustand store<RecipesState>;
 ```
 
 ### hooks/useGenerateRecipe.ts
@@ -543,92 +508,50 @@ interface UseGenerateRecipeReturn {
   generate: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
-  recipe: Recipe | null;
+  recipes: Recipe[];
 }
 export function useGenerateRecipe(): UseGenerateRecipeReturn;
+// Reads profile.allergens/dietaryPreferences (defaults to [] if null)
+// Sends selectedCuisines (omitted if empty), strictIngredients (omitted if false)
+// Client-side Zod parse before calling Cloud Function
 ```
 
-- Reads `selectedIngredients` from `usePantryStore((s) => s.selectedIngredients)`
-- Reads `profile` from `useAuthStore((s) => s.profile)`
-- Validates with `GenerateRecipeInputSchema` before calling Cloud Function
-- Calls `generateRecipeFn`; sets recipe/loading/error on `useRecipesStore`
-
-### components/AIDisclaimer.tsx
+### components
 
 ```typescript
 export function AIDisclaimer(): React.JSX.Element;
-// testID: 'ai-disclaimer'
-// Static — no props. App Store required disclaimer on every recipe screen.
+// Amber banner: "AI-Generated Recipe — verify allergens, consult healthcare provider"
+
+export function RecipeSummaryCard(props: {
+  recipe: Recipe;
+  onViewFull: () => void;
+  testID?: string;
+}): React.JSX.Element;
+// Title, description, allergen warnings, timing (prep+cook), servings, difficulty badge
+
+export function MeatTemperatureCard(props: {
+  ingredients: RecipeIngredient[];
+  testID?: string;
+}): React.JSX.Element | null;
+// Returns null if no meat/seafood detected. Shows USDA safe internal temps (°F / °C) with optional rest time.
+// Detects: chicken, turkey, pork, beef, lamb, veal, fish, shrimp, crab, lobster, etc.
 ```
 
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
 export { AIDisclaimer } from './components/AIDisclaimer';
+export { RecipeSummaryCard } from './components/RecipeSummaryCard';
+export { MeatTemperatureCard } from './components/MeatTemperatureCard';
 export { useGenerateRecipe } from './hooks/useGenerateRecipe';
 export { useRecipesStore } from './store/recipesStore';
 export { GenerateRecipeInputSchema } from './types';
 export type { GenerateRecipeInput } from './types';
 ```
 
-### Test mock patterns (learned this feature)
-
-- Double-cast `(store as unknown as jest.Mock)` — single cast fails strict TSC for Zustand stores/Firebase callables.
-- `Pressable.props.disabled` is `undefined` in RNTL host element — use `accessibilityState.disabled` instead. Set it explicitly in Button mock: `accessibilityState={{ disabled: !!disabled }}`.
-- When button label matches heading text, `getByText` throws "multiple elements" — add testID to heading (`testID="recipes-heading"`) and use `getByTestId` in tests.
-
 ---
 
-## src/app/(tabs)/recipes.tsx — Recipe Generation Screen
-
-testIDs: `recipes-screen`, `recipes-heading`, `btn-generate-recipe`, `recipes-no-ingredients`,
-`recipes-loading`, `recipes-error`, `recipe-card`, `recipe-allergen-warning`, `recipe-title`,
-`recipe-description`, `recipe-ingredients-list`, `recipe-instructions-list`, `recipe-nutrition`,
-`btn-view-full-recipe`, `ai-disclaimer`
-
-- Shows ingredient count from pantry (`usePantryStore` selector)
-- Generate button disabled when no ingredients or loading
-- Recipe card (allergen warning, title, description, meta, ingredients, instructions, nutrition)
-- "View Full Recipe" button → `router.push('/(tabs)/recipe-detail')` (inside recipe-card, only when recipe loaded)
-- `AIDisclaimer` always shown at bottom (App Store compliance)
-
----
-
-## src/app/(tabs)/recipe-detail.tsx — Recipe Detail Screen (Feature 6) ✅
-
-testIDs: `recipe-detail-screen`, `btn-back`, `recipe-detail-empty`, `recipe-detail-content`,
-`detail-allergen-warning`, `detail-title`, `detail-description`, `detail-ingredients-list`,
-`detail-instructions-list`, `detail-nutrition`, `btn-save-recipe`, `btn-chat-with-ai`, `ai-disclaimer`
-
-- Reads `currentRecipe` from `useRecipesStore()` (NOT `useGenerateRecipe` — no side effects needed)
-- Back button: `router.back()`
-- Empty state when no recipe loaded
-- Full recipe display (same structure as inline recipe card in recipes.tsx)
-- `btn-save-recipe`: disabled stub (Feature 9)
-- `btn-chat-with-ai`: `router.push({ pathname: '/chat', params: { recipeId: recipe.id } })`
-- `AIDisclaimer` always shown
-
-### (tabs)/\_layout.tsx
-
-Added `<Tabs.Screen name="recipe-detail" options={{ href: null }} />` — hides from tab bar.
-
----
-
-## Test Coverage (Feature 5 + 6)
-
-| File                   | Tests                                                                                    |
-| ---------------------- | ---------------------------------------------------------------------------------------- |
-| AIDisclaimer.test.tsx  | renders, heading, disclaimer text, allergen verification, healthcare mention             |
-| recipes.test.tsx       | 26 tests — generation, disabled states, recipe card, View Full Recipe button, disclaimer |
-| recipe-detail.test.tsx | 21 tests — empty state, recipe content, action buttons, back nav, chat nav, disclaimer   |
-
-**Feature 5 total: 49 tests**
-**Feature 6 total: 24 new tests (21 recipe-detail + 3 additions to recipes)**
-**Grand total: 303 tests, 37 suites — all passing**
-
----
-
-## src/features/chat/ — Feature 7 COMPLETE ✅
+## src/features/chat/
 
 ### store/chatStore.ts
 
@@ -637,17 +560,17 @@ interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
-  recipeId: string | null;
-  isVoiceMuted: boolean;        // persisted to AsyncStorage key '@recipeapp/voice_muted'
+  recipeSnapshot: Recipe | null;   // full Recipe object for AI context
+  isVoiceMuted: boolean;           // persisted to AsyncStorage
   addMessage: (message: ChatMessage) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setRecipeId: (id: string | null) => void;
+  setRecipeSnapshot: (recipe: Recipe | null) => void;
   setVoiceMuted: (muted: boolean) => void;
-  loadVoiceMuted: () => Promise<void>;  // call on mount to restore persisted value
-  reset: () => void;  // clears messages/loading/error/recipeId — NOT isVoiceMuted
+  loadVoiceMuted: () => Promise<void>;
+  reset: () => void;
 }
-export const useChatStore = create<ChatState>(...)
+export const useChatStore: Zustand store<ChatState>;
 ```
 
 ### services/chatService.ts
@@ -656,9 +579,8 @@ export const useChatStore = create<ChatState>(...)
 export async function sendChatMessage(
   message: string,
   history: Pick<ChatMessage, 'role' | 'content'>[],
-  recipeId?: string
+  recipeSnapshot?: RecipeSnapshot
 ): Promise<string>;
-// Calls chatFn httpsCallable → returns reply string
 ```
 
 ### hooks/useChat.ts
@@ -671,11 +593,8 @@ interface UseChatReturn {
   sendMessage: (text: string) => Promise<void>;
 }
 export function useChat(): UseChatReturn;
+// Auto-generates message IDs + ISO timestamps; reads recipeSnapshot from chatStore
 ```
-
-- Trims whitespace; no-ops on empty string
-- Adds user message immediately, then fetches AI reply, then adds assistant message
-- Reads `recipeId` from store
 
 ### hooks/useVoiceInput.ts
 
@@ -684,114 +603,59 @@ interface UseVoiceInputReturn {
   isListening: boolean;
   transcript: string;
   error: string | null;
-  isAvailable: boolean; // false on web/emulator; true on device with STT
+  isAvailable: boolean;
   startListening: () => Promise<void>;
   stopListening: () => void;
   clearTranscript: () => void;
 }
 export function useVoiceInput(): UseVoiceInputReturn;
+// ⚠️ isRecognitionAvailable() is SYNCHRONOUS — do NOT use .then()
+// Lazy-loads expo-speech-recognition (not available in Expo Go)
 ```
-
-- `isRecognitionAvailable()` is **synchronous** (returns `boolean`, not `Promise`)
-- Uses `expo-speech-recognition` — `ExpoSpeechRecognitionModule`
-- Ignores `no-speech` error code; surfaces all others
 
 ### hooks/useTextToSpeech.ts
 
 ```typescript
 interface UseTextToSpeechReturn {
-  speak: (text: string) => void; // stops current speech, then speaks
+  speak: (text: string) => void;
   stop: () => void;
   isVoiceMuted: boolean;
-  toggleMute: () => void; // stops speech + persists via setVoiceMuted
+  toggleMute: () => void;
 }
 export function useTextToSpeech(): UseTextToSpeechReturn;
+// speak() is no-op when isVoiceMuted=true; toggleMute() stops playback when unmuting
 ```
 
-### components/ChatBubble.tsx
+### components
 
 ```typescript
-interface ChatBubbleProps {
-  message: ChatMessage;
-  testID?: string;
-}
-export function ChatBubble(props): React.JSX.Element;
-// testID defaults to `chat-bubble-${message.id}`; text testID: `${testID}-text`
-// User messages: self-end, primary-600 bg, "You" label
-// Assistant messages: self-start, gray-100 bg, "AI Chef" label
-```
-
-### components/ChatInput.tsx
-
-```typescript
-interface ChatInputProps {
+export function ChatBubble(props: { message: ChatMessage; testID?: string }): React.JSX.Element;
+export function ChatInput(props: {
   onSend: (text: string) => void;
   isLoading: boolean;
-  testID?: string; // defaults to 'chat-input'
-}
-export function ChatInput(props): React.JSX.Element;
-// testIDs: 'chat-text-input', 'btn-send-message', 'btn-voice' (if voice available)
-// Voice transcript auto-populates text input
-```
-
-### components/VoiceButton.tsx
-
-```typescript
-interface VoiceButtonProps {
-  isListening: boolean;
-  isAvailable: boolean;
+  testID?: string;
+}): React.JSX.Element;
+export function VoiceButton(props: {
   onPress: () => void;
-  testID?: string; // defaults to 'btn-voice'
-}
-export function VoiceButton(props): React.JSX.Element | null;
-// Returns null when isAvailable=false (web/emulator)
-// 🎤 when idle, ⏹ when listening; red bg when active
+  isListening: boolean;
+  testID?: string;
+}): React.JSX.Element;
 ```
 
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
-export { ChatBubble, ChatInput, VoiceButton } from './components/*';
-export { useChat, useVoiceInput, useTextToSpeech } from './hooks/*';
+export { ChatBubble, ChatInput, VoiceButton } from './components/...';
+export { useChat } from './hooks/useChat';
+export { useVoiceInput } from './hooks/useVoiceInput';
+export { useTextToSpeech } from './hooks/useTextToSpeech';
 export { useChatStore } from './store/chatStore';
 export { sendChatMessage } from './services/chatService';
 ```
 
 ---
 
-## src/app/chat.tsx — Chat Screen (Feature 7) ✅
-
-testIDs: `chat-screen`, `btn-back`, `chat-heading`, `btn-toggle-mute`,
-`chat-empty`, `chat-message-list`, `chat-loading`, `chat-error`, `chat-input-bar`
-
-- Root-level route — push nav from recipe-detail (`router.push({ pathname: '/chat', params: { recipeId } })`)
-- `useLocalSearchParams<{ recipeId?: string }>()` to get recipe context
-- `loadVoiceMuted()` called on mount; `reset()` called on unmount
-- Auto-scrolls to bottom on new message; TTS speaks new assistant messages
-- `btn-toggle-mute`: 🔊 / 🔇 depending on `isVoiceMuted`
-
----
-
-## Test Coverage (Feature 7)
-
-| File                    | Tests                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| chatStore.test.ts       | addMessage, setLoading, setError, setRecipeId, setVoiceMuted+persist, loadVoiceMuted, reset |
-| chatService.test.ts     | reply, argument passing, no-recipeId, error propagation                                     |
-| useChat.test.ts         | initial state, user+AI messages, trim, empty no-op, error, loading, recipeId                |
-| useVoiceInput.test.ts   | available/unavailable/throws, start, stop, transcript, final, errors, clear, denied         |
-| useTextToSpeech.test.ts | speak, muted, stop-before-speak, stop(), toggleMute, persistence                            |
-| ChatBubble.test.tsx     | renders, You/AI Chef labels, default/custom testID                                          |
-| ChatInput.test.tsx      | text input, send disabled/enabled, trim, clear after send, loading                          |
-| VoiceButton.test.tsx    | mic/stop icons, onPress, null when unavailable, accessibility                               |
-| chat.test.tsx           | render, empty state, heading, mute, back nav, message list, loading, error, input           |
-
-**Feature 7 total: 88 new tests**
-**Grand total: 391 tests, 45 suites — all passing**
-
----
-
-## src/features/scan/ — Feature 8 COMPLETE ✅
+## src/features/scan/
 
 ### types/index.ts
 
@@ -806,14 +670,14 @@ export type ScanMimeType = 'image/jpeg' | 'image/png' | 'image/webp';
 interface ScanState {
   status: ScanStatus;
   error: string | null;
-  accumulatedIngredients: PantryItem[];  // grows with each scan; deduped by id
-  setStatus(s: ScanStatus): void;
-  setError(e: string | null): void;
-  mergeIngredients(newItems: PantryItem[]): void;  // deduplicates by id
-  removeIngredient(id: string): void;
-  reset(): void;
+  accumulatedIngredients: PantryItem[];
+  setStatus: (status: ScanStatus) => void;
+  setError: (error: string | null) => void;
+  mergeIngredients: (newItems: PantryItem[]) => void;  // de-dupes by .id
+  removeIngredient: (id: string) => void;
+  reset: () => void;
 }
-export const useScanStore = create<ScanState>(...)
+export const useScanStore: Zustand store<ScanState>;
 ```
 
 ### services/scanService.ts
@@ -823,8 +687,7 @@ export async function analyzePhoto(
   imageBase64: string,
   mimeType: ScanMimeType
 ): Promise<PantryItem[]>;
-// Calls analyzePhotoFn; throws Error('No food ingredients detected...') on empty result
-// Images never stored — base64 is a local var discarded after call
+// Calls analyzePhotoFn Cloud Function; throws if result is empty array
 ```
 
 ### hooks/useScan.ts
@@ -834,51 +697,38 @@ interface UseScanReturn {
   status: ScanStatus;
   error: string | null;
   accumulatedIngredients: PantryItem[];
-  isAnalyzing: boolean; // status === 'analyzing'
-  takePhoto(): Promise<void>; // launchCameraAsync + analyzePhoto → mergeIngredients
-  pickFromGallery(): Promise<void>; // launchImageLibraryAsync + analyzePhoto → mergeIngredients
-  addManually(ingredient: PantryItem): void; // mergeIngredients([ingredient])
-  removeIngredient(id: string): void;
-  addAllToPantry(): void; // addIngredient for each → reset() → router.replace('/(tabs)')
-  clearAll(): void; // reset()
+  isAnalyzing: boolean;
+  takePhoto: () => Promise<void>;
+  pickFromGallery: () => Promise<void>;
+  addManually: (ingredient: PantryItem) => void;
+  removeIngredient: (id: string) => void;
+  addAllToPantry: () => void;
+  clearAll: () => void;
 }
 export function useScan(): UseScanReturn;
+// Images never stored — base64 local var discarded after Cloud Function returns
 ```
 
-- Cancel (no assets): no-op, status unchanged
-- mimeType mapping: `'image/png'`→png, `'image/webp'`→webp, anything else→jpeg
-- Error (incl. empty result): `setStatus('error')` + `setError(message)` — accumulated list preserved
-
-### components/ScanResultCard.tsx
+### components
 
 ```typescript
-interface ScanResultCardProps {
+export function ScanResultCard(props: {
   ingredient: PantryItem;
   onRemove: () => void;
-  testID?: string; // defaults to `scan-result-${ingredient.id}`
-}
-export function ScanResultCard(props): React.JSX.Element;
-// testID-name, testID-remove sub-testIDs; accessibilityLabel: "Remove {name}"
-```
-
-### components/ManualIngredientSearch.tsx
-
-```typescript
-interface ManualIngredientSearchProps {
+  testID?: string;
+}): React.JSX.Element;
+export function ManualIngredientSearch(props: {
   onAdd: (ingredient: PantryItem) => void;
   alreadyAdded: PantryItem[];
   testID?: string;
-}
-export function ManualIngredientSearch(props): React.JSX.Element;
-// Real-time filter via searchIngredients(query) on every keystroke; max 5 results
-// Already-added items: disabled + checkmark; clears input after selection
-// testIDs: 'manual-search-input', 'manual-result-{id}', 'manual-result-{id}-check'
+}): React.JSX.Element;
+// ManualIngredientSearch: shows top 5 results, de-dupes against alreadyAdded
 ```
 
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
-export { ScanResultCard, ManualIngredientSearch } from './components/*';
+export { ScanResultCard, ManualIngredientSearch } from './components/...';
 export { useScan } from './hooks/useScan';
 export { useScanStore } from './store/scanStore';
 export { analyzePhoto } from './services/scanService';
@@ -887,37 +737,7 @@ export type { ScanStatus, ScanMimeType } from './types';
 
 ---
 
-## src/app/(tabs)/scan.tsx — Scan Screen (Feature 8) ✅
-
-testIDs: `scan-screen`, `btn-take-photo`, `btn-pick-gallery`, `scan-analyzing-indicator`,
-`scan-error-banner`, `scan-results-list`, `btn-add-all`, `btn-clear-all`
-
-- Camera + Gallery buttons (disabled while analyzing)
-- Analyzing indicator (spinner + "Analyzing photo…")
-- Error banner (status=error && error msg present)
-- `ManualIngredientSearch` — real-time search from INGREDIENTS constant
-- Accumulated list: `ScanResultCard` per item + "Add N to Pantry" CTA + "Clear" link
-- "Add to Pantry" → `addAllToPantry()` → navigates to `/(tabs)` (pantry screen)
-
----
-
-## Test Coverage (Feature 8)
-
-| File                              | Tests                                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------------------- |
-| `scanStore.test.ts`               | initial state, setStatus, setError, mergeIngredients (dedup), removeIngredient, reset         |
-| `scanService.test.ts`             | correct args, returns ingredients, throws on empty, error propagation                         |
-| `useScan.test.ts`                 | idle state, takePhoto/gallery success+cancel+error, addManually, addAllToPantry, clearAll     |
-| `ScanResultCard.test.tsx`         | render, emoji, no-emoji, remove, default/custom testID, accessibilityLabel                    |
-| `ManualIngredientSearch.test.tsx` | input, real-time results, add, already-added disabled+check, clear after add                  |
-| `scan.test.tsx`                   | idle UI, analyzing disables buttons, error banner, results list, add-to-pantry, clear, remove |
-
-**Feature 8 total: 66 new tests**
-**Grand total: 457 tests, 51 suites — all passing**
-
----
-
-## src/features/saved-recipes/ — Feature 9 COMPLETE ✅
+## src/features/saved-recipes/
 
 ### types/index.ts
 
@@ -925,66 +745,52 @@ testIDs: `scan-screen`, `btn-take-photo`, `btn-pick-gallery`, `scan-analyzing-in
 export const MAX_NOTES_LENGTH = 500;
 export const MAX_REVIEW_LENGTH = 500;
 
-export const SavedRecipeSchema; // Zod — id, recipe, savedAt, rating(1-10|null), review(≤500), notes(≤500), lastModifiedAt, isShared, sharedAt?, sharedFrom?
-export type SavedRecipe = z.infer<typeof SavedRecipeSchema>;
+export type SavedRecipe = {
+  id: string;
+  recipe: Recipe;
+  savedAt: string;
+  rating: number | null;   // 1–10
+  review: string;          // max 500, public when shared
+  notes: string;           // max 500, private
+  lastModifiedAt: string;
+  isShared: boolean;
+  sharedAt: string | null;
+  sharedFrom: string | null; // uid of original sharer
+};
 
-export const SharedRecipeSchema; // Zod — id, recipe, sharedBy{uid,displayName}, sharedAt, rating(1-10|null), review(≤500), saveCount
-export type SharedRecipe = z.infer<typeof SharedRecipeSchema>;
+export type SharedRecipe = {
+  id: string;
+  recipe: Recipe;
+  sharedBy: { uid: string; displayName: string };
+  sharedAt: string;
+  rating: number | null;
+  review: string;
+  saveCount: number;
+};
+
+export const SavedRecipeSchema: Zod schema;
+export const SharedRecipeSchema: Zod schema;
 ```
 
-### services/savedRecipesService.ts
+### Firestore paths
 
-```typescript
-// Firestore path: users/{uid}/savedRecipes/{recipeId}
-export async function saveRecipe(uid: string, recipe: Recipe): Promise<SavedRecipe>;
-// setDoc — idempotent; defaults: rating=null, review='', notes='', isShared=false
-export async function updateSavedRecipe(
-  uid: string,
-  id: string,
-  updates: Partial<Pick<SavedRecipe, 'rating' | 'review' | 'notes' | 'isShared' | 'sharedAt'>>
-): Promise<void>;
-export async function deleteSavedRecipe(uid: string, id: string): Promise<void>;
-export async function loadSavedRecipes(uid: string): Promise<SavedRecipe[]>; // orderBy savedAt desc
-export async function isRecipeSaved(uid: string, recipeId: string): Promise<boolean>;
 ```
-
-### services/communityService.ts
-
-```typescript
-// Top-level collection: sharedRecipes/{recipeId}
-export async function shareRecipe(
-  savedRecipe: SavedRecipe,
-  sharedBy: { uid: string; displayName: string }
-): Promise<void>;
-// setDoc — copies rating+review from savedRecipe at share-time (snapshot)
-export async function unshareRecipe(savedRecipeId: string): Promise<void>;
-export async function loadSharedRecipes(): Promise<SharedRecipe[]>; // orderBy sharedAt desc, limit 50
-export async function saveToMyCollection(
-  uid: string,
-  sharedRecipe: SharedRecipe
-): Promise<SavedRecipe>;
-// creates savedRecipes doc with sharedFrom = sharedRecipe.sharedBy.uid
-export async function incrementSaveCount(sharedRecipeId: string): Promise<void>; // increment(1)
+users/{uid}/savedRecipes/{id}  → SavedRecipe
+sharedRecipes/{id}             → SharedRecipe (top-level collection)
 ```
 
 ### store/savedRecipesStore.ts
 
 ```typescript
 interface SavedRecipesState {
-  savedRecipes: SavedRecipe[];          // sorted savedAt desc
+  savedRecipes: SavedRecipe[];
   currentSavedRecipe: SavedRecipe | null;
-  isLoading: boolean;
-  error: string | null;
-  setSavedRecipes(recipes: SavedRecipe[]): void;
-  addSavedRecipe(recipe: SavedRecipe): void;    // prepend; deduplicates by id
-  updateSavedRecipe(id: string, updates: Partial<SavedRecipe>): void; // updates list + currentSavedRecipe if match
-  removeSavedRecipe(id: string): void;          // removes from list; clears currentSavedRecipe if match
-  setCurrentSavedRecipe(recipe: SavedRecipe | null): void;
-  setLoading(v: boolean): void;
-  setError(e: string | null): void;
-  reset(): void;
+  isLoading: boolean; error: string | null;
+  setSavedRecipes, addSavedRecipe, updateSavedRecipe, removeSavedRecipe,
+  setCurrentSavedRecipe, setLoading, setError, reset
 }
-export const useSavedRecipesStore = create<SavedRecipesState>(...)
+export const useSavedRecipesStore: Zustand store<SavedRecipesState>;
+// addSavedRecipe: de-dupes by .id
 ```
 
 ### store/communityStore.ts
@@ -993,142 +799,91 @@ export const useSavedRecipesStore = create<SavedRecipesState>(...)
 interface CommunityState {
   sharedRecipes: SharedRecipe[];
   currentSharedRecipe: SharedRecipe | null;
-  isLoading: boolean;
-  error: string | null;
-  setSharedRecipes(recipes: SharedRecipe[]): void;
-  setCurrentSharedRecipe(recipe: SharedRecipe | null): void;
-  updateSaveCount(id: string, count: number): void; // updates saveCount on matching recipe
-  setLoading(v: boolean): void;
-  setError(e: string | null): void;
-  reset(): void;
+  isLoading: boolean; error: string | null;
+  setSharedRecipes, setCurrentSharedRecipe, updateSaveCount, setLoading, setError, reset
 }
-export const useCommunityStore = create<CommunityState>(...)
+export const useCommunityStore: Zustand store<CommunityState>;
 ```
 
-### hooks/useSavedRecipes.ts
+### hooks
 
 ```typescript
+// useSavedRecipes — loads on mount, client-side rating filter
 interface UseSavedRecipesReturn {
-  savedRecipes: SavedRecipe[];
-  isLoading: boolean;
-  error: string | null;
-  ratingFilter: number | null; // null = all; n = rating >= n
-  setRatingFilter(filter: number | null): void;
-  filteredRecipes: SavedRecipe[];
-  deleteRecipe(id: string): Promise<void>; // removes from store + Firestore
+  savedRecipes;
+  isLoading;
+  error;
+  ratingFilter;
+  setRatingFilter;
+  filteredRecipes;
+  deleteRecipe;
 }
 export function useSavedRecipes(): UseSavedRecipesReturn;
-```
 
-### hooks/useSaveRecipe.ts
-
-```typescript
+// useSaveRecipe — toggle save for a Recipe
 interface UseSaveRecipeReturn {
-  isSaved: boolean; // checks savedRecipesStore by recipe.id (optimistic)
+  isSaved: boolean;
   isSaving: boolean;
-  toggleSave(): Promise<void>; // save → saveRecipe+addSavedRecipe; unsave → deleteSavedRecipe+removeSavedRecipe
+  toggleSave: () => Promise<void>;
 }
 export function useSaveRecipe(recipe: Recipe | null): UseSaveRecipeReturn;
-```
 
-### hooks/useSavedRecipeDetail.ts
-
-```typescript
+// useSavedRecipeDetail — debounced auto-save (500ms), share/unshare/delete
 interface UseSavedRecipeDetailReturn {
-  savedRecipe: SavedRecipe | null;
-  updateRating(rating: number | null): Promise<void>; // debounced 500ms
-  updateReview(review: string): Promise<void>; // debounced 500ms
-  updateNotes(notes: string): Promise<void>; // debounced 500ms
-  shareRecipeHandler(): Promise<void>; // shareRecipe + updates store isShared/sharedAt
-  unshareRecipeHandler(): Promise<void>; // unshareRecipe + clears store isShared/sharedAt
-  deleteRecipeHandler(): void; // Alert.alert confirm → removeSavedRecipe + deleteSavedRecipe + router.back()
+  savedRecipe;
+  isLoading;
+  error;
+  updateRating;
+  updateReview;
+  updateNotes;
+  shareRecipeHandler;
+  unshareRecipeHandler;
+  deleteRecipeHandler;
 }
 export function useSavedRecipeDetail(): UseSavedRecipeDetailReturn;
-```
 
-### hooks/useCommunityRecipes.ts
-
-```typescript
+// useCommunityRecipes — loads shared recipes, save to my collection
 interface UseCommunityRecipesReturn {
-  sharedRecipes: SharedRecipe[];
-  isLoading: boolean;
-  error: string | null;
-  saveToMyCollection(sharedRecipe: SharedRecipe): Promise<void>;
-  // calls saveToMyCollection service + addSavedRecipe + incrementSaveCount + optimistic updateSaveCount
+  sharedRecipes;
+  isLoading;
+  error;
+  saveToMyCollection;
 }
 export function useCommunityRecipes(): UseCommunityRecipesReturn;
 ```
 
-### components/SavedRecipeCard.tsx
+### components
 
 ```typescript
-interface SavedRecipeCardProps {
+export function SavedRecipeCard(props: {
   savedRecipe: SavedRecipe;
   onPress: () => void;
-  onDelete: () => void;
-  testID?: string; // defaults to `saved-card-${savedRecipe.id}`
-}
-export function SavedRecipeCard(props): React.JSX.Element;
-// Sub-testIDs: ${testID}-title, ${testID}-rating, ${testID}-review, ${testID}-delete
-// Rating badge shows only when rating !== null; review snippet shows only when review.length > 0
-// Shows "Shared" badge when isShared === true
-```
-
-### components/CommunityRecipeCard.tsx
-
-```typescript
-interface CommunityRecipeCardProps {
+  testID?: string;
+}): React.JSX.Element;
+export function CommunityRecipeCard(props: {
   sharedRecipe: SharedRecipe;
+  onSave: () => void;
   onPress: () => void;
-  isSaved: boolean;
-  testID?: string; // defaults to `community-card-${sharedRecipe.id}`
-}
-export function CommunityRecipeCard(props): React.JSX.Element;
-// Sub-testIDs: ${testID}-title, ${testID}-rating, ${testID}-review, ${testID}-sharer, ${testID}-saved-badge
-// Rating badge shows only when rating !== null; review snippet shows only when review.length > 0
-// "Saved" badge when isSaved === true
-```
-
-### components/RatingPicker.tsx
-
-```typescript
-interface RatingPickerProps {
+  testID?: string;
+}): React.JSX.Element;
+export function RatingPicker(props: {
   rating: number | null;
-  onRatingChange: (rating: number | null) => void;
-  testID?: string; // defaults to 'rating-picker'
-}
-export function RatingPicker(props): React.JSX.Element;
-// 10 horizontal buttons (1–10); tap selected → deselect (null)
-// Button testIDs: ${testID}-btn-{n}; accessibilityState.selected on selected btn
-```
-
-### components/RecipeNotes.tsx
-
-```typescript
-interface RecipeNotesProps {
+  onChange: (r: number | null) => void;
+  testID?: string;
+}): React.JSX.Element; // 1-10 scale
+export function RecipeNotes(props: {
   notes: string;
-  onNotesChange: (notes: string) => void;
-  testID?: string; // defaults to 'recipe-notes'
-}
-export function RecipeNotes(props): React.JSX.Element;
-// Label: "Private Notes"; placeholder: "Add cooking notes…"; max 500 chars; char counter
-// testIDs: ${testID}-input, ${testID}-counter
-```
-
-### components/ReviewInput.tsx
-
-```typescript
-interface ReviewInputProps {
+  onChange: (n: string) => void;
+  testID?: string;
+}): React.JSX.Element; // max 500 chars
+export function ReviewInput(props: {
   review: string;
-  onReviewChange: (review: string) => void;
-  testID?: string; // defaults to 'review-input'
-}
-export function ReviewInput(props): React.JSX.Element;
-// Label: "Your Review (public if shared)"; max 500 chars; char counter
-// testIDs: ${testID}-input, ${testID}-counter
+  onChange: (r: string) => void;
+  testID?: string;
+}): React.JSX.Element; // max 500 chars
 ```
 
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
 export {
@@ -1137,29 +892,15 @@ export {
   RatingPicker,
   RecipeNotes,
   ReviewInput,
-} from './components/*';
+} from './components/...';
 export {
   useSavedRecipes,
   useSaveRecipe,
   useSavedRecipeDetail,
   useCommunityRecipes,
-} from './hooks/*';
+} from './hooks/...';
 export { useSavedRecipesStore } from './store/savedRecipesStore';
 export { useCommunityStore } from './store/communityStore';
-export {
-  saveRecipe,
-  updateSavedRecipe,
-  deleteSavedRecipe,
-  loadSavedRecipes,
-  isRecipeSaved,
-} from './services/savedRecipesService';
-export {
-  shareRecipe,
-  unshareRecipe,
-  loadSharedRecipes,
-  saveToMyCollection,
-  incrementSaveCount,
-} from './services/communityService';
 export {
   SavedRecipeSchema,
   SharedRecipeSchema,
@@ -1171,147 +912,32 @@ export type { SavedRecipe, SharedRecipe } from './types';
 
 ---
 
-## src/app/(tabs)/ — Feature 9 Screens
-
-### saved.tsx
-
-testIDs: `saved-screen`, `saved-loading`, `saved-error`, `saved-empty`, `saved-list`,
-`filter-all`, `filter-6`, `filter-7`, `filter-8`, `filter-9`, `filter-10`, `saved-card-{id}`
-
-- Rating filter pills: All / 6+ / 7+ / 8+ / 9+ / 10 (client-side filtering via `filteredRecipes`)
-- FlatList of `SavedRecipeCard` — pressing → `setCurrentSavedRecipe` + `router.push('/(tabs)/saved-recipe-detail')`
-- Delete via `SavedRecipeCard.onDelete` → `deleteRecipe(id)` with `Alert.alert` confirm
-
-### saved-recipe-detail.tsx (hidden from tab bar — `href: null`)
-
-testIDs: `saved-detail-screen`, `btn-back`, `saved-detail-empty`, `detail-title`,
-`rating-picker`, `review-input`, `recipe-notes`, `btn-share`, `btn-unshare`,
-`btn-delete-saved`, `ai-disclaimer`
-
-- Reads `currentSavedRecipe` from store via `useSavedRecipeDetail()`
-- Full recipe display + `RatingPicker` + `ReviewInput` + `RecipeNotes` (all debounced auto-save)
-- Share/Unshare toggle; Delete with Alert confirmation
-- `AIDisclaimer` at bottom
-
-### community.tsx (6th tab)
-
-testIDs: `community-screen`, `community-loading`, `community-error`, `community-empty`,
-`community-list`, `community-card-{id}`
-
-- `useCommunityRecipes()` loads on mount
-- FlatList of `CommunityRecipeCard` — pressing → `setCurrentSharedRecipe` + `router.push('/(tabs)/community-recipe-detail')`
-
-### community-recipe-detail.tsx (hidden from tab bar — `href: null`)
-
-testIDs: `community-detail-screen`, `btn-back`, `community-detail-empty`, `detail-title`,
-`community-sharer`, `community-rating`, `community-review`,
-`btn-save-to-collection`, `ai-disclaimer`
-
-- Read-only recipe display from `currentSharedRecipe` store
-- Shows sharer info (name, rating, review from original share)
-- "Save to My Recipes" button (disabled if already saved) → `saveToMyCollection` → `router.replace('/(tabs)/saved')`
-
-### recipe-detail.tsx (modified — Save button wired up)
-
-```typescript
-// Added import:
-import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
-// Hook usage:
-const { isSaved, isSaving, toggleSave } = useSaveRecipe(recipe);
-// Button:
-label={isSaved ? 'Saved ✓' : 'Save Recipe'}
-variant={isSaved ? 'primary' : 'secondary'}
-disabled={isSaving}
-onPress={() => { void toggleSave(); }}
-```
-
-### \_layout.tsx (tabs) — modified
-
-```typescript
-// New tab:
-<Tabs.Screen name="community" options={{ title: 'Community', tabBarIcon: ({color}) => <Ionicons name={focused ? 'people' : 'people-outline'} ... /> }} />
-// Hidden screens registered:
-<Tabs.Screen name="saved-recipe-detail" options={{ href: null }} />
-<Tabs.Screen name="community-recipe-detail" options={{ href: null }} />
-```
-
----
-
-## firestore.rules — Feature 9 additions
-
-```
-match /users/{uid} {
-  // ... existing rules ...
-  match /savedRecipes/{recipeId} {
-    allow read, write, delete: if request.auth != null && request.auth.uid == uid;
-  }
-}
-match /sharedRecipes/{recipeId} {
-  allow read: if request.auth != null;
-  allow create: if request.auth != null;
-  allow update: if request.auth != null;  // anyone can increment saveCount
-  allow delete: if request.auth != null && request.auth.uid == resource.data.sharedBy.uid;
-}
-```
-
----
-
-## Test Coverage (Feature 9)
-
-| File                               | Tests                                                                                                      |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `savedRecipesService.test.ts`      | saveRecipe, updateSavedRecipe, deleteSavedRecipe, loadSavedRecipes, isRecipeSaved                          |
-| `communityService.test.ts`         | shareRecipe, unshareRecipe, loadSharedRecipes, saveToMyCollection, incrementSaveCount                      |
-| `savedRecipesStore.test.ts`        | all store actions, dedup, updateSavedRecipe syncs currentSavedRecipe, removeSavedRecipe clears current     |
-| `communityStore.test.ts`           | all store actions, updateSaveCount                                                                         |
-| `useSavedRecipes.test.ts`          | load on mount, ratingFilter, filteredRecipes, deleteRecipe                                                 |
-| `useSaveRecipe.test.ts`            | isSaved optimistic, toggleSave (save + unsave), isSaving flag                                              |
-| `useSavedRecipeDetail.test.ts`     | load from store, updateRating/review/notes (debounced), shareRecipeHandler, unshareRecipeHandler, delete   |
-| `useCommunityRecipes.test.ts`      | load on mount, setError on failure, saveToMyCollection calls service+store+incrementSaveCount              |
-| `RatingPicker.test.tsx`            | 10 buttons, select, deselect (tap selected again), accessibilityState.selected                             |
-| `RecipeNotes.test.tsx`             | render, onChange, char counter, 500-char limit enforced                                                    |
-| `ReviewInput.test.tsx`             | render, onChange, char counter, 500-char limit enforced                                                    |
-| `SavedRecipeCard.test.tsx`         | render, title, description, rating badge, review snippet, onPress, onDelete, custom testID                 |
-| `CommunityRecipeCard.test.tsx`     | render, title, sharer name, rating badge, review snippet, isSaved badge, onPress, custom testID            |
-| `saved.test.tsx`                   | loading, empty, list, filter pills, navigate to detail, delete                                             |
-| `saved-recipe-detail.test.tsx`     | render, empty state, rating/review/notes update, share/unshare, delete                                     |
-| `community.test.tsx`               | loading, empty, list, navigate to detail                                                                   |
-| `community-recipe-detail.test.tsx` | render, empty state, sharer info, allergen warning, save button enabled/disabled, save calls service, back |
-
-**Feature 9 total: 149 new tests**
-**Grand total: 606 tests, 68 suites — all passing**
-
----
-
-## src/features/profile/ — Feature 10 COMPLETE ✅
+## src/features/profile/
 
 ### hooks/useProfileSettings.ts
 
 ```typescript
 interface UseProfileSettingsReturn {
-  email: string; // read-only, from profile
+  email: string;
   displayName: string;
-  selectedAllergens: string[]; // IDs only
+  selectedAllergens: string[];
   selectedDietaryPreferences: string[];
   isLoading: boolean;
   error: string | null;
-  hasChanges: boolean; // true when local state differs from profile
+  hasChanges: boolean; // computed via useMemo (sorted array + displayName trim comparison)
   setDisplayName: (name: string) => void;
   toggleAllergen: (id: string) => void;
   toggleDietaryPreference: (id: string) => void;
-  saveChanges: () => Promise<void>; // updateUserProfile → fetchUserProfile → setProfile
-  resetChanges: () => void; // discard local edits, restore from profile
-  signOut: () => Promise<void>; // signOutUser(); auth listener handles redirect
+  saveChanges: () => Promise<void>;
+  resetChanges: () => void;
+  signOut: () => Promise<void>;
 }
 export function useProfileSettings(): UseProfileSettingsReturn;
+// saveChanges validates displayName non-empty; updates Firestore + authStore profile
+// resetChanges discards local edits, reverts to profile state
 ```
 
-- Initializes local state from `useAuthStore((s) => s.profile)`
-- `hasChanges` computed via `useMemo` — compares sorted allergen/dietary arrays
-- `saveChanges` validates displayName non-empty before calling service
-- No profile store needed — auth store already holds profile
-
-### index.ts (barrel)
+### index.ts exports
 
 ```typescript
 export { useProfileSettings } from './hooks/useProfileSettings';
@@ -1319,49 +945,203 @@ export { useProfileSettings } from './hooks/useProfileSettings';
 
 ---
 
-## src/app/(tabs)/profile.tsx — Profile Screen (Feature 10) ✅
-
-testIDs: `profile-screen`, `input-display-name`, `input-email`,
-`card-allergen-{id}` (9 cards), `card-dietary-{id}` (9 cards),
-`disclaimer-card`, `profile-error`, `profile-loading`, `btn-save-profile`,
-`btn-sign-out`, `btn-privacy-policy`, `btn-delete-account`, `app-version`
-
-- Displays + edits display name (Input with autoCapitalize="words")
-- Displays email (Input with editable=false)
-- 9 AllergenCards + 9 DietaryPreferenceCards (reused from onboarding)
-- DisclaimerCard (App Store allergen requirement)
-- Save Changes button: disabled when !hasChanges || isLoading
-- Sign Out: calls `signOut()` (auth listener handles redirect)
-- Privacy Policy → `router.push('/(tabs)/privacy-policy')` [Feature 12 stub]
-- Delete Account → `router.push('/(tabs)/delete-account')` [Feature 11 stub]
-- App version from `Constants.expoConfig?.version ?? '1.0.0'`
-
----
-
-## src/app/(tabs)/delete-account.tsx + privacy-policy.tsx — Stubs (Features 11/12)
-
-Minimal stub screens registered in `_layout.tsx` with `href: null`.
-Allows typed router.push calls from profile.tsx to compile.
-Full implementation in Features 11 and 12.
-
----
-
-## src/app/(tabs)/\_layout.tsx — Updated (Feature 10)
+## src/stores/uiStore.ts
 
 ```typescript
-// New hidden screens added:
-<Tabs.Screen name="delete-account" options={{ href: null }} />
-<Tabs.Screen name="privacy-policy" options={{ href: null }} />
+export type ColorSchemePreference = 'light' | 'dark' | 'system';
+
+interface UIState {
+  isLoading: boolean;
+  toastMessage: string | null;
+  toastType: 'success' | 'error' | 'info';
+  colorScheme: ColorSchemePreference;
+  setLoading: (loading: boolean) => void;
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  clearToast: () => void;
+  setColorScheme: (scheme: ColorSchemePreference) => void;
+}
+export const useUIStore: Zustand store<UIState>;
 ```
 
 ---
 
-## Test Coverage (Feature 10)
+## src/constants/
 
-| File                         | Tests                                                                                                                                                                                                                                                           |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useProfileSettings.test.ts` | init from profile, hasChanges, toggleAllergen, toggleDietaryPreference, saveChanges (success+error+empty name), resetChanges, signOut (success+error)                                                                                                           |
-| `profile.test.tsx`           | render, display name, email read-only, 9 allergen cards, 9 dietary cards, selected states, toggle calls, save button disabled/enabled/loading, loading indicator, error, save calls hook, disclaimer, sign out, delete account nav, privacy policy nav, version |
+### allergens.ts
 
-**Feature 10 total: 40 new tests**
-**Grand total: 646 tests, 70 suites — all passing**
+```typescript
+export interface Allergen {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+}
+export const BIG_9_ALLERGENS: Allergen[]; // milk, eggs, fish, shellfish, tree-nuts, peanuts, wheat, soybeans, sesame
+
+export interface DietaryPreference {
+  id: string;
+  name: string;
+  icon: string;
+}
+export const DIETARY_PREFERENCES: DietaryPreference[]; // vegetarian, vegan, gluten-free, keto, paleo, halal, kosher, low-carb, dairy-free
+```
+
+### cuisines.ts
+
+```typescript
+export const CUISINES: Array<{ id: string; label: string; emoji: string }>;
+// american, mexican, italian, chinese, japanese, indian, thai, french,
+// mediterranean, korean, vietnamese, middle-eastern, greek, spanish (14 total)
+export type CuisineId = (typeof CUISINES)[number]['id'];
+```
+
+### theme.ts
+
+```typescript
+export const Colors = {
+  primary: Record<50|100|200|300|400|500|600|700|800|900, string>,
+  accent:  Record<50|...|900, string>,
+  brand: { green: string; orange: string; cream: string },
+  semantic: { success, error, warning, info },
+  gray: Record<50|...|900, string>,
+};
+export const Spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, '2xl': 48 };
+```
+
+---
+
+## functions/src/
+
+### functions/src/shared/middleware/validate.ts
+
+```typescript
+// ⚠️ Firebase Callable SDK serializes undefined → null for all optional fields.
+// All optional input fields MUST use .nullable().optional() in schema.
+
+export const GenerateRecipeInputSchema; // allergens/dietaryPreferences nullable, cuisines/strictIngredients nullable
+
+export interface GenerateRecipeInput {
+  ingredients: Array<{ id: string; name: string; emoji?: string; category?: string }>;
+  allergens: string[]; // normalised from null → [] in validateGenerateRecipeInput
+  dietaryPreferences: string[]; // normalised from null → [] in validateGenerateRecipeInput
+  cuisines?: string[] | null;
+  strictIngredients?: boolean | null;
+}
+
+export function validateGenerateRecipeInput(data: unknown): GenerateRecipeInput;
+// Normalises raw.allergens ?? [] and raw.dietaryPreferences ?? []
+export const validateChatInput: (data: unknown) => z.infer<typeof ChatInputSchema>;
+export const validateAnalyzePhotoInput: (data: unknown) => z.infer<typeof AnalyzePhotoInputSchema>;
+// All throw HttpsError('invalid-argument', 'Invalid input: ...') on failure
+```
+
+### functions/src/features/recipes/generateRecipe.ts
+
+```typescript
+// onCall({ secrets: ['GROQ_API_KEY'], maxInstances: 10, region: 'us-central1' })
+// Pipeline: authenticate → checkRateLimit → validateGenerateRecipeInput → logger.info → Groq → parse → return
+// Returns: { recipes: Recipe[] } — always exactly 5 recipes
+// Logs: logger.info('generateRecipe', { uid, ingredientCount, allergenCount, cuisineCount, strictIngredients })
+// Model: llama-3.3-70b-versatile, temp: 0.7, max_tokens: 16000, response_format: json_object
+// z.coerce.number() on all numeric fields (Llama sometimes returns strings)
+```
+
+### functions/src/features/chat/chatWithAssistant.ts
+
+```typescript
+// onCall({ secrets: ['GROQ_API_KEY'], maxInstances: 10, region: 'us-central1' })
+// Pipeline: authenticate → checkRateLimit → validateChatInput → logger.info → Groq → return
+// Logs: logger.info('chatWithAssistant', { uid, messageLength, historyLength, hasRecipeSnapshot })
+// Model: llama-3.3-70b-versatile, temp: 0.5, max_tokens: 512
+// recipeSnapshot builds rich structured context block via buildChatPrompt()
+```
+
+### functions/src/features/vision/analyzeIngredientPhoto.ts
+
+```typescript
+// onCall({ secrets: ['GEMINI_API_KEY'], maxInstances: 5, region: 'us-central1' })
+// Pipeline: authenticate → checkRateLimit → validateAnalyzePhotoInput → logger.info → Gemini → parse → return
+// Logs: logger.info('analyzeIngredientPhoto', { uid, mimeType })
+// Model: gemini-2.0-flash-exp, temp: 0.2, maxOutputTokens: 1024
+// Extracts JSON from markdown code blocks if needed
+// ⚠️ Image data immediately discarded — never stored (App Store compliance)
+```
+
+### functions/src/shared/middleware/authenticate.ts
+
+```typescript
+export function authenticate(request: CallableRequest): string; // returns uid or throws HttpsError('unauthenticated')
+```
+
+### functions/src/shared/middleware/rateLimit.ts
+
+```typescript
+export async function checkRateLimit(uid: string, operation: string): Promise<void>;
+// Firestore counters: 10 req/hr per user per operation. Throws HttpsError('resource-exhausted') if exceeded.
+```
+
+### functions/src/shared/prompts/recipePrompts.ts
+
+```typescript
+export const RECIPE_SYSTEM_PROMPT: string;
+export function buildRecipePrompt(input: {
+  ingredients: Array<{ name: string }>;
+  allergens: string[];
+  dietaryPreferences: string[];
+  cuisines?: string[] | null;
+  strictIngredients?: boolean | null;
+}): string;
+```
+
+### functions/src/shared/prompts/chatPrompts.ts
+
+```typescript
+export const CHAT_SYSTEM_PROMPT: string;
+export function buildChatPrompt(message: string, recipeSnapshot?: RecipeSnapshot): string;
+// recipeSnapshot builds structured context: title, desc, ingredients, instructions, allergens
+```
+
+### functions/src/shared/prompts/visionPrompts.ts
+
+```typescript
+export const VISION_SYSTEM_PROMPT: string;
+```
+
+---
+
+## Deployment
+
+### vercel.json
+
+```json
+{
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+- Vercel: auto-deploys from GitHub `main` branch
+- Env var in Vercel: `EXPO_PUBLIC_FIREBASE_ENV=staging`
+- Local web dev: `EXPO_PUBLIC_FIREBASE_ENV=staging npx expo start --web`
+
+### Firebase Project IDs
+
+- staging: `recipeapp-staging-e2d31`
+- production: `recipeapp-prod-aa25c`
+
+---
+
+## Key Gotchas (copy of memory — most relevant ones)
+
+- **Firebase Callable SDK serializes `undefined` → `null`** — every optional CF input field needs `.nullable().optional()`
+- **`z.infer` with `.transform()` in Zod v4** on nested object fields gives INPUT type — normalize nulls in validator function body with explicit return type interface instead
+- **CF logger**: `import * as logger from 'firebase-functions/logger'` — NOT `import { logger }`
+- **`fetchUserProfile` casts with `as UserProfile`** — runtime values may differ from TS type if Firestore doc is missing fields
+- **`isRecognitionAvailable()`** is synchronous — don't `.then()` it
+- **Test files for route files** go in `src/app/<group>/__tests__/` (NOT directly in `src/app/`)
+- **`render()` outside `act()`** — call synchronously, then `await act(async () => {})` for effects
+- **Zustand store mocks** — always use explicit factory `jest.mock('path', () => ({ useStore: () => fn() }))`, never auto-mock

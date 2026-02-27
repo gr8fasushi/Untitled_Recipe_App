@@ -103,6 +103,8 @@ describe('useRecipesStore', () => {
       useRecipesStore.getState().setCurrentRecipe(mockRecipe);
       useRecipesStore.getState().setLoading(true);
       useRecipesStore.getState().setError('oops');
+      useRecipesStore.getState().toggleCuisine('italian');
+      useRecipesStore.getState().setStrictIngredients(true);
       useRecipesStore.getState().reset();
     });
     const state = useRecipesStore.getState();
@@ -110,5 +112,60 @@ describe('useRecipesStore', () => {
     expect(state.currentRecipe).toBeNull();
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
+    expect(state.selectedCuisines).toEqual([]);
+    expect(state.strictIngredients).toBe(false);
+  });
+
+  it('starts with empty selectedCuisines and strictIngredients=false', () => {
+    const state = useRecipesStore.getState();
+    expect(state.selectedCuisines).toEqual([]);
+    expect(state.strictIngredients).toBe(false);
+  });
+
+  it('toggleCuisine adds a cuisine when not selected', () => {
+    act(() => {
+      useRecipesStore.getState().toggleCuisine('italian');
+    });
+    expect(useRecipesStore.getState().selectedCuisines).toEqual(['italian']);
+  });
+
+  it('toggleCuisine removes a cuisine when already selected', () => {
+    act(() => {
+      useRecipesStore.getState().toggleCuisine('italian');
+      useRecipesStore.getState().toggleCuisine('italian');
+    });
+    expect(useRecipesStore.getState().selectedCuisines).toEqual([]);
+  });
+
+  it('toggleCuisine supports multiple cuisines', () => {
+    act(() => {
+      useRecipesStore.getState().toggleCuisine('italian');
+      useRecipesStore.getState().toggleCuisine('mexican');
+    });
+    expect(useRecipesStore.getState().selectedCuisines).toEqual(['italian', 'mexican']);
+  });
+
+  it('clearCuisines empties the selectedCuisines array', () => {
+    act(() => {
+      useRecipesStore.getState().toggleCuisine('italian');
+      useRecipesStore.getState().toggleCuisine('mexican');
+      useRecipesStore.getState().clearCuisines();
+    });
+    expect(useRecipesStore.getState().selectedCuisines).toEqual([]);
+  });
+
+  it('setStrictIngredients sets the flag to true', () => {
+    act(() => {
+      useRecipesStore.getState().setStrictIngredients(true);
+    });
+    expect(useRecipesStore.getState().strictIngredients).toBe(true);
+  });
+
+  it('setStrictIngredients sets the flag back to false', () => {
+    act(() => {
+      useRecipesStore.getState().setStrictIngredients(true);
+      useRecipesStore.getState().setStrictIngredients(false);
+    });
+    expect(useRecipesStore.getState().strictIngredients).toBe(false);
   });
 });
