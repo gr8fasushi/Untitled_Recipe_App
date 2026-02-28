@@ -1,4 +1,4 @@
-import { FlatList, Text, View, ActivityIndicator } from 'react-native';
+import { FlatList, Platform, Text, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,8 @@ import { useCommunityRecipes } from '@/features/saved-recipes/hooks/useCommunity
 import { useCommunityStore } from '@/features/saved-recipes/store/communityStore';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { CommunityRecipeCard } from '@/features/saved-recipes/components/CommunityRecipeCard';
+import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 import type { SharedRecipe } from '@/features/saved-recipes/types';
 
 export default function CommunityScreen(): React.JSX.Element {
@@ -14,6 +16,13 @@ export default function CommunityScreen(): React.JSX.Element {
   const savedRecipes = useSavedRecipesStore((s) => s.savedRecipes);
   const { sharedRecipes, isLoading, error } = useCommunityRecipes();
 
+  const isWeb = Platform.OS === 'web';
+  const holiday = useHolidayStore((s) => s.theme);
+  const gradient = holiday?.gradient ?? (['#451a03', '#92400e', '#f59e0b'] as const);
+  const bannerEmoji = holiday?.bannerEmoji ?? '⭐';
+  const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? ['⭐', '👨‍🍳', '🌟'];
+  const subtitleColor = holiday?.subtitleHexColor ?? '#fde68a';
+
   function handleCardPress(item: SharedRecipe): void {
     setCurrentSharedRecipe(item);
     router.push('/(tabs)/community-recipe-detail');
@@ -21,24 +30,46 @@ export default function CommunityScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="community-screen">
-      {/* Gradient header */}
-      <View className="w-full items-center bg-primary-700">
-        <View className="w-full max-w-2xl">
-          <LinearGradient
-            colors={['#c2410c', '#ea580c', '#fb923c']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+      <BackgroundDecor items={DECOR_SETS.community} />
+      {/* Gradient header — amber/gold community theme */}
+      <LinearGradient
+        colors={[gradient[0], gradient[1], gradient[2]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View className="items-center w-full">
+          <View
+            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
           >
-            <View className="px-6 pt-5 pb-6">
-              <Text className="text-3xl mb-1">⭐</Text>
-              <Text className="text-2xl font-nunito-bold text-white">Popular Recipes</Text>
-              <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                Discover recipes shared by the community
+            {/* Emoji silhouettes */}
+            <View
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              pointerEvents="none"
+            >
+              <Text
+                style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+              >
+                {sil0}
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+              >
+                {sil1}
+              </Text>
+              <Text
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+              >
+                {sil2}
               </Text>
             </View>
-          </LinearGradient>
+            <Text className="text-5xl mb-1">{bannerEmoji}</Text>
+            <Text className="text-3xl font-nunito-extrabold text-white">Popular Recipes</Text>
+            <Text style={{ color: subtitleColor }} className="text-sm mt-1 font-nunito-semibold">
+              Discover recipes shared by the community
+            </Text>
+          </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Loading */}
       {isLoading && (

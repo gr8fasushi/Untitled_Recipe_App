@@ -104,9 +104,9 @@ interface DecorItem {
   rotate?: string;
 }
 export function BackgroundDecor({ items }: { items: DecorItem[] }): React.JSX.Element;
-// DECOR_SETS keys: home | pantry | recipes | saved | profile | chat
+// DECOR_SETS keys: home | pantry | recipes | saved | profile | chat | recipeSearch | community
 export const DECOR_SETS: Record<
-  'home' | 'pantry' | 'recipes' | 'saved' | 'profile' | 'chat',
+  'home' | 'pantry' | 'recipes' | 'saved' | 'profile' | 'chat' | 'recipeSearch' | 'community',
   DecorItem[]
 >;
 ```

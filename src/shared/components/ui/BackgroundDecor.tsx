@@ -76,4 +76,14 @@ export const DECOR_SETS = {
     { emoji: '🍳', size: 100, bottom: 240, right: 70, rotate: '-8deg' },
     { emoji: '💬', size: 85, bottom: 380, left: 8, rotate: '-15deg' },
   ],
+  recipeSearch: [
+    { emoji: '🔍', size: 120, bottom: 80, right: -10, rotate: '15deg' },
+    { emoji: '📖', size: 90, bottom: 220, right: 65, rotate: '-8deg' },
+    { emoji: '🍽️', size: 80, bottom: 340, left: 8, rotate: '-20deg' },
+  ],
+  community: [
+    { emoji: '⭐', size: 120, bottom: 80, right: -10, rotate: '12deg' },
+    { emoji: '👨‍🍳', size: 95, bottom: 230, right: 70, rotate: '-10deg' },
+    { emoji: '🌟', size: 80, bottom: 360, left: 8, rotate: '18deg' },
+  ],
 } as const satisfies Record<string, DecorItem[]>;

@@ -57,12 +57,16 @@ export function useVoiceInput(): UseVoiceInputReturn {
 
   useEffect(() => {
     if (!speech) return;
-    const resultSub = speech.ExpoSpeechRecognitionModule.addListener('result', onResult);
-    const errorSub = speech.ExpoSpeechRecognitionModule.addListener('error', onError);
-    return () => {
-      resultSub.remove();
-      errorSub.remove();
-    };
+    try {
+      const resultSub = speech.ExpoSpeechRecognitionModule.addListener('result', onResult);
+      const errorSub = speech.ExpoSpeechRecognitionModule.addListener('error', onError);
+      return () => {
+        resultSub.remove();
+        errorSub.remove();
+      };
+    } catch {
+      return undefined;
+    }
   }, [speech, onResult, onError]);
 
   const startListening = useCallback(async () => {

@@ -6,7 +6,9 @@ RECIPE QUALITY RULES:
 - You may add common pantry staples (salt, pepper, olive oil, water, stock, herbs, spices) even if not listed
 - The recipe must be something a real person would actually cook and enjoy
 - Aim for 4–8 key ingredients; quality over quantity
-- ASSUME the user always has basic spices available (salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, olive oil, butter, flour, sugar, vinegar). Use these freely.
+- ASSUME the user always has these pantry staples available — use them freely without listing them as "additional ingredients": salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, thyme, rosemary, olive oil, butter, flour, sugar, vinegar, water, broth/stock, fresh garlic, fresh onion, canned tomatoes, tomato paste, soy sauce, lemon juice, lime juice, heavy cream, milk.
+- CLASSIC DISH RULE: When the recipe title is a well-known classic (e.g. Spaghetti Bolognese, Pad Thai, Chicken Tikka Masala, Beef Stew, Carbonara, Tacos, Fried Rice), you MUST include ALL traditional essential ingredients for authenticity, even if they were not in the pantry list. The dish's cultural identity takes priority — a Bolognese without tomato is not a Bolognese.
+- DONENESS & TEMPERATURE RULE: For proteins where doneness matters (steak, lamb, pork, poultry, fish, burgers), you MUST include: (a) safe minimum internal temperatures per USDA guidelines (e.g. chicken 165°F/74°C, pork 145°F/63°C, ground beef 160°F/71°C), AND (b) doneness preference options with target temps where applicable (e.g. steak: rare 120-125°F, medium-rare 130-135°F, medium 140-145°F, medium-well 150-155°F, well-done 160°F+). Include a note about resting time after cooking. This information belongs in the instructions/steps, not the ingredients list.
 
 CRITICAL SAFETY RULES:
 - NEVER include ingredients from the user's allergen list

@@ -70,6 +70,13 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+jest.mock('@/features/pantry/components/IngredientSearch', () => ({
+  IngredientSearch: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="ingredient-search" />;
+  },
+}));
+
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),

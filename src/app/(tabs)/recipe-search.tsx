@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TextInput, Pressable, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  Pressable,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -8,7 +16,8 @@ import { db } from '@/shared/services/firebase/firebase.config';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
-import { PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 import type { Recipe } from '@/shared/types';
 
 export default function RecipeSearchScreen(): React.JSX.Element {
@@ -20,6 +29,13 @@ export default function RecipeSearchScreen(): React.JSX.Element {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const isWeb = Platform.OS === 'web';
+  const holiday = useHolidayStore((s) => s.theme);
+  const gradient = holiday?.gradient ?? (['#134e4a', '#0f766e', '#2dd4bf'] as const);
+  const bannerEmoji = holiday?.bannerEmoji ?? '🔍';
+  const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? ['🔍', '📖', '🍽️'];
+  const subtitleColor = holiday?.subtitleHexColor ?? '#99f6e4';
 
   async function handleSearch(): Promise<void> {
     const q = searchQuery.trim();
@@ -75,25 +91,47 @@ export default function RecipeSearchScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="recipe-search-screen">
+      <BackgroundDecor items={DECOR_SETS.recipeSearch} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-        {/* Gradient header */}
-        <View className="w-full items-center bg-primary-700">
-          <View className="w-full max-w-2xl">
-            <LinearGradient
-              colors={['#c2410c', '#ea580c', '#fb923c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+        {/* Gradient header — deep teal search/discovery theme */}
+        <LinearGradient
+          colors={[gradient[0], gradient[1], gradient[2]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
+            <View
+              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
             >
-              <View className="px-6 pt-5 pb-6">
-                <Text className="text-3xl mb-1">🔍</Text>
-                <Text className="text-2xl font-nunito-bold text-white">Search Recipes</Text>
-                <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                  Find a dish by name or keyword
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  {sil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  {sil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  {sil2}
                 </Text>
               </View>
-            </LinearGradient>
+              <Text className="text-5xl mb-1">{bannerEmoji}</Text>
+              <Text className="text-3xl font-nunito-extrabold text-white">Search Recipes</Text>
+              <Text style={{ color: subtitleColor }} className="text-sm mt-1 font-nunito-semibold">
+                Find a dish by name or keyword
+              </Text>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <PageContainer className="px-4 mt-4">
           {/* Search input */}

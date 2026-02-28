@@ -8,6 +8,7 @@ import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
@@ -123,6 +124,12 @@ export default function RecipesScreen(): React.JSX.Element {
               </Text>
             </View>
           ) : null}
+
+          {/* Ingredient search — add/manage pantry without leaving this tab */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">Your Ingredients</Text>
+            <IngredientSearch />
+          </View>
 
           {/* Cuisine selector */}
           <View className="mb-4">
