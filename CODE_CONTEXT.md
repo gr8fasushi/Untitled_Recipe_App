@@ -1,7 +1,7 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 13 (Vercel web deploy + Load More + back nav fix) — COMPLETE. 747 tests, 75 suites, all passing.
+> Last updated: Feature 14 (UI polish + holiday theming system) — COMPLETE. 748 tests, 75 suites, all passing.
 > Current branch: `feature/web-deploy`
 
 ---
@@ -92,11 +92,49 @@ export function Input(props: InputProps): React.JSX.Element;
 
 - Red border on `error` prop; error testID = `${testID}-error`
 
+### BackgroundDecor.tsx
+
+```typescript
+interface DecorItem {
+  emoji: string;
+  size: number;
+  bottom: number;
+  right?: number;
+  left?: number;
+  rotate?: string;
+}
+export function BackgroundDecor({ items }: { items: DecorItem[] }): React.JSX.Element;
+// DECOR_SETS keys: home | pantry | recipes | saved | profile | chat
+export const DECOR_SETS: Record<
+  'home' | 'pantry' | 'recipes' | 'saved' | 'profile' | 'chat',
+  DecorItem[]
+>;
+```
+
+- Renders large faint emoji watermarks absolutely behind page content; opacity 0.08
+- `chat` set: 👨‍🍳 🍳 💬
+
+### HolidayEffect.tsx
+
+```typescript
+interface HolidayEffectProps {
+  particle: string;
+  count?: number;
+  onComplete?: () => void;
+}
+export function HolidayEffect(props: HolidayEffectProps): React.JSX.Element | null;
+```
+
+- 20 animated falling emoji particles, unmounts after all animations complete
+- Rendered in root `_layout.tsx` (once per launch, controlled by `useHolidayStore.effectShownThisLaunch`)
+
 ### index.ts exports
 
 ```typescript
 export { Button } from './Button';
 export { Input } from './Input';
+export { BackgroundDecor, DECOR_SETS } from './BackgroundDecor';
+export { HolidayEffect } from './HolidayEffect';
 ```
 
 ---
@@ -157,6 +195,45 @@ export const analyzePhotoFn = httpsCallable<AnalyzePhotoInput, AnalyzePhotoOutpu
   'analyzeIngredientPhoto'
 );
 ```
+
+---
+
+## src/shared/hooks/useHolidayTheme.ts
+
+```typescript
+export interface HolidayTheme {
+  name: string;
+  gradient: readonly [string, string, string];
+  bannerEmoji: string;
+  silhouetteEmojis: readonly [string, string, string];
+  particle: string;
+  particleCount: number;
+  greeting: string;
+  subtitleHexColor: string; // hex color for subtitle text
+  tileAccentHex: string; // hex color for tile accent bg
+}
+export function useHolidayTheme(): HolidayTheme | null;
+```
+
+- Detects 7 holidays (Christmas, New Year's, July 4th, Halloween, Valentine's, St. Patrick's, Thanksgiving)
+- Pure date function — no side effects; called once in `_layout.tsx` and synced into `useHolidayStore`
+
+---
+
+## src/stores/holidayStore.ts
+
+```typescript
+interface HolidayState {
+  theme: HolidayTheme | null;
+  effectShownThisLaunch: boolean;
+  setTheme: (theme: HolidayTheme | null) => void;
+  markEffectShown: () => void;
+}
+export const useHolidayStore: StoreApi<HolidayState>;
+```
+
+- Set once at app launch in `_layout.tsx` via `useHolidayTheme()` result
+- `effectShownThisLaunch` prevents HolidayEffect from replaying after mount
 
 ---
 

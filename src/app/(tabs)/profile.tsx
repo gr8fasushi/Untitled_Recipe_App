@@ -14,6 +14,7 @@ import { useProfileSettings } from '@/features/profile/hooks/useProfileSettings'
 import { VoicePicker } from '@/features/profile/components/VoicePicker';
 import { useUIStore } from '@/stores/uiStore';
 import type { ColorSchemePreference } from '@/stores/uiStore';
+import { useHolidayStore } from '@/stores/holidayStore';
 
 const APPEARANCE_OPTIONS: { label: string; value: ColorSchemePreference; emoji: string }[] = [
   { label: 'Light', value: 'light', emoji: '☀️' },
@@ -42,19 +43,24 @@ export default function ProfileScreen(): React.JSX.Element {
   const isWeb = Platform.OS === 'web';
   const colorScheme = useUIStore((s) => s.colorScheme);
   const setColorScheme = useUIStore((s) => s.setColorScheme);
+  const holiday = useHolidayStore((s) => s.theme);
+  const profileGradient = holiday?.gradient ?? (['#1e3a8a', '#1d4ed8', '#60a5fa'] as const);
+  const profileEmoji = holiday?.bannerEmoji ?? '👤';
+  const [prSil0, prSil1, prSil2] = holiday?.silhouetteEmojis ?? ['👤', '⚙️', '🔒'];
+  const profileSubtitleColor = holiday?.subtitleHexColor ?? '#bfdbfe'; // blue-200
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="profile-screen">
       <BackgroundDecor items={DECOR_SETS.profile} />
       {/* Gradient header — navy/blue account theme */}
       <LinearGradient
-        colors={['#1e3a8a', '#1d4ed8', '#60a5fa']}
+        colors={[profileGradient[0], profileGradient[1], profileGradient[2]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
           <View
-            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
           >
             {/* Emoji silhouettes */}
             <View
@@ -62,29 +68,30 @@ export default function ProfileScreen(): React.JSX.Element {
               pointerEvents="none"
             >
               <Text
-                style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+                style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
               >
-                👤
+                {prSil0}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
               >
-                ⚙️
+                {prSil1}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
               >
-                🔒
+                {prSil2}
               </Text>
             </View>
-            <Text className="text-3xl mb-1">👤</Text>
+            <Text className="text-5xl mb-1">{profileEmoji}</Text>
             <Text
               className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
             >
               Profile
             </Text>
             <Text
-              className={`text-blue-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              style={{ color: profileSubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
             >
               Manage your account and preferences
             </Text>

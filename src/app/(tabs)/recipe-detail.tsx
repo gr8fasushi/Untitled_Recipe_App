@@ -40,17 +40,17 @@ export default function RecipeDetailScreen(): React.JSX.Element {
                 pointerEvents="none"
               >
                 <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
                 >
                   🍳
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
                 >
                   🔥
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
                 >
                   🥄
                 </Text>

@@ -29,7 +29,7 @@ export function BackgroundDecor({ items }: BackgroundDecorProps): React.JSX.Elem
           style={{
             position: 'absolute',
             fontSize: item.size,
-            opacity: 0.04,
+            opacity: 0.08,
             bottom: item.bottom,
             ...(item.right !== undefined ? { right: item.right } : {}),
             ...(item.left !== undefined ? { left: item.left } : {}),
@@ -70,5 +70,10 @@ export const DECOR_SETS = {
     { emoji: '👤', size: 120, bottom: 80, right: -10, rotate: '8deg' },
     { emoji: '⚙️', size: 90, bottom: 220, right: 60, rotate: '-12deg' },
     { emoji: '🔒', size: 80, bottom: 340, left: 8, rotate: '18deg' },
+  ],
+  chat: [
+    { emoji: '👨‍🍳', size: 130, bottom: 80, right: -15, rotate: '12deg' },
+    { emoji: '🍳', size: 100, bottom: 240, right: 70, rotate: '-8deg' },
+    { emoji: '💬', size: 85, bottom: 380, left: 8, rotate: '-15deg' },
   ],
 } as const satisfies Record<string, DecorItem[]>;

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -49,20 +50,33 @@ function Tile({
   );
 }
 
+const DEFAULT_GRADIENT = ['#92400e', '#b45309', '#f59e0b'] as const;
+const DEFAULT_SILHOUETTES = ['🍽️', '🥘', '🍴'] as const;
+const DEFAULT_SUBTITLE_COLOR = '#fde68a'; // amber-200
+
 export default function HomeScreen(): React.JSX.Element {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
+  const holiday = useHolidayStore((s) => s.theme);
   const greeting = getGreeting();
   const name = profile?.displayName ?? '';
   const isWeb = Platform.OS === 'web';
+
+  const gradient = holiday?.gradient ?? DEFAULT_GRADIENT;
+  const bannerEmoji = holiday?.bannerEmoji ?? DEFAULT_SILHOUETTES[0];
+  const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? DEFAULT_SILHOUETTES;
+  const subtitleColor = holiday?.subtitleHexColor ?? DEFAULT_SUBTITLE_COLOR;
+  const headingText = holiday
+    ? `${holiday.greeting}${name ? `, ${name}` : ''}!`
+    : `${greeting}${name ? `, ${name}` : ''}!`;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="home-screen">
       <BackgroundDecor items={DECOR_SETS.home} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Gradient header — amber/warm gold theme */}
+        {/* Gradient header */}
         <LinearGradient
-          colors={['#92400e', '#b45309', '#f59e0b']}
+          colors={[gradient[0], gradient[1], gradient[2]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -76,30 +90,36 @@ export default function HomeScreen(): React.JSX.Element {
                 pointerEvents="none"
               >
                 <Text
-                  style={{ position: 'absolute', fontSize: 100, opacity: 0.1, top: -10, right: 10 }}
+                  style={{
+                    position: 'absolute',
+                    fontSize: 100,
+                    opacity: 0.18,
+                    top: -10,
+                    right: 10,
+                  }}
                 >
-                  🍽️
+                  {sil0}
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 75, opacity: 0.08, top: 20, right: 105 }}
+                  style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 105 }}
                 >
-                  🥘
+                  {sil1}
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 85, opacity: 0.08, top: -5, right: 185 }}
+                  style={{ position: 'absolute', fontSize: 85, opacity: 0.15, top: -5, right: 185 }}
                 >
-                  🍴
+                  {sil2}
                 </Text>
               </View>
-              <Text className="text-3xl mb-1">🍽️</Text>
+              <Text className="text-5xl mb-1">{bannerEmoji}</Text>
               <Text
                 className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
               >
-                {greeting}
-                {name ? `, ${name}` : ''}!
+                {headingText}
               </Text>
               <Text
-                className={`text-amber-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+                style={{ color: subtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
                 What would you like to cook today?
               </Text>
@@ -116,7 +136,7 @@ export default function HomeScreen(): React.JSX.Element {
               subtitle="Use what you have to generate recipes"
               onPress={() => router.push('/(tabs)/pantry')}
               testID="tile-cook-pantry"
-              accentColor="#fff7ed"
+              accentColor={holiday?.tileAccentHex ?? '#fff7ed'}
             />
             <Tile
               emoji="🔍"
@@ -124,7 +144,7 @@ export default function HomeScreen(): React.JSX.Element {
               subtitle="Find a specific dish by name"
               onPress={() => router.push('/(tabs)/recipe-search')}
               testID="tile-search-recipes"
-              accentColor="#eff6ff"
+              accentColor={holiday?.tileAccentHex ?? '#eff6ff'}
             />
           </View>
 
@@ -136,7 +156,7 @@ export default function HomeScreen(): React.JSX.Element {
               subtitle="See what the community is cooking"
               onPress={() => router.push('/(tabs)/community')}
               testID="tile-popular-recipes"
-              accentColor="#fefce8"
+              accentColor={holiday?.tileAccentHex ?? '#fefce8'}
             />
             <Tile
               emoji="🔖"
@@ -144,7 +164,7 @@ export default function HomeScreen(): React.JSX.Element {
               subtitle="Recipes you've bookmarked"
               onPress={() => router.push('/(tabs)/saved')}
               testID="tile-my-saved"
-              accentColor="#f0fdf4"
+              accentColor={holiday?.tileAccentHex ?? '#f0fdf4'}
             />
           </View>
         </PageContainer>

@@ -6,6 +6,7 @@ import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes'
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
 import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
 const RATING_FILTERS: { label: string; value: number | null }[] = [
@@ -33,6 +34,12 @@ export default function SavedScreen(): React.JSX.Element {
   const hasRecipes = savedRecipes.length > 0;
   const isWeb = Platform.OS === 'web';
 
+  const holiday = useHolidayStore((s) => s.theme);
+  const savedGradient = holiday?.gradient ?? (['#3b0764', '#6d28d9', '#a78bfa'] as const);
+  const savedEmoji = holiday?.bannerEmoji ?? '🔖';
+  const [sSil0, sSil1, sSil2] = holiday?.silhouetteEmojis ?? ['🔖', '⭐', '❤️'];
+  const savedSubtitleColor = holiday?.subtitleHexColor ?? '#ddd6fe'; // violet-200
+
   function handleCardPress(item: SavedRecipe): void {
     setCurrentSavedRecipe(item);
     router.push('/(tabs)/saved-recipe-detail');
@@ -43,13 +50,13 @@ export default function SavedScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.saved} />
       {/* Gradient header — full width gradient, content constrained inside */}
       <LinearGradient
-        colors={['#3b0764', '#6d28d9', '#a78bfa']}
+        colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
           <View
-            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
           >
             {/* Emoji silhouettes */}
             <View
@@ -57,22 +64,22 @@ export default function SavedScreen(): React.JSX.Element {
               pointerEvents="none"
             >
               <Text
-                style={{ position: 'absolute', fontSize: 90, opacity: 0.1, top: -8, right: 16 }}
+                style={{ position: 'absolute', fontSize: 90, opacity: 0.18, top: -8, right: 16 }}
               >
-                🔖
+                {sSil0}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 20, right: 100 }}
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 20, right: 100 }}
               >
-                ⭐
+                {sSil1}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 180 }}
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 180 }}
               >
-                ❤️
+                {sSil2}
               </Text>
             </View>
-            <Text className="text-3xl mb-1">🔖</Text>
+            <Text className="text-5xl mb-1">{savedEmoji}</Text>
             <Text
               testID="saved-heading"
               className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
@@ -80,7 +87,8 @@ export default function SavedScreen(): React.JSX.Element {
               Saved Recipes
             </Text>
             <Text
-              className={`text-violet-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              style={{ color: savedSubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
             >
               Your bookmarked collection
             </Text>

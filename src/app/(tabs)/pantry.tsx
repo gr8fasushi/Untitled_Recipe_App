@@ -10,7 +10,8 @@ import { loadPantry, savePantry } from '@/features/pantry/services/pantryService
 import { useScan } from '@/features/scan/hooks/useScan';
 import { IngredientChip } from '@/features/pantry/components/IngredientChip';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
-import { PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 
 export default function PantryScreen(): React.JSX.Element {
   const { user } = useAuthStore();
@@ -84,17 +85,24 @@ export default function PantryScreen(): React.JSX.Element {
       : 'Search or scan below to add ingredients';
   const isWeb = Platform.OS === 'web';
 
+  const holiday = useHolidayStore((s) => s.theme);
+  const pantryGradient = holiday?.gradient ?? (['#064e3b', '#065f46', '#10b981'] as const);
+  const pantryEmoji = holiday?.bannerEmoji ?? '🥘';
+  const [pSil0, pSil1, pSil2] = holiday?.silhouetteEmojis ?? ['🥦', '🥕', '🍅'];
+  const pantrySubtitleColor = holiday?.subtitleHexColor ?? '#6ee7b7'; // emerald-300
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50" testID="pantry-screen">
+      <BackgroundDecor items={DECOR_SETS.pantry} />
       {/* Gradient header — emerald/green fresh ingredients theme */}
       <LinearGradient
-        colors={['#064e3b', '#065f46', '#10b981']}
+        colors={[pantryGradient[0], pantryGradient[1], pantryGradient[2]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
           <View
-            className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
           >
             {/* Emoji silhouettes */}
             <View
@@ -102,62 +110,34 @@ export default function PantryScreen(): React.JSX.Element {
               pointerEvents="none"
             >
               <Text
-                style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+                style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
               >
-                🥦
+                {pSil0}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
               >
-                🥕
+                {pSil1}
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
               >
-                🍅
+                {pSil2}
               </Text>
             </View>
-            {/* Title row */}
-            <View className="flex-row items-center justify-between mb-1">
-              <View className="flex-row items-center gap-3">
-                <Text className="text-3xl">🥘</Text>
-                <Text
-                  className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
-                >
-                  My Pantry
-                </Text>
-              </View>
-              {ingredientCount > 0 ? (
-                <Pressable
-                  testID="btn-clear-pantry"
-                  onPress={clearPantry}
-                  className="px-3 py-1.5 rounded-full border border-emerald-300 active:opacity-75"
-                >
-                  <Text className="text-xs font-nunito-bold text-emerald-100">Clear all</Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {/* Subtitle */}
+            {/* Emoji + title stacked (matching other tabs) */}
+            <Text className="text-5xl mb-1">{pantryEmoji}</Text>
             <Text
-              className={`text-emerald-200 ${isWeb ? 'text-base' : 'text-sm'} ml-12 font-nunito-semibold`}
+              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+            >
+              My Pantry
+            </Text>
+            <Text
+              style={{ color: pantrySubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
             >
               {subtitle}
             </Text>
-
-            {/* Selected ingredient chips */}
-            {ingredientCount > 0 ? (
-              <View testID="pantry-chips" className="mt-4 flex-row flex-wrap">
-                {selectedIngredients.map((ingredient) => (
-                  <IngredientChip
-                    key={ingredient.id}
-                    ingredient={ingredient}
-                    onRemove={() => removeIngredient(ingredient.id)}
-                    testID={`chip-${ingredient.id}`}
-                  />
-                ))}
-              </View>
-            ) : null}
           </View>
         </View>
       </LinearGradient>
@@ -170,6 +150,34 @@ export default function PantryScreen(): React.JSX.Element {
         </View>
       ) : (
         <PageContainer>
+          {/* Ingredient chips + Clear All — now in PageContainer */}
+          {ingredientCount > 0 ? (
+            <View className="px-4 pt-4 pb-2">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-nunito-bold text-gray-700">
+                  Your Pantry ({ingredientCount})
+                </Text>
+                <Pressable
+                  testID="btn-clear-pantry"
+                  onPress={clearPantry}
+                  className="active:opacity-75"
+                >
+                  <Text className="text-xs font-nunito-bold text-red-400">Clear all</Text>
+                </Pressable>
+              </View>
+              <View testID="pantry-chips" className="flex-row flex-wrap">
+                {selectedIngredients.map((ingredient) => (
+                  <IngredientChip
+                    key={ingredient.id}
+                    ingredient={ingredient}
+                    onRemove={() => removeIngredient(ingredient.id)}
+                    testID={`chip-${ingredient.id}`}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
+
           {/* Error banner */}
           {error ? (
             <View testID="pantry-error" className="mx-4 mt-3 rounded-xl bg-red-50 px-4 py-3">

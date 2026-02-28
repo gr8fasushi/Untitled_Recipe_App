@@ -8,11 +8,13 @@ import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
 export default function RecipesScreen(): React.JSX.Element {
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
+  const removeIngredient = usePantryStore((s) => s.removeIngredient);
   const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
   const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
@@ -23,6 +25,12 @@ export default function RecipesScreen(): React.JSX.Element {
 
   const hasIngredients = selectedIngredients.length > 0;
   const isWeb = Platform.OS === 'web';
+
+  const holiday = useHolidayStore((s) => s.theme);
+  const recipesGradient = holiday?.gradient ?? (['#7c2d12', '#c2410c', '#fb923c'] as const);
+  const recipesEmoji = holiday?.bannerEmoji ?? '🍳';
+  const [rSil0, rSil1, rSil2] = holiday?.silhouetteEmojis ?? ['🍳', '🔥', '🥄'];
+  const recipesSubtitleColor = holiday?.subtitleHexColor ?? '#fed7aa'; // orange-200
 
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);
@@ -35,13 +43,13 @@ export default function RecipesScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — deep red/orange cooking theme */}
         <LinearGradient
-          colors={['#7c2d12', '#c2410c', '#fb923c']}
+          colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View className="items-center w-full">
             <View
-              className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-6'} overflow-hidden`}
+              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
             >
               {/* Emoji silhouettes */}
               <View
@@ -49,22 +57,22 @@ export default function RecipesScreen(): React.JSX.Element {
                 pointerEvents="none"
               >
                 <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.1, top: -8, right: 12 }}
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
                 >
-                  🍳
+                  {rSil0}
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.08, top: 22, right: 105 }}
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
                 >
-                  🔥
+                  {rSil1}
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.08, top: -5, right: 185 }}
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
                 >
-                  🥄
+                  {rSil2}
                 </Text>
               </View>
-              <Text className="text-3xl mb-1">🍳</Text>
+              <Text className="text-5xl mb-1">{recipesEmoji}</Text>
               <Text
                 testID="recipes-heading"
                 className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
@@ -72,12 +80,33 @@ export default function RecipesScreen(): React.JSX.Element {
                 Generate Recipes
               </Text>
               <Text
-                className={`text-orange-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+                style={{ color: recipesSubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
                 {hasIngredients
-                  ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
+                  ? 'Tap an ingredient to remove it'
                   : 'Add ingredients in the Pantry tab first'}
               </Text>
+              {/* Removable ingredient chips */}
+              {hasIngredients ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="mt-3 -mx-1"
+                >
+                  {selectedIngredients.map((ingredient) => (
+                    <Pressable
+                      key={ingredient.id}
+                      testID={`banner-ingredient-${ingredient.id}`}
+                      onPress={() => removeIngredient(ingredient.id)}
+                      className="flex-row items-center gap-1 bg-white/20 rounded-full px-3 py-1 mr-2"
+                    >
+                      <Text className="text-xs font-nunito-bold text-white">{ingredient.name}</Text>
+                      <Text className="text-xs text-white/60">×</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : null}
             </View>
           </View>
         </LinearGradient>
