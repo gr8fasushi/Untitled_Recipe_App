@@ -89,3 +89,14 @@ export const validateChatInput = (data: unknown): z.infer<typeof ChatInputSchema
 
 export const validateAnalyzePhotoInput = (data: unknown): z.infer<typeof AnalyzePhotoInputSchema> =>
   validateInput(AnalyzePhotoInputSchema, data);
+
+export const FeedbackInputSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  message: z.string().min(10).max(500),
+  category: z.enum(['bug', 'feature', 'general']).optional(),
+});
+
+export type FeedbackInput = z.infer<typeof FeedbackInputSchema>;
+
+export const validateFeedbackInput = (data: unknown): FeedbackInput =>
+  validateInput(FeedbackInputSchema, data);

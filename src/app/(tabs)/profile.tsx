@@ -12,6 +12,7 @@ import { DisclaimerCard } from '@/features/onboarding/components/DisclaimerCard'
 import { BIG_9_ALLERGENS, DIETARY_PREFERENCES } from '@/constants/allergens';
 import { useProfileSettings } from '@/features/profile/hooks/useProfileSettings';
 import { VoicePicker } from '@/features/profile/components/VoicePicker';
+import { FeedbackSection } from '@/features/profile/components/FeedbackSection';
 import { useUIStore } from '@/stores/uiStore';
 import type { ColorSchemePreference } from '@/stores/uiStore';
 import { useHolidayStore } from '@/stores/holidayStore';
@@ -195,6 +196,11 @@ export default function ProfileScreen(): React.JSX.Element {
               Choose the voice used when reading recipe instructions aloud.
             </Text>
             <VoicePicker />
+          </View>
+
+          {/* Feedback section */}
+          <View className="px-4 pt-6">
+            <FeedbackSection />
           </View>
 
           {/* Disclaimer + Save */}

@@ -7,3 +7,4 @@ initializeApp();
 export { generateRecipe } from './features/recipes/generateRecipe';
 export { chatWithAssistant } from './features/chat/chatWithAssistant';
 export { analyzeIngredientPhoto } from './features/vision/analyzeIngredientPhoto';
+export { submitFeedback } from './features/feedback/submitFeedback';
