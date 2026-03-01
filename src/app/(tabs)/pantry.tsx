@@ -12,6 +12,7 @@ import { IngredientChip } from '@/features/pantry/components/IngredientChip';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
 import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 export default function PantryScreen(): React.JSX.Element {
   const { user } = useAuthStore();
@@ -86,13 +87,18 @@ export default function PantryScreen(): React.JSX.Element {
   const isWeb = Platform.OS === 'web';
 
   const holiday = useHolidayStore((s) => s.theme);
-  const pantryGradient = holiday?.gradient ?? (['#064e3b', '#065f46', '#10b981'] as const);
+  const isDark = useIsDarkMode();
+  const pantryGradient =
+    holiday?.gradient ??
+    (isDark
+      ? (['#022c22', '#064e3b', '#065f46'] as const)
+      : (['#064e3b', '#065f46', '#10b981'] as const));
   const pantryEmoji = holiday?.bannerEmoji ?? '🥘';
   const [pSil0, pSil1, pSil2] = holiday?.silhouetteEmojis ?? ['🥦', '🥕', '🍅'];
   const pantrySubtitleColor = holiday?.subtitleHexColor ?? '#6ee7b7'; // emerald-300
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="pantry-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="pantry-screen">
       <BackgroundDecor items={DECOR_SETS.pantry} />
       {/* Gradient header — emerald/green fresh ingredients theme */}
       <LinearGradient

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -51,6 +52,7 @@ function Tile({
 }
 
 const DEFAULT_GRADIENT = ['#92400e', '#b45309', '#f59e0b'] as const;
+const DEFAULT_GRADIENT_DARK = ['#451a03', '#78350f', '#92400e'] as const;
 const DEFAULT_SILHOUETTES = ['🍽️', '🥘', '🍴'] as const;
 const DEFAULT_SUBTITLE_COLOR = '#fde68a'; // amber-200
 
@@ -58,11 +60,12 @@ export default function HomeScreen(): React.JSX.Element {
   const router = useRouter();
   const profile = useAuthStore((s) => s.profile);
   const holiday = useHolidayStore((s) => s.theme);
+  const isDark = useIsDarkMode();
   const greeting = getGreeting();
   const name = profile?.displayName ?? '';
   const isWeb = Platform.OS === 'web';
 
-  const gradient = holiday?.gradient ?? DEFAULT_GRADIENT;
+  const gradient = holiday?.gradient ?? (isDark ? DEFAULT_GRADIENT_DARK : DEFAULT_GRADIENT);
   const bannerEmoji = holiday?.bannerEmoji ?? DEFAULT_SILHOUETTES[0];
   const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? DEFAULT_SILHOUETTES;
   const subtitleColor = holiday?.subtitleHexColor ?? DEFAULT_SUBTITLE_COLOR;
@@ -71,7 +74,7 @@ export default function HomeScreen(): React.JSX.Element {
     : `${greeting}${name ? `, ${name}` : ''}!`;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="home-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="home-screen">
       <BackgroundDecor items={DECOR_SETS.home} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header */}

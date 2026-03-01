@@ -10,6 +10,7 @@ import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import type { ChatMessage } from '@/shared/types';
 
 export default function ChatScreen(): React.JSX.Element {
@@ -21,6 +22,7 @@ export default function ChatScreen(): React.JSX.Element {
   const setRecipeSnapshot = useChatStore((s) => s.setRecipeSnapshot);
   const loadVoiceMuted = useChatStore((s) => s.loadVoiceMuted);
   const reset = useChatStore((s) => s.reset);
+  const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
@@ -48,12 +50,12 @@ export default function ChatScreen(): React.JSX.Element {
   }, [messages, speak]);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="chat-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="chat-screen">
       <BackgroundDecor items={DECOR_SETS.chat} />
 
       {/* Gradient header — deep indigo AI theme */}
       <LinearGradient
-        colors={['#1e1b4b', '#4338ca', '#6366f1']}
+        colors={isDark ? ['#0f0e24', '#1e1b4b', '#312e81'] : ['#1e1b4b', '#4338ca', '#6366f1']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -124,50 +126,53 @@ export default function ChatScreen(): React.JSX.Element {
         </View>
       </LinearGradient>
 
-      {/* Empty state */}
-      {messages.length === 0 && !isLoading ? (
-        <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
-          <Text className="text-6xl mb-3">👨‍🍳</Text>
-          <Text className="text-lg font-semibold text-gray-700 mb-2 text-center">
-            Ask me anything about this recipe
-          </Text>
-          <Text className="text-sm text-gray-400 text-center">
-            Substitutions, cooking tips, nutrition — I&apos;m here to help.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          testID="chat-message-list"
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ChatBubble message={item} testID={`bubble-${item.id}`} />}
-          contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        />
-      )}
-
-      {/* Loading indicator */}
-      {isLoading ? (
-        <View testID="chat-loading" className="px-4 py-2">
-          <View className="self-start bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
-            <ActivityIndicator size="small" color="#6b7280" />
+      {/* All post-header content constrained to max-w-2xl on web */}
+      <View className="flex-1 w-full max-w-2xl self-center">
+        {/* Empty state */}
+        {messages.length === 0 && !isLoading ? (
+          <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
+            <Text className="text-6xl mb-3">👨‍🍳</Text>
+            <Text className="text-lg font-semibold text-gray-700 mb-2 text-center">
+              Ask me anything about this recipe
+            </Text>
+            <Text className="text-sm text-gray-400 text-center">
+              Substitutions, cooking tips, nutrition — I&apos;m here to help.
+            </Text>
           </View>
-        </View>
-      ) : null}
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            testID="chat-message-list"
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ChatBubble message={item} testID={`bubble-${item.id}`} />}
+            contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          />
+        )}
 
-      {/* Error */}
-      {error ? (
-        <View
-          testID="chat-error"
-          className="mx-4 mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2"
-        >
-          <Text className="text-xs text-red-700">{error}</Text>
-        </View>
-      ) : null}
+        {/* Loading indicator */}
+        {isLoading ? (
+          <View testID="chat-loading" className="px-4 py-2">
+            <View className="self-start bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
+              <ActivityIndicator size="small" color="#6b7280" />
+            </View>
+          </View>
+        ) : null}
 
-      {/* Input */}
-      <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
+        {/* Error */}
+        {error ? (
+          <View
+            testID="chat-error"
+            className="mx-4 mb-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2"
+          >
+            <Text className="text-xs text-red-700">{error}</Text>
+          </View>
+        ) : null}
+
+        {/* Input */}
+        <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
+      </View>
     </SafeAreaView>
   );
 }

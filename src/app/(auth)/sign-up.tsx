@@ -10,7 +10,7 @@ export default function SignUpScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View className="flex-1 justify-center px-6 py-12">
           <View className="mb-10 items-center">

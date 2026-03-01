@@ -38,6 +38,8 @@ export const RecipeSchema = z.object({
   servings: z.number(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   generatedAt: z.string(),
+  source: z.enum(['ai', 'themealdb']).default('ai'),
+  imageUrl: z.string().optional(),
 });
 
 export const MAX_NOTES_LENGTH = 500;

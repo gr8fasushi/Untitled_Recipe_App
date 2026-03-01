@@ -23,7 +23,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
   const recipe = savedRecipe?.recipe ?? null;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="saved-detail-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="saved-detail-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-gray-100">

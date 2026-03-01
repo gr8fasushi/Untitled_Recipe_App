@@ -27,7 +27,9 @@ export function DietaryPreferenceCard({
       accessibilityState={{ checked: isSelected }}
       accessibilityLabel={`${preference.name}${isSelected ? ', selected' : ''}`}
       className={`mb-3 rounded-xl border-2 p-4 ${
-        isSelected ? 'border-primary-600 bg-primary-50' : 'border-gray-200 bg-white'
+        isSelected
+          ? 'border-primary-600 bg-primary-50 dark:bg-primary-950'
+          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
       }`}
     >
       <View className="flex-row items-center justify-between">
@@ -35,7 +37,7 @@ export function DietaryPreferenceCard({
           <Text className="text-2xl">{preference.icon}</Text>
           <Text
             className={`text-base font-semibold ${
-              isSelected ? 'text-primary-700' : 'text-gray-900'
+              isSelected ? 'text-primary-700' : 'text-gray-900 dark:text-gray-100'
             }`}
           >
             {preference.name}
@@ -44,7 +46,9 @@ export function DietaryPreferenceCard({
         <View
           testID={`${testID ?? 'dietary-card'}-checkmark`}
           className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
-            isSelected ? 'border-primary-600 bg-primary-600' : 'border-gray-300 bg-white'
+            isSelected
+              ? 'border-primary-600 bg-primary-600'
+              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
           }`}
         >
           {isSelected && <Text className="text-xs font-bold text-white">✓</Text>}

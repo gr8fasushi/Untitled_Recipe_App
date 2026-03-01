@@ -15,6 +15,7 @@ import { VoicePicker } from '@/features/profile/components/VoicePicker';
 import { useUIStore } from '@/stores/uiStore';
 import type { ColorSchemePreference } from '@/stores/uiStore';
 import { useHolidayStore } from '@/stores/holidayStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 const APPEARANCE_OPTIONS: { label: string; value: ColorSchemePreference; emoji: string }[] = [
   { label: 'Light', value: 'light', emoji: '☀️' },
@@ -44,13 +45,18 @@ export default function ProfileScreen(): React.JSX.Element {
   const colorScheme = useUIStore((s) => s.colorScheme);
   const setColorScheme = useUIStore((s) => s.setColorScheme);
   const holiday = useHolidayStore((s) => s.theme);
-  const profileGradient = holiday?.gradient ?? (['#1e3a8a', '#1d4ed8', '#60a5fa'] as const);
+  const isDark = useIsDarkMode();
+  const profileGradient =
+    holiday?.gradient ??
+    (isDark
+      ? (['#0f172a', '#1e3a8a', '#1e40af'] as const)
+      : (['#1e3a8a', '#1d4ed8', '#60a5fa'] as const));
   const profileEmoji = holiday?.bannerEmoji ?? '👤';
   const [prSil0, prSil1, prSil2] = holiday?.silhouetteEmojis ?? ['👤', '⚙️', '🔒'];
   const profileSubtitleColor = holiday?.subtitleHexColor ?? '#bfdbfe'; // blue-200
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="profile-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="profile-screen">
       <BackgroundDecor items={DECOR_SETS.profile} />
       {/* Gradient header — navy/blue account theme */}
       <LinearGradient

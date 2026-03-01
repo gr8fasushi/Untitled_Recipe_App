@@ -4,9 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
+import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
 import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
 import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
 import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700',
@@ -18,15 +20,16 @@ export default function RecipeDetailScreen(): React.JSX.Element {
   const { currentRecipe: recipe } = useRecipesStore();
   const router = useRouter();
   const { isSaved, isSaving, toggleSave } = useSaveRecipe(recipe);
+  const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="recipe-detail-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipe-detail-screen">
       <BackgroundDecor items={DECOR_SETS.recipes} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Gradient hero banner */}
         <LinearGradient
-          colors={['#7c2d12', '#c2410c', '#fb923c']}
+          colors={isDark ? ['#431407', '#7c2d12', '#9a3412'] : ['#7c2d12', '#c2410c', '#fb923c']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -240,58 +243,60 @@ export default function RecipeDetailScreen(): React.JSX.Element {
               {/* Safe meat temperatures */}
               <MeatTemperatureCard ingredients={recipe.ingredients} testID="detail-meat-temps" />
 
-              {/* Nutrition card */}
-              <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5 overflow-hidden">
-                <View className="px-4 py-3 border-b border-gray-50 bg-orange-50">
-                  <Text className="text-base font-nunito-bold text-gray-900">
-                    📊 Nutrition per serving
-                  </Text>
+              {/* Nutrition card — suppressed for TheMealDB recipes */}
+              {recipe.source !== 'themealdb' ? (
+                <View className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-5 overflow-hidden">
+                  <View className="px-4 py-3 border-b border-gray-50 bg-orange-50">
+                    <Text className="text-base font-nunito-bold text-gray-900">
+                      📊 Nutrition per serving
+                    </Text>
+                  </View>
+                  <View testID="detail-nutrition" className="flex-row flex-wrap gap-2 p-4">
+                    {(
+                      [
+                        {
+                          label: 'Calories',
+                          value: `${recipe.nutrition.calories} kcal`,
+                          color: 'bg-orange-50 border-orange-100',
+                        },
+                        {
+                          label: 'Protein',
+                          value: `${recipe.nutrition.protein}g`,
+                          color: 'bg-blue-50 border-blue-100',
+                        },
+                        {
+                          label: 'Carbs',
+                          value: `${recipe.nutrition.carbohydrates}g`,
+                          color: 'bg-amber-50 border-amber-100',
+                        },
+                        {
+                          label: 'Fat',
+                          value: `${recipe.nutrition.fat}g`,
+                          color: 'bg-yellow-50 border-yellow-100',
+                        },
+                        {
+                          label: 'Fiber',
+                          value: `${recipe.nutrition.fiber}g`,
+                          color: 'bg-green-50 border-green-100',
+                        },
+                        {
+                          label: 'Sodium',
+                          value: `${recipe.nutrition.sodium}mg`,
+                          color: 'bg-purple-50 border-purple-100',
+                        },
+                      ] as const
+                    ).map(({ label, value, color }) => (
+                      <View
+                        key={label}
+                        className={`rounded-xl border px-3 py-2 min-w-[80px] ${color}`}
+                      >
+                        <Text className="text-xs text-gray-500 font-nunito">{label}</Text>
+                        <Text className="text-sm font-nunito-bold text-gray-900">{value}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-                <View testID="detail-nutrition" className="flex-row flex-wrap gap-2 p-4">
-                  {(
-                    [
-                      {
-                        label: 'Calories',
-                        value: `${recipe.nutrition.calories} kcal`,
-                        color: 'bg-orange-50 border-orange-100',
-                      },
-                      {
-                        label: 'Protein',
-                        value: `${recipe.nutrition.protein}g`,
-                        color: 'bg-blue-50 border-blue-100',
-                      },
-                      {
-                        label: 'Carbs',
-                        value: `${recipe.nutrition.carbohydrates}g`,
-                        color: 'bg-amber-50 border-amber-100',
-                      },
-                      {
-                        label: 'Fat',
-                        value: `${recipe.nutrition.fat}g`,
-                        color: 'bg-yellow-50 border-yellow-100',
-                      },
-                      {
-                        label: 'Fiber',
-                        value: `${recipe.nutrition.fiber}g`,
-                        color: 'bg-green-50 border-green-100',
-                      },
-                      {
-                        label: 'Sodium',
-                        value: `${recipe.nutrition.sodium}mg`,
-                        color: 'bg-purple-50 border-purple-100',
-                      },
-                    ] as const
-                  ).map(({ label, value, color }) => (
-                    <View
-                      key={label}
-                      className={`rounded-xl border px-3 py-2 min-w-[80px] ${color}`}
-                    >
-                      <Text className="text-xs text-gray-500 font-nunito">{label}</Text>
-                      <Text className="text-sm font-nunito-bold text-gray-900">{value}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+              ) : null}
 
               {/* Action buttons */}
               <View className="gap-3 mb-2">
@@ -326,9 +331,9 @@ export default function RecipeDetailScreen(): React.JSX.Element {
                 </Pressable>
               </View>
 
-              {/* AI Disclaimer */}
+              {/* Source disclaimer */}
               <View className="mt-4">
-                <AIDisclaimer />
+                {recipe.source === 'themealdb' ? <MealDbBadge /> : <AIDisclaimer />}
               </View>
             </View>
           </View>

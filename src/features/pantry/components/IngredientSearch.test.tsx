@@ -164,3 +164,53 @@ describe('IngredientSearch', () => {
     expect(mockCacheIngredient).not.toHaveBeenCalled();
   });
 });
+
+describe('IngredientSearch — controlled mode', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Store is still called (for fallback) but controlled props override its values
+    setupStore();
+    setupHook({ results: [chicken, salmon] });
+  });
+
+  it('renders without error when controlled props are passed', () => {
+    const onControlledAdd = jest.fn();
+    const { getByTestId } = render(
+      <IngredientSearch controlledIngredients={[]} onControlledAdd={onControlledAdd} />
+    );
+    expect(getByTestId('ingredient-search')).toBeTruthy();
+  });
+
+  it('uses controlledIngredients for Added state instead of pantry store', () => {
+    const onControlledAdd = jest.fn();
+    const { getByTestId } = render(
+      <IngredientSearch controlledIngredients={[chicken]} onControlledAdd={onControlledAdd} />
+    );
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
+    // chicken is in controlledIngredients, so it should show Added ✓
+    expect(getByTestId('ingredient-row-usda-123-check')).toBeTruthy();
+    // salmon is not in controlledIngredients, so no check
+    expect(() => getByTestId('ingredient-row-usda-456-check')).toThrow();
+  });
+
+  it('calls onControlledAdd instead of storeAdd when a row is pressed', () => {
+    const onControlledAdd = jest.fn();
+    const { getByTestId } = render(
+      <IngredientSearch controlledIngredients={[]} onControlledAdd={onControlledAdd} />
+    );
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
+    fireEvent.press(getByTestId('ingredient-row-usda-123'));
+    expect(onControlledAdd).toHaveBeenCalledWith(chicken);
+    expect(mockAddIngredient).not.toHaveBeenCalled();
+  });
+
+  it('does not call cacheIngredient when in controlled mode', () => {
+    const onControlledAdd = jest.fn();
+    const { getByTestId } = render(
+      <IngredientSearch controlledIngredients={[]} onControlledAdd={onControlledAdd} />
+    );
+    fireEvent.changeText(getByTestId('ingredient-search-input'), 'ch');
+    fireEvent.press(getByTestId('ingredient-row-usda-123'));
+    expect(mockCacheIngredient).not.toHaveBeenCalled();
+  });
+});

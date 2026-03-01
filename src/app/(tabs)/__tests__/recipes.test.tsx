@@ -4,14 +4,18 @@ import type { Recipe } from '@/shared/types';
 import type { PantryItem } from '@/features/pantry/types';
 
 const mockGenerate = jest.fn();
+const mockLoadMore = jest.fn();
 let mockIsLoading = false;
+let mockIsLoadingMore = false;
 let mockError: string | null = null;
 let mockRecipes: Recipe[] = [];
 
 jest.mock('@/features/recipes/hooks/useGenerateRecipe', () => ({
   useGenerateRecipe: () => ({
     generate: mockGenerate,
+    loadMore: mockLoadMore,
     isLoading: mockIsLoading,
+    isLoadingMore: mockIsLoadingMore,
     error: mockError,
     recipes: mockRecipes,
   }),
@@ -31,10 +35,14 @@ jest.mock('@/features/recipes/store/recipesStore', () => ({
     }),
 }));
 
+const mockRemoveIngredient = jest.fn();
 let mockSelectedIngredients: PantryItem[] = [];
 jest.mock('@/features/pantry/store/pantryStore', () => ({
   usePantryStore: (selector: (s: unknown) => unknown) =>
-    selector({ selectedIngredients: mockSelectedIngredients }),
+    selector({
+      selectedIngredients: mockSelectedIngredients,
+      removeIngredient: mockRemoveIngredient,
+    }),
 }));
 
 jest.mock('@/shared/components/ui/Button', () => ({
@@ -147,6 +155,7 @@ const makeRecipe = (id: string, title: string): Recipe => ({
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 });
 
 const recipe1 = makeRecipe('r1', 'Tomato Chicken');
@@ -158,9 +167,11 @@ describe('RecipesScreen', () => {
     jest.clearAllMocks();
     mockSelectedIngredients = [];
     mockIsLoading = false;
+    mockIsLoadingMore = false;
     mockError = null;
     mockRecipes = [];
     mockGenerate.mockResolvedValue(undefined);
+    mockLoadMore.mockResolvedValue(undefined);
     mockRouterPush.mockReset();
   });
 
@@ -169,7 +180,7 @@ describe('RecipesScreen', () => {
     expect(getByTestId('recipes-screen')).toBeTruthy();
   });
 
-  it('renders the Generate Recipes heading', () => {
+  it('renders the Find My Meal heading', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('recipes-heading')).toBeTruthy();
   });
@@ -183,6 +194,25 @@ describe('RecipesScreen', () => {
     mockSelectedIngredients = [tomato];
     const { queryByTestId } = render(<RecipesScreen />);
     expect(queryByTestId('recipes-no-ingredients')).toBeNull();
+  });
+
+  it('shows ingredient chips in page body when ingredients are selected', () => {
+    mockSelectedIngredients = [tomato, chicken];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('banner-ingredient-tomato')).toBeTruthy();
+    expect(getByTestId('banner-ingredient-chicken')).toBeTruthy();
+  });
+
+  it('hides ingredient chips when pantry is empty', () => {
+    const { queryByTestId } = render(<RecipesScreen />);
+    expect(queryByTestId('banner-ingredient-tomato')).toBeNull();
+  });
+
+  it('pressing an ingredient chip calls removeIngredient', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('banner-ingredient-tomato'));
+    expect(mockRemoveIngredient).toHaveBeenCalledWith('tomato');
   });
 
   it('generate button is disabled when no ingredients are selected', () => {

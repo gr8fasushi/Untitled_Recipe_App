@@ -6,6 +6,8 @@ import { authenticate } from '../../shared/middleware/authenticate';
 import { checkRateLimit } from '../../shared/middleware/rateLimit';
 import { validateGenerateRecipeInput } from '../../shared/middleware/validate';
 import { buildRecipePrompt, RECIPE_SYSTEM_PROMPT } from '../../shared/prompts/recipePrompts';
+import { fetchMealsForRecipeGeneration } from '../../shared/utils/mealDbService';
+import { mapMealDbToRecipe } from '../../shared/utils/mealDbMapper';
 
 const RecipeSchema = z.object({
   title: z.string(),
@@ -48,51 +50,95 @@ export const generateRecipe = onCall(
     const uid = authenticate(request);
     await checkRateLimit(uid, 'generateRecipe');
     const input = validateGenerateRecipeInput(request.data);
-    logger.info('generateRecipe', { uid, ingredientCount: input.ingredients.length, allergenCount: input.allergens.length, cuisineCount: (input.cuisines ?? []).length, strictIngredients: input.strictIngredients ?? false });
+    const cuisines = input.cuisines ?? [];
+    const ingredientNames = input.ingredients.map((i) => i.name);
 
-    const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
+    logger.info('generateRecipe', {
+      uid,
+      ingredientCount: input.ingredients.length,
+      allergenCount: input.allergens.length,
+      cuisineCount: cuisines.length,
+      strictIngredients: input.strictIngredients ?? false,
+    });
 
-    let content: string;
+    // ── Phase 1: TheMealDB ─────────────────────────────────────────────────
+    let mealDbRecipes: ReturnType<typeof mapMealDbToRecipe>[] = [];
     try {
-      const response = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: RECIPE_SYSTEM_PROMPT },
-          { role: 'user', content: buildRecipePrompt(input) },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 16000,
-      });
-      content = response.choices[0]?.message?.content ?? '';
+      const meals = await fetchMealsForRecipeGeneration(ingredientNames, cuisines, 5);
+      mealDbRecipes = meals.map(mapMealDbToRecipe);
+      logger.info('generateRecipe:mealDb', { found: mealDbRecipes.length });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Groq API error';
-      throw new HttpsError('unavailable', `AI service error: ${msg}`);
+      // Non-fatal — fall through to full AI generation
+      logger.warn('generateRecipe:mealDb fetch failed', { err });
     }
 
-    if (!content) {
-      throw new HttpsError('unavailable', 'No response from AI model');
-    }
+    // ── Phase 2: AI fills the remainder ───────────────────────────────────
+    const aiCount = 5 - mealDbRecipes.length;
+    let aiRecipes: Array<typeof RecipeSchema._type & { id: string; generatedAt: string; source: 'ai' }> = [];
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      throw new HttpsError('internal', 'Invalid JSON from AI model');
-    }
+    if (aiCount > 0) {
+      const mealDbTitles = mealDbRecipes.map((r) => r.title);
+      const allExcludeTitles = [
+        ...mealDbTitles,
+        ...(input.excludeTitles ?? []),
+      ];
 
-    const ResponseSchema = z.object({ recipes: z.array(RecipeSchema).length(5) });
-    const validated = ResponseSchema.safeParse(parsed);
-    if (!validated.success) {
-      throw new HttpsError('internal', 'AI response did not match expected schema');
-    }
+      const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
+      let content: string;
+      try {
+        const response = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: RECIPE_SYSTEM_PROMPT },
+            {
+              role: 'user',
+              content: buildRecipePrompt({
+                ...input,
+                excludeTitles: allExcludeTitles,
+                count: aiCount,
+              }),
+            },
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 16000,
+        });
+        content = response.choices[0]?.message?.content ?? '';
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Groq API error';
+        throw new HttpsError('unavailable', `AI service error: ${msg}`);
+      }
 
-    return {
-      recipes: validated.data.recipes.map((r) => ({
+      if (!content) {
+        throw new HttpsError('unavailable', 'No response from AI model');
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        throw new HttpsError('internal', 'Invalid JSON from AI model');
+      }
+
+      const ResponseSchema = z.object({
+        recipes: z.array(RecipeSchema).min(1).max(5),
+      });
+      const validated = ResponseSchema.safeParse(parsed);
+      if (!validated.success) {
+        throw new HttpsError('internal', 'AI response did not match expected schema');
+      }
+
+      aiRecipes = validated.data.recipes.map((r) => ({
         ...r,
         id: crypto.randomUUID(),
         generatedAt: new Date().toISOString(),
-      })),
+        source: 'ai' as const,
+      }));
+    }
+
+    // ── Combine and return ─────────────────────────────────────────────────
+    return {
+      recipes: [...mealDbRecipes, ...aiRecipes],
     };
   }
 );

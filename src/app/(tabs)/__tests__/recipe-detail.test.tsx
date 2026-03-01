@@ -34,6 +34,13 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+jest.mock('@/features/recipes/components/MealDbBadge', () => ({
+  MealDbBadge: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="mealdb-badge" />;
+  },
+}));
+
 const mockToggleSave = jest.fn();
 let mockIsSaved = false;
 let mockIsSaving = false;
@@ -81,6 +88,7 @@ const sampleRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -238,8 +246,42 @@ describe('RecipeDetailScreen — with recipe', () => {
     });
   });
 
-  it('shows the AI disclaimer when recipe is loaded', () => {
+  it('shows the AI disclaimer for AI-sourced recipes', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
     expect(getByTestId('ai-disclaimer')).toBeTruthy();
+  });
+});
+
+describe('RecipeDetailScreen — TheMealDB recipe', () => {
+  const mealDbRecipe: Recipe = {
+    ...sampleRecipe,
+    source: 'themealdb' as const,
+    imageUrl: 'https://example.com/image.jpg',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCurrentRecipe = mealDbRecipe;
+    mockIsSaved = false;
+    mockIsSaving = false;
+    mockRouterBack.mockReset();
+    mockRouterPush.mockReset();
+  });
+
+  it('shows MealDbBadge instead of AIDisclaimer for TheMealDB recipes', () => {
+    const { getByTestId, queryByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('mealdb-badge')).toBeTruthy();
+    expect(queryByTestId('ai-disclaimer')).toBeNull();
+  });
+
+  it('hides the nutrition section for TheMealDB recipes', () => {
+    const { queryByTestId } = render(<RecipeDetailScreen />);
+    expect(queryByTestId('detail-nutrition')).toBeNull();
+  });
+
+  it('still shows ingredients and instructions for TheMealDB recipes', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-ingredients-list')).toBeTruthy();
+    expect(getByTestId('detail-instructions-list')).toBeTruthy();
   });
 });

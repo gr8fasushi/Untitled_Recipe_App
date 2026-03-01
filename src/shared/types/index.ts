@@ -29,6 +29,8 @@ export interface Recipe {
   servings: number;
   difficulty: 'easy' | 'medium' | 'hard';
   generatedAt: string;
+  source: 'ai' | 'themealdb';
+  imageUrl?: string;
 }
 
 export interface RecipeIngredient {
