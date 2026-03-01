@@ -77,10 +77,37 @@ export async function fetchMealsForRecipeGeneration(
     }
   }
 
-  // Supplement with ingredient filter if needed
+  // Supplement with ingredient filter — parallel calls for up to 3 ingredients
   if (summaries.length < maxResults && ingredientNames.length > 0) {
-    const results = await filterMealsByIngredient(ingredientNames[0]);
-    for (const m of results) {
+    const topIngredients = ingredientNames.slice(0, 3);
+    const ingredientResults = await Promise.all(
+      topIngredients.map((ing) => filterMealsByIngredient(ing))
+    );
+
+    let candidateMeals: MealDbMeal[];
+    if (topIngredients.length <= 1) {
+      candidateMeals = ingredientResults[0] ?? [];
+    } else {
+      // Intersection: meals that match every ingredient filter
+      const allSets = ingredientResults.map((res) => new Set(res.map((m) => m.idMeal)));
+      const [firstResults = []] = ingredientResults;
+      const intersection = firstResults.filter((m) =>
+        allSets.slice(1).every((set) => set.has(m.idMeal))
+      );
+      if (intersection.length > 0) {
+        candidateMeals = intersection;
+      } else {
+        // Fall back to union when no meals match all ingredients
+        const unionIds = new Set<string>();
+        candidateMeals = ingredientResults.flat().filter((m) => {
+          if (unionIds.has(m.idMeal)) return false;
+          unionIds.add(m.idMeal);
+          return true;
+        });
+      }
+    }
+
+    for (const m of candidateMeals) {
       if (!seen.has(m.idMeal)) {
         seen.add(m.idMeal);
         summaries.push(m);

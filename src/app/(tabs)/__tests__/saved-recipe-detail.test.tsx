@@ -7,8 +7,15 @@ import type { Recipe } from '@/shared/types';
 // Mocks
 // ---------------------------------------------------------------------------
 const mockRouterBack = jest.fn();
+const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockRouterBack }),
+  useRouter: () => ({ back: mockRouterBack, push: mockRouterPush }),
+}));
+
+const mockSetCurrentRecipe = jest.fn();
+jest.mock('@/features/recipes/store/recipesStore', () => ({
+  useRecipesStore: (sel: (s: { setCurrentRecipe: jest.Mock }) => unknown) =>
+    sel({ setCurrentRecipe: mockSetCurrentRecipe }),
 }));
 
 const mockUpdateRating = jest.fn();
@@ -92,7 +99,20 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+jest.mock('@/features/recipes/components/MealDbBadge', () => ({
+  MealDbBadge: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="mealdb-badge" />;
+  },
+}));
+
+jest.mock('@/features/recipes/components/MeatTemperatureCard', () => ({
+  MeatTemperatureCard: () => null,
+}));
+
 jest.mock('@/shared/components/ui', () => ({
+  BackgroundDecor: () => null,
+  DECOR_SETS: { saved: [] },
   Button: ({
     label,
     onPress,
@@ -261,9 +281,46 @@ describe('SavedRecipeDetailScreen', () => {
       expect(mockDeleteRecipeHandler).toHaveBeenCalledTimes(1);
     });
 
-    it('shows the AI disclaimer', () => {
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+    it('shows AIDisclaimer for AI-generated recipes', () => {
+      const { getByTestId, queryByTestId } = render(<SavedRecipeDetailScreen />);
       expect(getByTestId('ai-disclaimer')).toBeTruthy();
+      expect(queryByTestId('mealdb-badge')).toBeNull();
+    });
+
+    it('shows MealDbBadge for TheMealDB recipes', () => {
+      mockSavedRecipe = {
+        ...savedRecipe,
+        recipe: { ...sampleRecipe, source: 'themealdb' as const },
+      };
+      const { getByTestId, queryByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('mealdb-badge')).toBeTruthy();
+      expect(queryByTestId('ai-disclaimer')).toBeNull();
+    });
+
+    it('shows chat with AI button', () => {
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
+    });
+
+    it('pressing chat with AI sets current recipe and navigates to chat', () => {
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      fireEvent.press(getByTestId('btn-chat-with-ai'));
+      expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);
+      expect(mockRouterPush).toHaveBeenCalledWith('/chat');
+    });
+
+    it('shows hero image when imageUrl is present', () => {
+      mockSavedRecipe = {
+        ...savedRecipe,
+        recipe: { ...sampleRecipe, imageUrl: 'https://example.com/img.jpg' },
+      };
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('detail-hero-image')).toBeTruthy();
+    });
+
+    it('does not show hero image when imageUrl is absent', () => {
+      const { queryByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(queryByTestId('detail-hero-image')).toBeNull();
     });
   });
 });

@@ -1,11 +1,11 @@
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
-import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
@@ -24,6 +24,8 @@ export default function RecipesScreen(): React.JSX.Element {
   const strictIngredients = useRecipesStore((s) => s.strictIngredients);
   const setStrictIngredients = useRecipesStore((s) => s.setStrictIngredients);
   const router = useRouter();
+
+  const [useAI, setUseAI] = useState(true);
 
   const hasIngredients = selectedIngredients.length > 0;
   const isWeb = Platform.OS === 'web';
@@ -190,10 +192,35 @@ export default function RecipesScreen(): React.JSX.Element {
             </Text>
           ) : null}
 
+          {/* AI toggle */}
+          <Pressable
+            testID="checkbox-use-ai"
+            onPress={() => setUseAI(!useAI)}
+            className="flex-row items-center gap-2 py-2 mb-1"
+          >
+            <View
+              className={`w-5 h-5 rounded border-2 items-center justify-center ${
+                useAI ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
+              }`}
+            >
+              {useAI ? <Text className="text-white text-xs font-bold">✓</Text> : null}
+            </View>
+            <Text className="text-sm text-gray-700 font-nunito flex-1">
+              Let AI generate recipes
+            </Text>
+          </Pressable>
+          {!useAI ? (
+            <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
+              Only recipes from TheMealDB will be shown
+            </Text>
+          ) : null}
+
           <View className="mt-3">
             <Button
               label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
-              onPress={generate}
+              onPress={() => {
+                void generate(useAI);
+              }}
               disabled={isLoading || !hasIngredients}
               testID="btn-generate-recipe"
             />
@@ -245,7 +272,9 @@ export default function RecipesScreen(): React.JSX.Element {
                 ) : (
                   <Button
                     label="Find More Recipes"
-                    onPress={loadMore}
+                    onPress={() => {
+                      void loadMore(useAI);
+                    }}
                     variant="ghost"
                     disabled={!hasIngredients}
                     testID="btn-load-more"
@@ -254,10 +283,6 @@ export default function RecipesScreen(): React.JSX.Element {
               </View>
             </View>
           ) : null}
-
-          <View className="mt-4">
-            <AIDisclaimer />
-          </View>
         </PageContainer>
       </ScrollView>
     </SafeAreaView>

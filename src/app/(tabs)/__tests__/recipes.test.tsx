@@ -238,6 +238,7 @@ describe('RecipesScreen', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-generate-recipe'));
     expect(mockGenerate).toHaveBeenCalledTimes(1);
+    expect(mockGenerate).toHaveBeenCalledWith(true); // AI enabled by default
   });
 
   it('shows loading indicator while generating', () => {
@@ -296,8 +297,29 @@ describe('RecipesScreen', () => {
     expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
   });
 
-  it('always shows the AI disclaimer', () => {
+  it('does not show a blanket AI disclaimer at page level', () => {
+    const { queryByTestId } = render(<RecipesScreen />);
+    // Per-recipe disclaimers are handled inside each RecipeSummaryCard, not as a page banner
+    expect(queryByTestId('ai-disclaimer')).toBeNull();
+  });
+
+  it('shows the AI toggle checkbox', () => {
     const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('ai-disclaimer')).toBeTruthy();
+    expect(getByTestId('checkbox-use-ai')).toBeTruthy();
+  });
+
+  it('calls generate with useAI=true by default when button is pressed', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(true);
+  });
+
+  it('calls generate with useAI=false after toggling AI off', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('checkbox-use-ai')); // Toggle off
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(false);
   });
 });

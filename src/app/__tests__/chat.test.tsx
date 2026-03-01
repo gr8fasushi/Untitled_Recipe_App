@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 
 jest.mock('expo-router', () => ({
   useRouter: jest.fn().mockReturnValue({ back: jest.fn(), push: jest.fn() }),
+  Stack: { Screen: () => null },
 }));
 
 jest.mock('@/features/recipes/store/recipesStore', () => ({

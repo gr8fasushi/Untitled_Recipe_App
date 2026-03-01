@@ -7,8 +7,8 @@ import { useRecipesStore } from '../store/recipesStore';
 import type { Recipe } from '@/shared/types';
 
 interface UseGenerateRecipeReturn {
-  generate: () => Promise<void>;
-  loadMore: () => Promise<void>;
+  generate: (useAI?: boolean) => Promise<void>;
+  loadMore: (useAI?: boolean) => Promise<void>;
   isLoading: boolean;
   isLoadingMore: boolean;
   error: string | null;
@@ -32,84 +32,92 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
     setError,
   } = useRecipesStore();
 
-  const generate = useCallback(async () => {
-    // Build input without undefined optional fields — Firebase Callable converts undefined → null,
-    // which causes CF schema validation to fail for non-nullable optional fields.
-    const inputData = {
-      ingredients: selectedIngredients,
-      allergens: profile?.allergens ?? [],
-      dietaryPreferences: profile?.dietaryPreferences ?? [],
-      ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
-      ...(strictIngredients && { strictIngredients: true as const }),
-    };
-    const parsed = GenerateRecipeInputSchema.safeParse(inputData);
+  const generate = useCallback(
+    async (useAI: boolean = true) => {
+      // Build input without undefined optional fields — Firebase Callable converts undefined → null,
+      // which causes CF schema validation to fail for non-nullable optional fields.
+      const inputData = {
+        ingredients: selectedIngredients,
+        allergens: profile?.allergens ?? [],
+        dietaryPreferences: profile?.dietaryPreferences ?? [],
+        ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
+        ...(strictIngredients && { strictIngredients: true as const }),
+        ...(!useAI && { useAI: false as const }),
+      };
+      const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? 'Invalid input');
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const result = await generateRecipeFn(parsed.data);
-      setRecipes(result.data.recipes);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to generate recipe';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    selectedIngredients,
-    profile,
-    selectedCuisines,
-    strictIngredients,
-    setRecipes,
-    setLoading,
-    setError,
-  ]);
+      try {
+        const result = await generateRecipeFn(parsed.data);
+        setRecipes(result.data.recipes);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to generate recipe';
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      selectedIngredients,
+      profile,
+      selectedCuisines,
+      strictIngredients,
+      setRecipes,
+      setLoading,
+      setError,
+    ]
+  );
 
-  const loadMore = useCallback(async () => {
-    const excludeTitles = recipes.map((r) => r.title);
-    const inputData = {
-      ingredients: selectedIngredients,
-      allergens: profile?.allergens ?? [],
-      dietaryPreferences: profile?.dietaryPreferences ?? [],
-      ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
-      ...(strictIngredients && { strictIngredients: true as const }),
-      ...(excludeTitles.length > 0 && { excludeTitles }),
-    };
-    const parsed = GenerateRecipeInputSchema.safeParse(inputData);
+  const loadMore = useCallback(
+    async (useAI: boolean = true) => {
+      const excludeTitles = recipes.map((r) => r.title);
+      const inputData = {
+        ingredients: selectedIngredients,
+        allergens: profile?.allergens ?? [],
+        dietaryPreferences: profile?.dietaryPreferences ?? [],
+        ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
+        ...(strictIngredients && { strictIngredients: true as const }),
+        ...(excludeTitles.length > 0 && { excludeTitles }),
+        ...(!useAI && { useAI: false as const }),
+      };
+      const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid input');
-      return;
-    }
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message ?? 'Invalid input');
+        return;
+      }
 
-    setLoadingMore(true);
-    setError(null);
+      setLoadingMore(true);
+      setError(null);
 
-    try {
-      const result = await generateRecipeFn(parsed.data);
-      appendRecipes(result.data.recipes);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load more recipes';
-      setError(message);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [
-    selectedIngredients,
-    profile,
-    selectedCuisines,
-    strictIngredients,
-    recipes,
-    appendRecipes,
-    setLoadingMore,
-    setError,
-  ]);
+      try {
+        const result = await generateRecipeFn(parsed.data);
+        appendRecipes(result.data.recipes);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to load more recipes';
+        setError(message);
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [
+      selectedIngredients,
+      profile,
+      selectedCuisines,
+      strictIngredients,
+      recipes,
+      appendRecipes,
+      setLoadingMore,
+      setError,
+    ]
+  );
 
   return { generate, loadMore, isLoading, isLoadingMore, error, recipes };
 }

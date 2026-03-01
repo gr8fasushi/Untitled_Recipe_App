@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useChatStore } from '@/features/chat/store/chatStore';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { useChat } from '@/features/chat/hooks/useChat';
@@ -51,6 +51,8 @@ export default function ChatScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="chat-screen">
+      {/* Suppress Expo Router's native header — the gradient banner has its own back button */}
+      <Stack.Screen options={{ headerShown: false }} />
       <BackgroundDecor items={DECOR_SETS.chat} />
 
       {/* Gradient header — deep indigo AI theme */}
