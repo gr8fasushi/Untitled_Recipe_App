@@ -1,45 +1,132 @@
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TextInput, Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '@/shared/services/firebase/firebase.config';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
+import {
+  fetchMealById,
+  filterMealsByArea,
+  filterMealsByIngredient,
+  searchMealsByName,
+} from '@/shared/services/mealDbService';
+import type { MealDbMeal } from '@/shared/services/mealDbService';
+import { mapMealDbToRecipe } from '@/shared/utils/mealDbMapper';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
+import { RecipeFilterPanel } from '@/features/recipes/components/RecipeFilterPanel';
+import { useRecipeFilters } from '@/features/recipes/hooks/useRecipeFilters';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
-import { PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { useHolidayStore } from '@/stores/holidayStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import type { Recipe } from '@/shared/types';
 
-export default function RecipeSearchScreen(): React.JSX.Element {
-  const router = useRouter();
-  const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<Recipe[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+const PAGE_SIZE = 10;
 
-  async function handleSearch(): Promise<void> {
-    const q = searchQuery.trim();
-    if (q.length < 2) return;
-    setIsSearching(true);
-    setError(null);
-    setHasSearched(true);
-    try {
-      // Prefix search on community-recipes by title
-      const recipesRef = collection(db, 'community-recipes');
-      const titleQuery = query(
-        recipesRef,
+function dedupeById(meals: MealDbMeal[]): MealDbMeal[] {
+  const seen = new Set<string>();
+  return meals.filter((m) => (seen.has(m.idMeal) ? false : (seen.add(m.idMeal), true)));
+}
+
+function mergeDedup(recipes: Recipe[]): Recipe[] {
+  const seen = new Set<string>();
+  return recipes.filter((r) => {
+    const key = r.title.toLowerCase().trim();
+    return seen.has(key) ? false : (seen.add(key), true);
+  });
+}
+
+async function searchCommunityByTitle(q: string): Promise<Recipe[]> {
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, 'community-recipes'),
         where('title', '>=', q),
         where('title', '<=', q + '\uf8ff'),
         orderBy('title'),
         limit(10)
-      );
-      const snapshot = await getDocs(titleQuery);
-      const found = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Recipe);
-      setResults(found);
+      )
+    );
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Recipe);
+  } catch {
+    return [];
+  }
+}
+
+export default function RecipeSearchScreen(): React.JSX.Element {
+  const router = useRouter();
+  const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const filters = useRecipeFilters();
+
+  const [results, setResults] = useState<Recipe[]>([]);
+  const [pendingIds, setPendingIds] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const isWeb = Platform.OS === 'web';
+  const holiday = useHolidayStore((s) => s.theme);
+  const isDark = useIsDarkMode();
+  const gradient =
+    holiday?.gradient ??
+    (isDark
+      ? (['#042f2e', '#134e4a', '#115e59'] as const)
+      : (['#134e4a', '#0f766e', '#2dd4bf'] as const));
+  const bannerEmoji = holiday?.bannerEmoji ?? '🔍';
+  const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? ['🔍', '📖', '🍽️'];
+  const subtitleColor = holiday?.subtitleHexColor ?? '#99f6e4';
+
+  const canSearch =
+    (filters.mode === 'name' && filters.searchName.trim().length >= 2) ||
+    (filters.mode === 'ingredients' && filters.selectedIngredients.length > 0) ||
+    (filters.mode === 'cuisine' && filters.selectedCuisines.length > 0);
+
+  // Reset results when filter mode changes
+  useEffect(() => {
+    setResults([]);
+    setPendingIds([]);
+    setHasSearched(false);
+    setError(null);
+  }, [filters.mode]);
+
+  async function handleSearch(): Promise<void> {
+    if (!canSearch) return;
+    setIsSearching(true);
+    setError(null);
+    setResults([]);
+    setPendingIds([]);
+    setHasSearched(true);
+
+    try {
+      if (filters.mode === 'name') {
+        const q = filters.searchName.trim();
+        const [mealDbMeals, firestoreRecipes] = await Promise.all([
+          searchMealsByName(q),
+          searchCommunityByTitle(q),
+        ]);
+        const mealDbRecipes = mealDbMeals.map(mapMealDbToRecipe);
+        setResults(mergeDedup([...mealDbRecipes, ...firestoreRecipes]));
+      } else if (filters.mode === 'ingredients') {
+        const summaries = await filterMealsByIngredient(filters.selectedIngredients[0].name);
+        const firstBatch = summaries.slice(0, PAGE_SIZE);
+        const full = await Promise.all(firstBatch.map((s) => fetchMealById(s.idMeal)));
+        setResults(full.filter((m): m is MealDbMeal => m !== null).map(mapMealDbToRecipe));
+        setPendingIds(summaries.slice(PAGE_SIZE).map((s) => s.idMeal));
+      } else {
+        // cuisine mode
+        const batches = await Promise.all(
+          filters.selectedCuisines.map((c) => filterMealsByArea(c))
+        );
+        const summaries = dedupeById(batches.flat());
+        const firstBatch = summaries.slice(0, PAGE_SIZE);
+        const full = await Promise.all(firstBatch.map((s) => fetchMealById(s.idMeal)));
+        setResults(full.filter((m): m is MealDbMeal => m !== null).map(mapMealDbToRecipe));
+        setPendingIds(summaries.slice(PAGE_SIZE).map((s) => s.idMeal));
+      }
     } catch {
       setError('Search failed. Please try again.');
     } finally {
@@ -47,16 +134,40 @@ export default function RecipeSearchScreen(): React.JSX.Element {
     }
   }
 
+  async function handleLoadMore(): Promise<void> {
+    if (pendingIds.length === 0) return;
+    setIsLoadingMore(true);
+    try {
+      const batch = pendingIds.slice(0, PAGE_SIZE);
+      const full = await Promise.all(batch.map((id) => fetchMealById(id)));
+      const newRecipes = full.filter((m): m is MealDbMeal => m !== null).map(mapMealDbToRecipe);
+      setResults((prev) => [...prev, ...newRecipes]);
+      setPendingIds((prev) => prev.slice(PAGE_SIZE));
+    } catch {
+      setError('Failed to load more. Please try again.');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
   async function handleAIGenerate(): Promise<void> {
-    const q = searchQuery.trim();
-    if (!q) return;
     setIsGenerating(true);
     setError(null);
     try {
+      const ingredientPayload =
+        filters.mode === 'ingredients' && filters.selectedIngredients.length > 0
+          ? filters.selectedIngredients
+          : [
+              {
+                id: 'search-query',
+                name: filters.searchName.trim() || filters.selectedCuisines[0] || 'varied recipes',
+              },
+            ];
       const result = await generateRecipeFn({
-        ingredients: [{ id: 'search-dish', name: q }],
+        ingredients: ingredientPayload,
         allergens: [],
         dietaryPreferences: [],
+        ...(filters.selectedCuisines.length > 0 && { cuisines: filters.selectedCuisines }),
       });
       setResults(result.data.recipes);
     } catch {
@@ -74,53 +185,74 @@ export default function RecipeSearchScreen(): React.JSX.Element {
   const showAIButton = hasSearched && !isSearching && results.length < 3;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="recipe-search-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipe-search-screen">
+      <BackgroundDecor items={DECOR_SETS.recipeSearch} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-        {/* Gradient header */}
-        <View className="w-full items-center bg-primary-700">
-          <View className="w-full max-w-2xl">
-            <LinearGradient
-              colors={['#c2410c', '#ea580c', '#fb923c']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+        {/* Gradient header — deep teal search/discovery theme */}
+        <LinearGradient
+          colors={[gradient[0], gradient[1], gradient[2]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
+            <View
+              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
             >
-              <View className="px-6 pt-5 pb-6">
-                <Text className="text-3xl mb-1">🔍</Text>
-                <Text className="text-2xl font-nunito-bold text-white">Search Recipes</Text>
-                <Text className="text-orange-200 text-sm mt-1 font-nunito">
-                  Find a dish by name or keyword
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  {sil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  {sil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  {sil2}
                 </Text>
               </View>
-            </LinearGradient>
+              <Text className="text-5xl mb-1">{bannerEmoji}</Text>
+              <Text
+                testID="search-heading"
+                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
+                Find a Meal
+              </Text>
+              <Text
+                style={{ color: subtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
+                Search TheMealDB + community recipes
+              </Text>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <PageContainer className="px-4 mt-4">
-          {/* Search input */}
-          <View className="flex-row gap-2">
-            <TextInput
-              testID="input-recipe-search"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={() => void handleSearch()}
-              placeholder="e.g. tacos, pasta, chicken stir fry…"
-              placeholderTextColor="#9ca3af"
-              returnKeyType="search"
-              className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-nunito text-gray-900"
-            />
-            <Pressable
-              testID="btn-search"
+          {/* Filter panel */}
+          <RecipeFilterPanel filters={filters} testID="search-filter-panel" />
+
+          {/* Find meals button */}
+          <View className="mt-4">
+            <Button
+              label={isSearching ? 'Searching…' : '🔍 Find Meals'}
               onPress={() => void handleSearch()}
-              disabled={isSearching || searchQuery.trim().length < 2}
-              className="bg-primary-600 rounded-xl px-4 items-center justify-center active:opacity-75"
-            >
-              <Text className="text-white font-nunito-bold text-sm">Search</Text>
-            </Pressable>
+              disabled={!canSearch || isSearching}
+              testID="btn-find-meals"
+            />
           </View>
 
           {/* Error */}
           {error ? (
-            <View className="mt-3 rounded-xl bg-red-50 px-4 py-3">
+            <View testID="search-error" className="mt-3 rounded-xl bg-red-50 px-4 py-3">
               <Text className="text-sm font-nunito text-red-700">{error}</Text>
             </View>
           ) : null}
@@ -128,7 +260,7 @@ export default function RecipeSearchScreen(): React.JSX.Element {
           {/* Loading */}
           {isSearching ? (
             <View testID="search-loading" className="mt-8 items-center">
-              <ActivityIndicator size="large" color="#ea580c" />
+              <ActivityIndicator size="large" color="#0f766e" />
               <Text className="mt-3 font-nunito text-gray-400">Searching…</Text>
             </View>
           ) : null}
@@ -147,6 +279,23 @@ export default function RecipeSearchScreen(): React.JSX.Element {
                   testID={`search-result-${index}`}
                 />
               ))}
+
+              {/* Load more */}
+              <View className="mt-4">
+                {isLoadingMore ? (
+                  <View testID="search-loading-more" className="items-center py-4">
+                    <ActivityIndicator size="small" color="#0f766e" />
+                    <Text className="mt-2 font-nunito text-gray-400 text-sm">Loading more…</Text>
+                  </View>
+                ) : pendingIds.length > 0 ? (
+                  <Button
+                    label="Find More Meals"
+                    onPress={() => void handleLoadMore()}
+                    variant="ghost"
+                    testID="btn-load-more-meals"
+                  />
+                ) : null}
+              </View>
             </View>
           ) : null}
 
@@ -158,28 +307,21 @@ export default function RecipeSearchScreen(): React.JSX.Element {
                 No recipes found
               </Text>
               <Text className="text-sm font-nunito text-gray-500 text-center">
-                Try a different search term, or let AI generate one for you.
+                Try different filters, or let AI generate one for you.
               </Text>
             </View>
           ) : null}
 
-          {/* AI Generate fallback */}
+          {/* AI fallback */}
           {showAIButton ? (
             <View className="mt-4">
-              <Pressable
-                testID="btn-ai-generate"
+              <Button
+                label={isGenerating ? 'Generating…' : '✨ Generate with AI instead'}
                 onPress={() => void handleAIGenerate()}
                 disabled={isGenerating}
-                className="rounded-xl border border-primary-200 bg-primary-50 py-3 items-center"
-              >
-                {isGenerating ? (
-                  <ActivityIndicator size="small" color="#ea580c" />
-                ) : (
-                  <Text className="text-sm font-nunito-bold text-primary-700">
-                    ✨ Generate with AI instead
-                  </Text>
-                )}
-              </Pressable>
+                variant="ghost"
+                testID="btn-ai-generate"
+              />
             </View>
           ) : null}
         </PageContainer>

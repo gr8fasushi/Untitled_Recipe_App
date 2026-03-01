@@ -79,18 +79,32 @@ function IngredientRow({ item, isSelected, onPress }: IngredientRowProps): React
   );
 }
 
-export function IngredientSearch(): React.JSX.Element {
+interface IngredientSearchProps {
+  /** When provided, uses this list instead of the pantry store for "Added ✓" state. */
+  controlledIngredients?: PantryItem[];
+  /** When provided, calls this instead of pantryStore.addIngredient. */
+  onControlledAdd?: (item: PantryItem) => void;
+}
+
+export function IngredientSearch({
+  controlledIngredients,
+  onControlledAdd,
+}: IngredientSearchProps = {}): React.JSX.Element {
   const [query, setQuery] = useState('');
   const textInputRef = useRef<TextInput>(null);
-  const { selectedIngredients, addIngredient } = usePantryStore();
+  const { selectedIngredients: storeIngredients, addIngredient: storeAdd } = usePantryStore();
   const { results, isSearching, error } = useIngredientSearch(query);
+
+  const selectedIngredients = controlledIngredients ?? storeIngredients;
+  const addIngredient = onControlledAdd ?? storeAdd;
 
   const hasQuery = query.trim().length >= 2;
   const selectedIds = new Set(selectedIngredients.map((i) => i.id));
 
   function handleAdd(item: PantryItem): void {
     addIngredient(item);
-    if (item.id.startsWith('usda-')) {
+    // Only cache USDA items when in pantry mode (not controlled/recipe-search mode)
+    if (item.id.startsWith('usda-') && !onControlledAdd) {
       void cacheIngredient(item);
     }
     setQuery('');

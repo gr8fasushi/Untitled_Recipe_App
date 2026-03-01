@@ -63,6 +63,7 @@ const sampleRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 // ---------------------------------------------------------------------------

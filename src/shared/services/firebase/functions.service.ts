@@ -28,6 +28,14 @@ interface AnalyzePhotoOutput {
   ingredients: Ingredient[];
 }
 
+export type FeedbackCategory = 'bug' | 'feature' | 'general';
+
+interface FeedbackInput {
+  rating: number;
+  message: string;
+  category?: FeedbackCategory;
+}
+
 export const generateRecipeFn = httpsCallable<GenerateRecipeInput, { recipes: Recipe[] }>(
   functions,
   'generateRecipe'
@@ -38,4 +46,9 @@ export const chatFn = httpsCallable<ChatInput, { reply: string }>(functions, 'ch
 export const analyzePhotoFn = httpsCallable<AnalyzePhotoInput, AnalyzePhotoOutput>(
   functions,
   'analyzeIngredientPhoto'
+);
+
+export const submitFeedbackFn = httpsCallable<FeedbackInput, { success: boolean }>(
+  functions,
+  'submitFeedback'
 );

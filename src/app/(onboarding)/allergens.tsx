@@ -20,7 +20,7 @@ export default function AllergensScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950">
       <View className="flex-1 px-6 py-8">
         {/* Progress indicator */}
         <View className="mb-6 flex-row justify-center gap-2" testID="progress-indicator">

@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  TextInput,
+  View,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { VoiceButton } from './VoiceButton';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 
@@ -34,6 +42,14 @@ export function ChatInput({
     prevTranscriptRef.current = '';
   }
 
+  function handleKeyPress(e: NativeSyntheticEvent<TextInputKeyPressEventData>): void {
+    if (Platform.OS !== 'web') return;
+    const webEvent = e.nativeEvent as { key: string; shiftKey?: boolean };
+    if (webEvent.key === 'Enter' && !webEvent.shiftKey) {
+      handleSend();
+    }
+  }
+
   function handleVoicePress(): void {
     if (isListening) {
       stopListening();
@@ -43,6 +59,11 @@ export function ChatInput({
   }
 
   const canSend = text.trim().length > 0 && !isLoading;
+  const placeholder = isListening
+    ? 'Listening...'
+    : Platform.OS === 'web'
+      ? 'Ask about this recipe... (Shift+Enter for new line)'
+      : 'Ask about this recipe...';
 
   return (
     <View
@@ -60,11 +81,12 @@ export function ChatInput({
         testID="chat-text-input"
         value={text}
         onChangeText={setText}
-        placeholder={isListening ? 'Listening...' : 'Ask about this recipe...'}
+        placeholder={placeholder}
         placeholderTextColor="#9ca3af"
         multiline
         maxLength={500}
         editable={!isLoading}
+        onKeyPress={handleKeyPress}
         className="flex-1 min-h-[40px] max-h-[120px] px-3 py-2 rounded-2xl border border-gray-300 text-sm text-gray-900 bg-gray-50"
         onSubmitEditing={handleSend}
       />
@@ -79,7 +101,7 @@ export function ChatInput({
           canSend ? 'bg-primary-600' : 'bg-gray-200'
         }`}
       >
-        <Text className={`text-lg ${canSend ? 'text-white' : 'text-gray-400'}`}>↑</Text>
+        <Ionicons name="send" size={16} color={canSend ? '#ffffff' : '#9ca3af'} />
       </Pressable>
     </View>
   );

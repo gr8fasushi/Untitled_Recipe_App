@@ -21,7 +21,7 @@ function Section({
 export default function PrivacyPolicyScreen(): React.JSX.Element {
   const router = useRouter();
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="privacy-policy-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="privacy-policy-screen">
       <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
         <Pressable
           testID="btn-back"

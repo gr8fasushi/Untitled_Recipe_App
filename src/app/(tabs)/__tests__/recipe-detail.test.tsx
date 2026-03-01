@@ -20,35 +20,24 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('@/shared/components/ui', () => ({
-  Button: ({
-    label,
-    onPress,
-    disabled,
-    testID,
-  }: {
-    label: string;
-    onPress: () => void;
-    disabled?: boolean;
-    testID?: string;
-  }) => {
-    const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
-    return (
-      <Pressable
-        testID={testID}
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityState={{ disabled: !!disabled }}
-      >
-        <Text>{label}</Text>
-      </Pressable>
-    );
+  BackgroundDecor: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="background-decor" />;
   },
+  DECOR_SETS: { recipes: [] },
 }));
 
 jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   AIDisclaimer: () => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');
     return <View testID="ai-disclaimer" />;
+  },
+}));
+
+jest.mock('@/features/recipes/components/MealDbBadge', () => ({
+  MealDbBadge: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="mealdb-badge" />;
   },
 }));
 
@@ -99,6 +88,7 @@ const sampleRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -140,10 +130,10 @@ describe('RecipeDetailScreen — empty state', () => {
     expect(getByTestId('btn-back')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to /(tabs)/recipes', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipes');
   });
 });
 
@@ -169,7 +159,7 @@ describe('RecipeDetailScreen — with recipe', () => {
 
   it('shows the recipe title', () => {
     const { getByTestId, getByText } = render(<RecipeDetailScreen />);
-    expect(getByTestId('detail-title')).toBeTruthy();
+    expect(getByTestId('detail-title-hero')).toBeTruthy();
     expect(getByText('Tomato Chicken')).toBeTruthy();
   });
 
@@ -214,15 +204,15 @@ describe('RecipeDetailScreen — with recipe', () => {
     expect(getByTestId('btn-save-recipe')).toBeTruthy();
   });
 
-  it('Save Recipe button shows "Save Recipe" when not saved', () => {
+  it('Save Recipe button shows "🔖 Save Recipe" when not saved', () => {
     const { getByText } = render(<RecipeDetailScreen />);
-    expect(getByText('Save Recipe')).toBeTruthy();
+    expect(getByText('🔖 Save Recipe')).toBeTruthy();
   });
 
-  it('Save Recipe button shows "Saved ✓" when saved', () => {
+  it('Save Recipe button shows "🔖 Saved" when saved', () => {
     mockIsSaved = true;
     const { getByText } = render(<RecipeDetailScreen />);
-    expect(getByText('Saved ✓')).toBeTruthy();
+    expect(getByText('🔖 Saved')).toBeTruthy();
   });
 
   it('Save Recipe button is disabled while saving', () => {
@@ -256,8 +246,42 @@ describe('RecipeDetailScreen — with recipe', () => {
     });
   });
 
-  it('shows the AI disclaimer when recipe is loaded', () => {
+  it('shows the AI disclaimer for AI-sourced recipes', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
     expect(getByTestId('ai-disclaimer')).toBeTruthy();
+  });
+});
+
+describe('RecipeDetailScreen — TheMealDB recipe', () => {
+  const mealDbRecipe: Recipe = {
+    ...sampleRecipe,
+    source: 'themealdb' as const,
+    imageUrl: 'https://example.com/image.jpg',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCurrentRecipe = mealDbRecipe;
+    mockIsSaved = false;
+    mockIsSaving = false;
+    mockRouterBack.mockReset();
+    mockRouterPush.mockReset();
+  });
+
+  it('shows MealDbBadge instead of AIDisclaimer for TheMealDB recipes', () => {
+    const { getByTestId, queryByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('mealdb-badge')).toBeTruthy();
+    expect(queryByTestId('ai-disclaimer')).toBeNull();
+  });
+
+  it('hides the nutrition section for TheMealDB recipes', () => {
+    const { queryByTestId } = render(<RecipeDetailScreen />);
+    expect(queryByTestId('detail-nutrition')).toBeNull();
+  });
+
+  it('still shows ingredients and instructions for TheMealDB recipes', () => {
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('detail-ingredients-list')).toBeTruthy();
+    expect(getByTestId('detail-instructions-list')).toBeTruthy();
   });
 });

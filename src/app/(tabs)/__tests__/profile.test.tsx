@@ -138,6 +138,13 @@ jest.mock('@/features/onboarding/components/DisclaimerCard', () => ({
   },
 }));
 
+jest.mock('@/features/profile/components/FeedbackSection', () => ({
+  FeedbackSection: () => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID="feedback-section-mock" />;
+  },
+}));
+
 // eslint-disable-next-line import/first
 import React from 'react';
 // eslint-disable-next-line import/first

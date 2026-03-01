@@ -23,7 +23,7 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="community-detail-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="community-detail-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Header */}
         <View className="flex-row items-center px-4 py-3 border-b border-gray-100">

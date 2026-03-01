@@ -8,9 +8,14 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { useColorScheme, View } from 'react-native';
 import '../../global.css';
 import { subscribeToAuthState, fetchUserProfile } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { useUIStore } from '@/stores/uiStore';
+import { useHolidayStore } from '@/stores/holidayStore';
+import { useHolidayTheme } from '@/shared/hooks/useHolidayTheme';
+import { HolidayEffect } from '@/shared/components/ui';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,6 +39,32 @@ export default function RootLayout(): React.JSX.Element | null {
   const setProfile = useAuthStore((s) => s.setProfile);
   const setInitialized = useAuthStore((s) => s.setInitialized);
 
+  const colorScheme = useUIStore((s) => s.colorScheme);
+  const isPrefsLoaded = useUIStore((s) => s.isPrefsLoaded);
+  const loadPersistedPrefs = useUIStore((s) => s.loadPersistedPrefs);
+
+  const setHolidayTheme = useHolidayStore((s) => s.setTheme);
+  const effectShown = useHolidayStore((s) => s.effectShownThisLaunch);
+  const markEffectShown = useHolidayStore((s) => s.markEffectShown);
+  const holidayTheme = useHolidayTheme();
+
+  // System color scheme from device
+  const systemScheme = useColorScheme();
+
+  // Resolve the effective scheme
+  const effectiveScheme = colorScheme === 'system' ? (systemScheme ?? 'light') : colorScheme;
+  const isDark = effectiveScheme === 'dark';
+
+  // Load persisted UI preferences on mount
+  useEffect(() => {
+    void loadPersistedPrefs();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync holiday theme into store (runs once on mount — date won't change mid-session)
+  useEffect(() => {
+    setHolidayTheme(holidayTheme);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -53,23 +84,32 @@ export default function RootLayout(): React.JSX.Element | null {
     return unsubscribe;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Only hide SplashScreen when BOTH fonts loaded AND Firebase auth resolved
+  // Only hide SplashScreen when BOTH fonts loaded AND Firebase auth resolved AND prefs loaded
   useEffect(() => {
-    if (loaded && isInitialized) {
+    if (loaded && isInitialized && isPrefsLoaded) {
       void SplashScreen.hideAsync();
     }
-  }, [loaded, isInitialized]);
+  }, [loaded, isInitialized, isPrefsLoaded]);
 
-  if (!loaded || !isInitialized) {
+  if (!loaded || !isInitialized || !isPrefsLoaded) {
     return null;
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
+    <View className={`${isDark ? 'dark' : ''} flex-1`}>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+      {holidayTheme && !effectShown ? (
+        <HolidayEffect
+          particle={holidayTheme.particle}
+          count={holidayTheme.particleCount}
+          onComplete={markEffectShown}
+        />
+      ) : null}
+    </View>
   );
 }

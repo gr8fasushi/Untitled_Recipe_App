@@ -16,7 +16,9 @@ export function ChatBubble({ message, testID }: ChatBubbleProps): React.JSX.Elem
     >
       <View
         className={`rounded-2xl px-4 py-3 ${
-          isUser ? 'bg-primary-600 rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'
+          isUser
+            ? 'bg-primary-600 rounded-br-sm shadow-sm'
+            : 'bg-white border border-gray-100 rounded-bl-sm shadow-sm'
         }`}
       >
         <Text

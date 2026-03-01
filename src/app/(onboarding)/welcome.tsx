@@ -10,7 +10,7 @@ export default function WelcomeScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950">
       <View className="flex-1 items-center justify-center px-6">
         <Text className="text-6xl">🍽️</Text>
 

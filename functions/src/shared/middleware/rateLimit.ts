@@ -1,13 +1,17 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-const MAX_REQUESTS_PER_HOUR = 10;
+const DEFAULT_MAX_REQUESTS_PER_HOUR = 30;
 
 /**
  * Enforces per-user rate limits using Firestore counters.
  * Each operation tracks its own hourly window.
  */
-export async function checkRateLimit(uid: string, operation: string): Promise<void> {
+export async function checkRateLimit(
+  uid: string,
+  operation: string,
+  maxRequests: number = DEFAULT_MAX_REQUESTS_PER_HOUR
+): Promise<void> {
   const db = getFirestore();
   const windowStart = new Date();
   windowStart.setMinutes(0, 0, 0);
@@ -22,10 +26,10 @@ export async function checkRateLimit(uid: string, operation: string): Promise<vo
     const doc = await tx.get(ref);
     const count = (doc.data()?.count as number) ?? 0;
 
-    if (count >= MAX_REQUESTS_PER_HOUR) {
+    if (count >= maxRequests) {
       throw new HttpsError(
         'resource-exhausted',
-        `Rate limit exceeded. Max ${MAX_REQUESTS_PER_HOUR} requests per hour.`
+        `Rate limit exceeded. Max ${maxRequests} requests per hour.`
       );
     }
 

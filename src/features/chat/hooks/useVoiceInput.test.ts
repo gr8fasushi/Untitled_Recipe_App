@@ -155,7 +155,7 @@ describe('useVoiceInput', () => {
     await act(async () => {});
 
     act(() => {
-      triggerEvent('error', { code: 'network' });
+      triggerEvent('error', { error: 'network', message: 'network error' });
     });
 
     expect(result.current.error).toBe('Voice recognition error. Please try again.');
@@ -168,7 +168,7 @@ describe('useVoiceInput', () => {
     await act(async () => {});
 
     act(() => {
-      triggerEvent('error', { code: 'no-speech' });
+      triggerEvent('error', { error: 'no-speech', message: 'no speech detected' });
     });
 
     expect(result.current.error).toBeNull();
@@ -201,5 +201,19 @@ describe('useVoiceInput', () => {
 
     expect(result.current.error).toBe('Microphone permission denied.');
     expect(mockModule.start).not.toHaveBeenCalled();
+  });
+
+  it('does not crash when addListener throws (Expo Go native bridge absent)', async () => {
+    mockModule.isRecognitionAvailable.mockReturnValueOnce(true);
+    mockModule.addListener.mockImplementationOnce(() => {
+      throw new Error('native bridge not available');
+    });
+    // Should render without throwing
+    const { result } = renderHook(() => useVoiceInput());
+    await act(async () => {});
+    // isAvailable is still true (set before addListener runs)
+    expect(result.current.isAvailable).toBe(true);
+    // Hook is stable — no uncaught error
+    expect(result.current.isListening).toBe(false);
   });
 });

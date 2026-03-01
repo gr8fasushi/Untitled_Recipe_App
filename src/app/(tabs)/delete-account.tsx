@@ -43,7 +43,7 @@ export default function DeleteAccountScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="delete-account-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="delete-account-screen">
       <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
         <Pressable
           testID="btn-back"

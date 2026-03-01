@@ -58,4 +58,83 @@ describe('GenerateRecipeInputSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts optional cuisines array', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      cuisines: ['italian', 'mexican'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts empty cuisines array', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      cuisines: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts missing cuisines (undefined)', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts optional strictIngredients boolean', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      strictIngredients: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts strictIngredients=false', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      strictIngredients: false,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts cuisines and strictIngredients together', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: ['peanuts'],
+      dietaryPreferences: ['keto'],
+      cuisines: ['japanese'],
+      strictIngredients: true,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts optional excludeTitles array', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      excludeTitles: ['Tomato Pasta', 'Garlic Bread'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts missing excludeTitles (undefined)', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+    });
+    expect(result.success).toBe(true);
+  });
 });

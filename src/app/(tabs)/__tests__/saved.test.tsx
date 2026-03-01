@@ -29,6 +29,7 @@ jest.mock('@/features/saved-recipes/hooks/useSavedRecipes', () => ({
   useSavedRecipes: () => ({
     isLoading: mockIsLoading,
     error: mockError,
+    savedRecipes: mockSavedRecipesState,
     ratingFilter: mockFilter,
     setRatingFilter: mockSetRatingFilter,
     filteredRecipes: mockSavedRecipesState,
@@ -88,6 +89,7 @@ const sampleRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 function makeSaved(id: string): SavedRecipe {
@@ -148,20 +150,28 @@ describe('SavedScreen', () => {
     expect(getByTestId('saved-card-r2')).toBeTruthy();
   });
 
-  it('renders rating filter pills', () => {
+  it('renders rating filter pills when recipes exist', () => {
+    mockSavedRecipesState = [makeSaved('r1')];
     const { getByTestId } = render(<SavedScreen />);
     expect(getByTestId('filter-all')).toBeTruthy();
     expect(getByTestId('filter-6')).toBeTruthy();
     expect(getByTestId('filter-10')).toBeTruthy();
   });
 
+  it('does not render rating filter pills when no recipes', () => {
+    const { queryByTestId } = render(<SavedScreen />);
+    expect(queryByTestId('filter-all')).toBeNull();
+  });
+
   it('calls setRatingFilter when a filter pill is pressed', () => {
+    mockSavedRecipesState = [makeSaved('r1')];
     const { getByTestId } = render(<SavedScreen />);
     fireEvent.press(getByTestId('filter-8'));
     expect(mockSetRatingFilter).toHaveBeenCalledWith(8);
   });
 
   it('calls setRatingFilter(null) when "All" is pressed', () => {
+    mockSavedRecipesState = [makeSaved('r1')];
     const { getByTestId } = render(<SavedScreen />);
     fireEvent.press(getByTestId('filter-all'));
     expect(mockSetRatingFilter).toHaveBeenCalledWith(null);

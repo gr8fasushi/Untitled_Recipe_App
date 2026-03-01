@@ -11,6 +11,28 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
 
+jest.mock('@/features/recipes/hooks/useRecipeFilters', () => ({
+  useRecipeFilters: () => ({
+    mode: 'ingredients',
+    setMode: jest.fn(),
+    selectedIngredients: [],
+    addIngredient: jest.fn(),
+    removeIngredient: jest.fn(),
+    selectedCuisines: [],
+    toggleCuisine: jest.fn(),
+    searchName: '',
+    setSearchName: jest.fn(),
+    reset: jest.fn(),
+  }),
+}));
+
+jest.mock('@/features/recipes/components/RecipeFilterPanel', () => ({
+  RecipeFilterPanel: ({ testID }: { testID?: string }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID={testID ?? 'community-filter-panel'} />;
+  },
+}));
+
 const mockSetCurrentSharedRecipe = jest.fn();
 let mockSharedRecipesState: SharedRecipe[] = [];
 let mockIsLoading = false;
@@ -83,6 +105,7 @@ const sampleRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 function makeShared(id: string): SharedRecipe {
@@ -146,5 +169,23 @@ describe('CommunityScreen', () => {
     fireEvent.press(getByTestId('community-card-r1'));
     expect(mockSetCurrentSharedRecipe).toHaveBeenCalledWith(mockSharedRecipesState[0]);
     expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/community-recipe-detail');
+  });
+
+  it('renders the filter panel', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    expect(getByTestId('community-filter-panel')).toBeTruthy();
+  });
+
+  it('shows load more button when more results are available', () => {
+    // 11 items > DISPLAY_PAGE_SIZE (10)
+    mockSharedRecipesState = Array.from({ length: 11 }, (_, i) => makeShared(`r${i}`));
+    const { getByTestId } = render(<CommunityScreen />);
+    expect(getByTestId('btn-community-load-more')).toBeTruthy();
+  });
+
+  it('does not show load more when all results fit on screen', () => {
+    mockSharedRecipesState = [makeShared('r1'), makeShared('r2')];
+    const { queryByTestId } = render(<CommunityScreen />);
+    expect(queryByTestId('btn-community-load-more')).toBeNull();
   });
 });

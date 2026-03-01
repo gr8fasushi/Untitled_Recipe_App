@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import Groq from 'groq-sdk';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { checkRateLimit } from '../../shared/middleware/rateLimit';
@@ -11,6 +12,7 @@ export const chatWithAssistant = onCall(
     const uid = authenticate(request);
     await checkRateLimit(uid, 'chat');
     const input = validateChatInput(request.data);
+    logger.info('chatWithAssistant', { uid, messageLength: input.message.length, historyLength: input.history.length, hasRecipeSnapshot: !!input.recipeSnapshot });
 
     const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
 

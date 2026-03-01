@@ -22,7 +22,7 @@ export default function ScanScreen(): React.JSX.Element {
   const count = accumulatedIngredients.length;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" testID="scan-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="scan-screen">
       <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View className="px-4 pt-4 pb-2">

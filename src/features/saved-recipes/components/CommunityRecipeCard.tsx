@@ -26,19 +26,19 @@ export function CommunityRecipeCard({
     <Pressable
       testID={testID}
       onPress={onPress}
-      className="bg-white border border-gray-100 rounded-xl p-4 mb-3 shadow-sm"
+      className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 mb-3 shadow-sm"
     >
       {/* Title */}
       <Text
         testID={`${testID}-title`}
-        className="text-base font-bold text-gray-900 mb-1"
+        className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1"
         numberOfLines={2}
       >
         {recipe.title}
       </Text>
 
       {/* Description */}
-      <Text className="text-sm text-gray-500 mb-2" numberOfLines={2}>
+      <Text className="text-sm text-gray-500 dark:text-gray-400 mb-2" numberOfLines={2}>
         {recipe.description}
       </Text>
 
@@ -46,7 +46,7 @@ export function CommunityRecipeCard({
       {review.length > 0 && (
         <Text
           testID={`${testID}-review`}
-          className="mb-2 text-xs text-gray-500 italic"
+          className="mb-2 text-xs text-gray-500 dark:text-gray-400 italic"
           numberOfLines={2}
         >
           &quot;{review}&quot;

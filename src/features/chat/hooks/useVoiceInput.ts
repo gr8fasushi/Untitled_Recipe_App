@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ExpoSpeechRecognitionErrorEvent } from 'expo-speech-recognition';
 
 interface UseVoiceInputReturn {
   isListening: boolean;
@@ -47,8 +48,8 @@ export function useVoiceInput(): UseVoiceInputReturn {
     if (event.isFinal) setIsListening(false);
   }, []);
 
-  const onError = useCallback((event: { code?: string }) => {
-    if (event.code !== 'no-speech') {
+  const onError = useCallback((event: ExpoSpeechRecognitionErrorEvent) => {
+    if (event.error !== 'no-speech') {
       setError('Voice recognition error. Please try again.');
     }
     setIsListening(false);
@@ -56,12 +57,16 @@ export function useVoiceInput(): UseVoiceInputReturn {
 
   useEffect(() => {
     if (!speech) return;
-    const resultSub = speech.ExpoSpeechRecognitionModule.addListener('result', onResult);
-    const errorSub = speech.ExpoSpeechRecognitionModule.addListener('error', onError);
-    return () => {
-      resultSub.remove();
-      errorSub.remove();
-    };
+    try {
+      const resultSub = speech.ExpoSpeechRecognitionModule.addListener('result', onResult);
+      const errorSub = speech.ExpoSpeechRecognitionModule.addListener('error', onError);
+      return () => {
+        resultSub.remove();
+        errorSub.remove();
+      };
+    } catch {
+      return undefined;
+    }
   }, [speech, onResult, onError]);
 
   const startListening = useCallback(async () => {

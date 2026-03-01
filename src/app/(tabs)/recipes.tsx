@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -7,13 +7,17 @@ import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
-import { Button, PageContainer } from '@/shared/components/ui';
+import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
+import { useHolidayStore } from '@/stores/holidayStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
 export default function RecipesScreen(): React.JSX.Element {
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const { generate, isLoading, error, recipes } = useGenerateRecipe();
+  const removeIngredient = usePantryStore((s) => s.removeIngredient);
+  const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
   const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
   const toggleCuisine = useRecipesStore((s) => s.toggleCuisine);
@@ -22,6 +26,18 @@ export default function RecipesScreen(): React.JSX.Element {
   const router = useRouter();
 
   const hasIngredients = selectedIngredients.length > 0;
+  const isWeb = Platform.OS === 'web';
+
+  const holiday = useHolidayStore((s) => s.theme);
+  const isDark = useIsDarkMode();
+  const recipesGradient =
+    holiday?.gradient ??
+    (isDark
+      ? (['#431407', '#7c2d12', '#9a3412'] as const)
+      : (['#7c2d12', '#c2410c', '#fb923c'] as const));
+  const recipesEmoji = holiday?.bannerEmoji ?? '🍳';
+  const [rSil0, rSil1, rSil2] = holiday?.silhouetteEmojis ?? ['🍳', '🔥', '🥄'];
+  const recipesSubtitleColor = holiday?.subtitleHexColor ?? '#fed7aa'; // orange-200
 
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);
@@ -29,24 +45,54 @@ export default function RecipesScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" testID="recipes-screen">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipes-screen">
+      <BackgroundDecor items={DECOR_SETS.recipes} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Gradient header */}
+        {/* Gradient header — deep red/orange cooking theme */}
         <LinearGradient
-          colors={['#c2410c', '#ea580c', '#fb923c']}
+          colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View className="items-center w-full">
-            <View className="w-full max-w-2xl px-6 pt-5 pb-6">
-              <Text className="text-3xl mb-1">🍳</Text>
-              <Text testID="recipes-heading" className="text-2xl font-nunito-bold text-white">
-                Generate Recipes
+            <View
+              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+            >
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  {rSil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  {rSil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  {rSil2}
+                </Text>
+              </View>
+              <Text className="text-5xl mb-1">{recipesEmoji}</Text>
+              <Text
+                testID="recipes-heading"
+                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
+                Find My Meal
               </Text>
-              <Text className="text-orange-200 text-sm mt-1 font-nunito">
+              <Text
+                style={{ color: recipesSubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
                 {hasIngredients
-                  ? `Using ${selectedIngredients.length} ingredient${selectedIngredients.length !== 1 ? 's' : ''} from your pantry`
-                  : 'Add ingredients in the Pantry tab first'}
+                  ? 'Select cuisines and find your perfect meal'
+                  : 'Add ingredients below to get started'}
               </Text>
             </View>
           </View>
@@ -63,6 +109,31 @@ export default function RecipesScreen(): React.JSX.Element {
                 generate recipes tailored to what you have.
               </Text>
             </View>
+          ) : null}
+
+          {/* Ingredient search — add/manage pantry without leaving this tab */}
+          <View className="mb-2">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">Your Ingredients</Text>
+            <IngredientSearch />
+          </View>
+
+          {/* Removable ingredient chips */}
+          {hasIngredients ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-1">
+              {selectedIngredients.map((ingredient) => (
+                <Pressable
+                  key={ingredient.id}
+                  testID={`banner-ingredient-${ingredient.id}`}
+                  onPress={() => removeIngredient(ingredient.id)}
+                  className="flex-row items-center gap-1 bg-primary-50 border border-primary-200 rounded-full px-3 py-1 mr-2"
+                >
+                  <Text className="text-xs font-nunito-bold text-primary-700">
+                    {ingredient.name}
+                  </Text>
+                  <Text className="text-xs text-primary-400">×</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
           ) : null}
 
           {/* Cuisine selector */}
@@ -121,7 +192,7 @@ export default function RecipesScreen(): React.JSX.Element {
 
           <View className="mt-3">
             <Button
-              label={isLoading ? 'Generating…' : '🍳 Generate 5 Recipes'}
+              label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
               onPress={generate}
               disabled={isLoading || !hasIngredients}
               testID="btn-generate-recipe"
@@ -137,15 +208,24 @@ export default function RecipesScreen(): React.JSX.Element {
           {isLoading ? (
             <View testID="recipes-loading" className="mt-8 items-center justify-center">
               <ActivityIndicator size="large" color="#ea580c" />
-              <Text className="mt-3 font-nunito text-gray-400">Generating 5 recipe ideas…</Text>
+              <Text className="mt-3 font-nunito text-gray-400">Finding your meal…</Text>
             </View>
           ) : null}
 
           {recipes.length > 0 && !isLoading ? (
             <View testID="recipes-list" className="mt-6">
-              <Text className="text-base font-nunito-semibold text-gray-700 mb-3">
-                {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
-              </Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-base font-nunito-semibold text-gray-700">
+                  {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
+                </Text>
+                <Pressable
+                  testID="btn-back-to-pantry"
+                  onPress={() => router.push('/(tabs)/pantry')}
+                  className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-accent-50 border border-accent-200"
+                >
+                  <Text className="text-xs font-nunito-bold text-accent-700">← Pantry</Text>
+                </Pressable>
+              </View>
               {recipes.map((recipe, index) => (
                 <RecipeSummaryCard
                   key={recipe.id}
@@ -154,6 +234,24 @@ export default function RecipesScreen(): React.JSX.Element {
                   testID={`recipe-card-${index}`}
                 />
               ))}
+              <View className="mt-4">
+                {isLoadingMore ? (
+                  <View className="items-center py-4">
+                    <ActivityIndicator size="small" color="#ea580c" />
+                    <Text className="mt-2 font-nunito text-gray-400 text-sm">
+                      Finding more recipes…
+                    </Text>
+                  </View>
+                ) : (
+                  <Button
+                    label="Find More Recipes"
+                    onPress={loadMore}
+                    variant="ghost"
+                    disabled={!hasIngredients}
+                    testID="btn-load-more"
+                  />
+                )}
+              </View>
             </View>
           ) : null}
 

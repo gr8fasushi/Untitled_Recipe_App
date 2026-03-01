@@ -13,6 +13,7 @@ export const GenerateRecipeInputSchema = z.object({
   dietaryPreferences: z.array(z.string()),
   cuisines: z.array(z.string()).optional(),
   strictIngredients: z.boolean().optional(),
+  excludeTitles: z.array(z.string()).optional(),
 });
 
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;

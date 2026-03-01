@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import * as Speech from 'expo-speech';
 import { useChatStore } from '../store/chatStore';
+import { useUIStore } from '@/stores/uiStore';
 
 interface UseTextToSpeechReturn {
   speak: (text: string) => void;
@@ -12,14 +13,19 @@ interface UseTextToSpeechReturn {
 export function useTextToSpeech(): UseTextToSpeechReturn {
   const isVoiceMuted = useChatStore((s) => s.isVoiceMuted);
   const setVoiceMuted = useChatStore((s) => s.setVoiceMuted);
+  const selectedVoiceId = useUIStore((s) => s.selectedVoiceId);
 
   const speak = useCallback(
     (text: string) => {
       if (isVoiceMuted) return;
       Speech.stop();
-      Speech.speak(text, { language: 'en-US', rate: 1.0 });
+      Speech.speak(text, {
+        language: 'en-US',
+        rate: 1.0,
+        ...(selectedVoiceId ? { voice: selectedVoiceId } : {}),
+      });
     },
-    [isVoiceMuted]
+    [isVoiceMuted, selectedVoiceId]
   );
 
   const stop = useCallback(() => {

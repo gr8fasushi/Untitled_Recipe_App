@@ -28,10 +28,13 @@ const mockRecipe: Recipe = {
   servings: 2,
   difficulty: 'easy',
   generatedAt: '2026-01-01T00:00:00Z',
+  source: 'ai' as const,
 };
 
 const mockSetRecipes = jest.fn();
+const mockAppendRecipes = jest.fn();
 const mockSetLoading = jest.fn();
+const mockSetLoadingMore = jest.fn();
 const mockSetError = jest.fn();
 
 jest.mock('@/features/auth/store/authStore', () => ({
@@ -74,11 +77,14 @@ describe('useGenerateRecipe', () => {
     (useRecipesStore as unknown as jest.Mock).mockReturnValue({
       recipes: [],
       isLoading: false,
+      isLoadingMore: false,
       error: null,
       selectedCuisines: [],
       strictIngredients: false,
       setRecipes: mockSetRecipes,
+      appendRecipes: mockAppendRecipes,
       setLoading: mockSetLoading,
+      setLoadingMore: mockSetLoadingMore,
       setError: mockSetError,
     });
 
@@ -91,8 +97,10 @@ describe('useGenerateRecipe', () => {
     const { result } = renderHook(() => useGenerateRecipe());
     expect(result.current.recipes).toEqual([]);
     expect(result.current.isLoading).toBe(false);
+    expect(result.current.isLoadingMore).toBe(false);
     expect(result.current.error).toBeNull();
     expect(typeof result.current.generate).toBe('function');
+    expect(typeof result.current.loadMore).toBe('function');
   });
 
   it('calls generateRecipeFn with ingredients, allergens, and dietary prefs', async () => {
@@ -167,5 +175,208 @@ describe('useGenerateRecipe', () => {
       await result.current.generate();
     });
     expect(mockSetError).toHaveBeenCalledWith('Failed to generate recipe');
+  });
+
+  it('includes cuisines in call when selectedCuisines is non-empty', async () => {
+    (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+      recipes: [],
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      selectedCuisines: ['italian', 'mexican'],
+      strictIngredients: false,
+      setRecipes: mockSetRecipes,
+      appendRecipes: mockAppendRecipes,
+      setLoading: mockSetLoading,
+      setLoadingMore: mockSetLoadingMore,
+      setError: mockSetError,
+    });
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ cuisines: ['italian', 'mexican'] })
+    );
+  });
+
+  it('omits cuisines from call when selectedCuisines is empty', async () => {
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
+    });
+    const calledWith = (generateRecipeFn as unknown as jest.Mock).mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(calledWith['cuisines']).toBeUndefined();
+  });
+
+  it('includes strictIngredients in call when true', async () => {
+    (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+      recipes: [],
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      selectedCuisines: [],
+      strictIngredients: true,
+      setRecipes: mockSetRecipes,
+      appendRecipes: mockAppendRecipes,
+      setLoading: mockSetLoading,
+      setLoadingMore: mockSetLoadingMore,
+      setError: mockSetError,
+    });
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ strictIngredients: true })
+    );
+  });
+
+  it('omits strictIngredients from call when false', async () => {
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
+    });
+    const calledWith = (generateRecipeFn as unknown as jest.Mock).mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(calledWith['strictIngredients']).toBeUndefined();
+  });
+
+  it('passes both cuisines and strictIngredients when both are set', async () => {
+    (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+      recipes: [],
+      isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      selectedCuisines: ['japanese'],
+      strictIngredients: true,
+      setRecipes: mockSetRecipes,
+      appendRecipes: mockAppendRecipes,
+      setLoading: mockSetLoading,
+      setLoadingMore: mockSetLoadingMore,
+      setError: mockSetError,
+    });
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ cuisines: ['japanese'], strictIngredients: true })
+    );
+  });
+
+  describe('loadMore', () => {
+    it('calls CF with excludeTitles from current recipes', async () => {
+      (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+        recipes: [mockRecipe],
+        isLoading: false,
+        isLoadingMore: false,
+        error: null,
+        selectedCuisines: [],
+        strictIngredients: false,
+        setRecipes: mockSetRecipes,
+        appendRecipes: mockAppendRecipes,
+        setLoading: mockSetLoading,
+        setLoadingMore: mockSetLoadingMore,
+        setError: mockSetError,
+      });
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(generateRecipeFn).toHaveBeenCalledWith(
+        expect.objectContaining({ excludeTitles: ['Tomato Pasta'] })
+      );
+    });
+
+    it('calls appendRecipes (not setRecipes) on success', async () => {
+      (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+        recipes: [mockRecipe],
+        isLoading: false,
+        isLoadingMore: false,
+        error: null,
+        selectedCuisines: [],
+        strictIngredients: false,
+        setRecipes: mockSetRecipes,
+        appendRecipes: mockAppendRecipes,
+        setLoading: mockSetLoading,
+        setLoadingMore: mockSetLoadingMore,
+        setError: mockSetError,
+      });
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(mockAppendRecipes).toHaveBeenCalledWith([mockRecipe]);
+      expect(mockSetRecipes).not.toHaveBeenCalled();
+    });
+
+    it('omits excludeTitles when recipes array is empty', async () => {
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      const calledWith = (generateRecipeFn as unknown as jest.Mock).mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(calledWith['excludeTitles']).toBeUndefined();
+    });
+
+    it('sets isLoadingMore true then false on success', async () => {
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(mockSetLoadingMore).toHaveBeenNthCalledWith(1, true);
+      expect(mockSetLoadingMore).toHaveBeenNthCalledWith(2, false);
+    });
+
+    it('sets error and calls setLoadingMore(false) when CF throws', async () => {
+      (generateRecipeFn as unknown as jest.Mock).mockRejectedValue(new Error('Load failed'));
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(mockSetError).toHaveBeenCalledWith('Load failed');
+      expect(mockSetLoadingMore).toHaveBeenCalledWith(false);
+    });
+
+    it('sets generic error for non-Error thrown values', async () => {
+      (generateRecipeFn as unknown as jest.Mock).mockRejectedValue('oops');
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(mockSetError).toHaveBeenCalledWith('Failed to load more recipes');
+    });
+
+    it('passes cuisines and strictIngredients through to CF', async () => {
+      (useRecipesStore as unknown as jest.Mock).mockReturnValue({
+        recipes: [],
+        isLoading: false,
+        isLoadingMore: false,
+        error: null,
+        selectedCuisines: ['korean'],
+        strictIngredients: true,
+        setRecipes: mockSetRecipes,
+        appendRecipes: mockAppendRecipes,
+        setLoading: mockSetLoading,
+        setLoadingMore: mockSetLoadingMore,
+        setError: mockSetError,
+      });
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(generateRecipeFn).toHaveBeenCalledWith(
+        expect.objectContaining({ cuisines: ['korean'], strictIngredients: true })
+      );
+    });
   });
 });
