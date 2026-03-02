@@ -133,7 +133,7 @@ describe('ChatScreen', () => {
   it('shows heading', async () => {
     await renderScreen();
     expect(screen.getByTestId('chat-heading')).toBeTruthy();
-    expect(screen.getByText('AI Chef')).toBeTruthy();
+    expect(screen.getByText('Chef Jules')).toBeTruthy();
   });
 
   it('shows mute toggle button', async () => {

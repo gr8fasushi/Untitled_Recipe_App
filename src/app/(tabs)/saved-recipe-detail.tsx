@@ -363,7 +363,9 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
                   accessibilityState={{ disabled: false }}
                   className="py-4 rounded-2xl items-center bg-primary-600"
                 >
-                  <Text className="text-base font-nunito-bold text-white">🤖 Chat with AI</Text>
+                  <Text className="text-base font-nunito-bold text-white">
+                    👨‍🍳 Chat with Chef Jules
+                  </Text>
                 </Pressable>
               </View>
 

@@ -108,7 +108,7 @@ export default function ChatScreen(): React.JSX.Element {
               testID="chat-heading"
               className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              AI Chef
+              Chef Jules
             </Text>
             {currentRecipe ? (
               <Text
@@ -121,7 +121,7 @@ export default function ChatScreen(): React.JSX.Element {
               <Text
                 className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                Ask me anything about cooking
+                Your personal virtual chef
               </Text>
             )}
           </View>
@@ -134,12 +134,25 @@ export default function ChatScreen(): React.JSX.Element {
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
             <Text className="text-6xl mb-3">👨‍🍳</Text>
-            <Text className="text-lg font-semibold text-gray-700 mb-2 text-center">
-              Ask me anything about this recipe
-            </Text>
-            <Text className="text-sm text-gray-400 text-center">
-              Substitutions, cooking tips, nutrition — I&apos;m here to help.
-            </Text>
+            {currentRecipe ? (
+              <>
+                <Text className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 text-center">
+                  Ask me anything about {currentRecipe.title}
+                </Text>
+                <Text className="text-sm text-gray-400 text-center">
+                  Substitutions, cooking tips, nutrition — Chef Jules is here to help.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 text-center">
+                  What would you like to cook today?
+                </Text>
+                <Text className="text-sm text-gray-400 text-center">
+                  Ask Chef Jules about any recipe, technique, or ingredient.
+                </Text>
+              </>
+            )}
           </View>
         ) : (
           <FlatList
