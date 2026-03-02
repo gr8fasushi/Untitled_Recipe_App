@@ -1,5 +1,5 @@
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,34 @@ import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
+const MEAL_TYPES = [
+  { id: 'breakfast', label: 'Breakfast', emoji: '🌅' },
+  { id: 'lunch', label: 'Lunch', emoji: '☀️' },
+  { id: 'dinner', label: 'Dinner', emoji: '🌙' },
+  { id: 'dessert', label: 'Dessert', emoji: '🍰' },
+  { id: 'snack', label: 'Snack', emoji: '🍿' },
+] as const;
+
+const DIFFICULTIES = [
+  { id: 'easy', label: 'Easy' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'hard', label: 'Hard' },
+] as const;
+
+const COOK_TIMES = [
+  { id: '< 15', label: '< 15 min', maxMinutes: 15 },
+  { id: '15-30', label: '15-30 min', maxMinutes: 30 },
+  { id: '30-60', label: '30-60 min', maxMinutes: 60 },
+  { id: '60+', label: '60+ min', maxMinutes: null },
+] as const;
+
+const SERVING_SIZES = [
+  { id: '1-2', label: '1-2' },
+  { id: '3-4', label: '3-4' },
+  { id: '5-6', label: '5-6' },
+  { id: '6+', label: '6+' },
+] as const;
+
 export default function RecipesScreen(): React.JSX.Element {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
@@ -27,6 +55,11 @@ export default function RecipesScreen(): React.JSX.Element {
   const strictIngredients = useRecipesStore((s) => s.strictIngredients);
   const setStrictIngredients = useRecipesStore((s) => s.setStrictIngredients);
   const router = useRouter();
+
+  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [selectedCookTimeId, setSelectedCookTimeId] = useState<string | null>(null);
+  const [selectedServingSize, setSelectedServingSize] = useState<string | null>(null);
 
   const allergenKey = (profile?.allergens ?? []).join(',');
   const dietKey = (profile?.dietaryPreferences ?? []).join(',');
@@ -50,9 +83,35 @@ export default function RecipesScreen(): React.JSX.Element {
   const [rSil0, rSil1, rSil2] = holiday?.silhouetteEmojis ?? ['🍳', '🔥', '🥄'];
   const recipesSubtitleColor = holiday?.subtitleHexColor ?? '#fed7aa'; // orange-200
 
+  function buildFilters() {
+    const cookTimeEntry = COOK_TIMES.find((t) => t.id === selectedCookTimeId);
+    return {
+      mealType: selectedMealType,
+      difficulty: selectedDifficulty,
+      maxCookTime: cookTimeEntry?.maxMinutes ?? null,
+      servingSize: selectedServingSize,
+    };
+  }
+
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);
     router.push('/(tabs)/recipe-detail');
+  }
+
+  function toggleMealType(id: string): void {
+    setSelectedMealType((prev) => (prev === id ? null : id));
+  }
+
+  function toggleDifficulty(id: string): void {
+    setSelectedDifficulty((prev) => (prev === id ? null : id));
+  }
+
+  function toggleCookTime(id: string): void {
+    setSelectedCookTimeId((prev) => (prev === id ? null : id));
+  }
+
+  function toggleServingSize(id: string): void {
+    setSelectedServingSize((prev) => (prev === id ? null : id));
   }
 
   return (
@@ -102,7 +161,7 @@ export default function RecipesScreen(): React.JSX.Element {
                 className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
                 {hasIngredients
-                  ? 'Select cuisines and find your perfect meal'
+                  ? "Turn what's in your kitchen into something delicious"
                   : 'Add ingredients below to get started'}
               </Text>
             </View>
@@ -147,6 +206,48 @@ export default function RecipesScreen(): React.JSX.Element {
             </ScrollView>
           ) : null}
 
+          {/* Manage Pantry — full-width prominent button */}
+          <Pressable
+            testID="btn-back-to-pantry"
+            onPress={() => router.push('/(tabs)/pantry')}
+            className="flex-row items-center justify-center gap-2 py-3 mb-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-600"
+          >
+            <Text className="text-sm font-nunito-bold text-emerald-700 dark:text-emerald-300">
+              ← Manage Pantry
+            </Text>
+          </Pressable>
+
+          {/* Meal type filter */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
+              Meal Type (optional)
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {MEAL_TYPES.map((mt) => {
+                const isActive = selectedMealType === mt.id;
+                return (
+                  <Pressable
+                    key={mt.id}
+                    testID={`meal-type-pill-${mt.id}`}
+                    onPress={() => toggleMealType(mt.id)}
+                    className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
+                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text className="text-sm">{mt.emoji}</Text>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700'
+                      }`}
+                    >
+                      {mt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Cuisine selector */}
           <View className="mb-4">
             <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
@@ -171,6 +272,96 @@ export default function RecipesScreen(): React.JSX.Element {
                       }`}
                     >
                       {cuisine.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Difficulty filter */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
+              Difficulty (optional)
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {DIFFICULTIES.map((d) => {
+                const isActive = selectedDifficulty === d.id;
+                return (
+                  <Pressable
+                    key={d.id}
+                    testID={`difficulty-pill-${d.id}`}
+                    onPress={() => toggleDifficulty(d.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700'
+                      }`}
+                    >
+                      {d.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Time to Cook filter */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
+              Time to Cook (optional)
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {COOK_TIMES.map((ct) => {
+                const isActive = selectedCookTimeId === ct.id;
+                return (
+                  <Pressable
+                    key={ct.id}
+                    testID={`cook-time-pill-${ct.id}`}
+                    onPress={() => toggleCookTime(ct.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700'
+                      }`}
+                    >
+                      {ct.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Serving Size filter */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
+              Serving Size (optional)
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {SERVING_SIZES.map((ss) => {
+                const isActive = selectedServingSize === ss.id;
+                return (
+                  <Pressable
+                    key={ss.id}
+                    testID={`serving-size-pill-${ss.id}`}
+                    onPress={() => toggleServingSize(ss.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700'
+                      }`}
+                    >
+                      {ss.label}
                     </Text>
                   </Pressable>
                 );
@@ -205,7 +396,7 @@ export default function RecipesScreen(): React.JSX.Element {
             <Button
               label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
               onPress={() => {
-                void generate();
+                void generate(buildFilters());
               }}
               disabled={isLoading || !hasIngredients}
               testID="btn-generate-recipe"
@@ -227,18 +418,9 @@ export default function RecipesScreen(): React.JSX.Element {
 
           {recipes.length > 0 && !isLoading ? (
             <View testID="recipes-list" className="mt-6">
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-base font-nunito-semibold text-gray-700">
-                  {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
-                </Text>
-                <Pressable
-                  testID="btn-back-to-pantry"
-                  onPress={() => router.push('/(tabs)/pantry')}
-                  className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-accent-50 border border-accent-200"
-                >
-                  <Text className="text-xs font-nunito-bold text-accent-700">← Pantry</Text>
-                </Pressable>
-              </View>
+              <Text className="text-base font-nunito-semibold text-gray-700 mb-3">
+                {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
+              </Text>
               {recipes.map((recipe, index) => (
                 <RecipeSummaryCard
                   key={recipe.id}
@@ -259,7 +441,7 @@ export default function RecipesScreen(): React.JSX.Element {
                   <Button
                     label="Find More Recipes"
                     onPress={() => {
-                      void loadMore();
+                      void loadMore(buildFilters());
                     }}
                     variant="ghost"
                     disabled={!hasIngredients}

@@ -76,6 +76,10 @@ export function buildRecipePrompt(input: {
   strictIngredients?: boolean | null;
   excludeTitles?: string[] | null;
   count?: number;
+  mealType?: string | null;
+  difficulty?: string | null;
+  maxCookTime?: number | null;
+  servingSize?: string | null;
 }): string {
   const count = input.count ?? 5;
   const hasIngredients = input.ingredients.length > 0;
@@ -103,12 +107,28 @@ ${
       ? `\nDO NOT generate any of these recipes — they have already been shown to the user:\n${input.excludeTitles.map((t) => `- ${t}`).join('\n')}\nCreate ${count} completely different recipes instead.`
       : '';
 
+  const mealTypeText = input.mealType
+    ? `\nMEAL TYPE: Generate ${input.mealType} recipes ONLY — every recipe must suit this meal occasion.`
+    : '';
+
+  const difficultyText = input.difficulty
+    ? `\nDIFFICULTY: ${input.difficulty} — adjust technique complexity and number of steps accordingly.`
+    : '';
+
+  const maxCookTimeText = input.maxCookTime
+    ? `\nTIME CONSTRAINT: Each recipe MUST be completable in under ${input.maxCookTime} minutes total (prep + cook combined). No exceptions.`
+    : '';
+
+  const servingSizeText = input.servingSize
+    ? `\nSERVING SIZE: Scale every recipe to serve ${input.servingSize} people. Adjust all ingredient amounts accordingly.`
+    : '';
+
   return `${ingredientText}
 
 ${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}
-${excludeText}
+${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}
 Return valid JSON only. CRITICAL REMINDER: The "recipes" array MUST contain EXACTLY ${count} recipe${count === 1 ? '' : 's'} — not ${count - 1}, not ${count + 1}, always ${count}.`;
 }

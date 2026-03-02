@@ -62,6 +62,10 @@ export const generateRecipe = onCall(
       excludeTitleCount: (input.excludeTitles ?? []).length,
       sessionToken: input.sessionToken ?? null,
       count,
+      mealType: input.mealType ?? null,
+      difficulty: input.difficulty ?? null,
+      maxCookTime: input.maxCookTime ?? null,
+      servingSize: input.servingSize ?? null,
     });
 
     const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });

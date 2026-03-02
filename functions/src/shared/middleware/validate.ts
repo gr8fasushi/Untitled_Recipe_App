@@ -17,6 +17,10 @@ export const GenerateRecipeInputSchema = z.object({
   excludeTitles: z.array(z.string().max(200)).max(50).nullable().optional(),
   count: z.number().int().min(1).max(10).nullable().optional(),
   sessionToken: z.string().max(20).nullable().optional(),
+  mealType: z.string().max(20).nullable().optional(),
+  difficulty: z.string().max(20).nullable().optional(),
+  maxCookTime: z.number().int().min(1).max(300).nullable().optional(),
+  servingSize: z.string().max(20).nullable().optional(),
 });
 
 export interface GenerateRecipeInput {
@@ -28,6 +32,10 @@ export interface GenerateRecipeInput {
   excludeTitles?: string[] | null;
   count: number;
   sessionToken?: string | null;
+  mealType?: string | null;
+  difficulty?: string | null;
+  maxCookTime?: number | null;
+  servingSize?: string | null;
 }
 
 const RecipeIngredientSnapshotSchema = z.object({

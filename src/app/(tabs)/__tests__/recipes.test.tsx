@@ -249,7 +249,17 @@ describe('RecipesScreen', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-generate-recipe'));
     expect(mockGenerate).toHaveBeenCalledTimes(1);
-    expect(mockGenerate).toHaveBeenCalledWith();
+  });
+
+  it('passes filter params to generate', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('meal-type-pill-breakfast'));
+    fireEvent.press(getByTestId('difficulty-pill-easy'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ mealType: 'breakfast', difficulty: 'easy' })
+    );
   });
 
   it('shows loading indicator while generating', () => {
@@ -363,16 +373,62 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('btn-load-more')).toBeNull();
   });
 
-  it('shows Back to Pantry button when recipes are loaded', () => {
-    mockRecipes = [recipe1];
+  it('shows Manage Pantry button always (not just when recipes are loaded)', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('btn-back-to-pantry')).toBeTruthy();
   });
 
-  it('pressing Back to Pantry navigates to the pantry tab', () => {
-    mockRecipes = [recipe1];
+  it('pressing Manage Pantry navigates to the pantry tab', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-back-to-pantry'));
     expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/pantry');
+  });
+
+  it('renders meal type filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('meal-type-pill-breakfast')).toBeTruthy();
+    expect(getByTestId('meal-type-pill-dinner')).toBeTruthy();
+  });
+
+  it('renders difficulty filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('difficulty-pill-easy')).toBeTruthy();
+    expect(getByTestId('difficulty-pill-hard')).toBeTruthy();
+  });
+
+  it('renders cook time filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('cook-time-pill-< 15')).toBeTruthy();
+    expect(getByTestId('cook-time-pill-60+')).toBeTruthy();
+  });
+
+  it('renders serving size filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('serving-size-pill-1-2')).toBeTruthy();
+    expect(getByTestId('serving-size-pill-6+')).toBeTruthy();
+  });
+
+  it('passes maxCookTime to generate when a cook time is selected', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cook-time-pill-15-30'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ maxCookTime: 30 }));
+  });
+
+  it('passes null maxCookTime for 60+ min selection', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cook-time-pill-60+'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ maxCookTime: null }));
+  });
+
+  it('passes servingSize to generate when a serving size is selected', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('serving-size-pill-3-4'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ servingSize: '3-4' }));
   });
 });
