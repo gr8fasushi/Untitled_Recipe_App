@@ -50,6 +50,8 @@ jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
 
 // eslint-disable-next-line import/first
 import CommunityScreen from '../community';
+// eslint-disable-next-line import/first
+import { useExploreStore } from '@/stores/exploreStore';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -85,6 +87,13 @@ const sampleRecipe: Recipe = {
 describe('CommunityScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useExploreStore.setState({
+      selectedCategory: 'Dinner',
+      recipes: [],
+      excludeTitles: [],
+      hasSearched: false,
+      error: null,
+    });
     mockProfile = { allergens: [], dietaryPreferences: [] };
     mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [] } });
   });

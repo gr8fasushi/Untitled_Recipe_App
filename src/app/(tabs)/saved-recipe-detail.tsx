@@ -21,15 +21,8 @@ const DIFFICULTY_STYLE: Record<string, string> = {
 
 export default function SavedRecipeDetailScreen(): React.JSX.Element {
   const router = useRouter();
-  const {
-    savedRecipe,
-    updateRating,
-    updateReview,
-    updateNotes,
-    shareRecipeHandler,
-    unshareRecipeHandler,
-    deleteRecipeHandler,
-  } = useSavedRecipeDetail();
+  const { savedRecipe, updateRating, updateReview, updateNotes, deleteRecipeHandler } =
+    useSavedRecipeDetail();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
@@ -82,7 +75,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
               <Pressable
                 testID="btn-back"
                 onPress={() => router.back()}
-                className="flex-row items-center gap-1 mb-4 self-start"
+                className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
               >
                 <Text className="text-violet-200 font-nunito-semibold text-sm">← Back</Text>
               </Pressable>
@@ -370,29 +363,6 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
                 >
                   <Text className="text-base font-nunito-bold text-white">🤖 Chat with AI</Text>
                 </Pressable>
-              </View>
-
-              {/* Share / Unshare */}
-              <View className="mb-3">
-                {savedRecipe.isShared ? (
-                  <Button
-                    label="Unshare from Community"
-                    variant="secondary"
-                    onPress={() => {
-                      void unshareRecipeHandler();
-                    }}
-                    testID="btn-unshare"
-                  />
-                ) : (
-                  <Button
-                    label="Share with Community"
-                    variant="secondary"
-                    onPress={() => {
-                      void shareRecipeHandler();
-                    }}
-                    testID="btn-share"
-                  />
-                )}
               </View>
 
               {/* Delete */}

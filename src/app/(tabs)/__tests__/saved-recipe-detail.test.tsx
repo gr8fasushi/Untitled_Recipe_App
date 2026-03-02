@@ -21,8 +21,6 @@ jest.mock('@/features/recipes/store/recipesStore', () => ({
 const mockUpdateRating = jest.fn();
 const mockUpdateReview = jest.fn();
 const mockUpdateNotes = jest.fn();
-const mockShareRecipeHandler = jest.fn().mockResolvedValue(undefined);
-const mockUnshareRecipeHandler = jest.fn().mockResolvedValue(undefined);
 const mockDeleteRecipeHandler = jest.fn();
 
 let mockSavedRecipe: SavedRecipe | null = null;
@@ -35,8 +33,6 @@ jest.mock('@/features/saved-recipes/hooks/useSavedRecipeDetail', () => ({
     updateRating: mockUpdateRating,
     updateReview: mockUpdateReview,
     updateNotes: mockUpdateNotes,
-    shareRecipeHandler: mockShareRecipeHandler,
-    unshareRecipeHandler: mockUnshareRecipeHandler,
     deleteRecipeHandler: mockDeleteRecipeHandler,
   }),
 }));
@@ -249,30 +245,6 @@ describe('SavedRecipeDetailScreen', () => {
       const { getByTestId } = render(<SavedRecipeDetailScreen />);
       fireEvent.press(getByTestId('recipe-notes'));
       expect(mockUpdateNotes).toHaveBeenCalledWith('Note!');
-    });
-
-    it('shows Share button when not shared', () => {
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      expect(getByTestId('btn-share')).toBeTruthy();
-    });
-
-    it('shows Unshare button when recipe is shared', () => {
-      mockSavedRecipe = { ...savedRecipe, isShared: true };
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      expect(getByTestId('btn-unshare')).toBeTruthy();
-    });
-
-    it('pressing Share calls shareRecipeHandler', () => {
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      fireEvent.press(getByTestId('btn-share'));
-      expect(mockShareRecipeHandler).toHaveBeenCalledTimes(1);
-    });
-
-    it('pressing Unshare calls unshareRecipeHandler', () => {
-      mockSavedRecipe = { ...savedRecipe, isShared: true };
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      fireEvent.press(getByTestId('btn-unshare'));
-      expect(mockUnshareRecipeHandler).toHaveBeenCalledTimes(1);
     });
 
     it('pressing Delete calls deleteRecipeHandler', () => {

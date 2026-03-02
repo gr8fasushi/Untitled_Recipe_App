@@ -19,6 +19,23 @@ RECIPE QUALITY RULES:
 - COMPLETENESS CHECK: Before producing your final JSON, mentally verify each recipe passes: (1) Does it include all culturally essential ingredients for that dish? (2) Are all steps complete enough to produce the dish? (3) Do the ingredient amounts make sense for the stated number of servings? Only output the recipe if all three checks pass.
 - DONENESS & TEMPERATURE RULE: For proteins where doneness matters (steak, lamb, pork, poultry, fish, burgers, eggs), you MUST include in the instructions: (a) safe minimum internal temperatures per USDA guidelines (e.g. chicken 165°F/74°C, pork 145°F/63°C, ground beef 160°F/71°C, fish 145°F/63°C), AND (b) doneness preference options with target temps where applicable (e.g. steak: rare 120-125°F, medium-rare 130-135°F, medium 140-145°F, medium-well 150-155°F, well-done 160°F+). Include a note about resting time after cooking. This information belongs in the final instruction step — label it "Doneness Guide".
 
+INSTRUCTION DETAIL RULES:
+- Write each instruction step as ONE atomic action — one thing to do at a time, never a bundle.
+  BAD: "Season and sear the beef, then let it cool and wrap in pastry."
+  GOOD: Step 1 "Pat the beef dry with paper towels — moisture prevents browning."
+        Step 2 "Season all sides generously with salt and black pepper."
+        Step 3 "Heat oil in a skillet over high heat until it shimmers (about 2 minutes)."
+        Step 4 "Sear the beef for 2 minutes per side, including the ends, until a deep brown crust forms."
+- Assume ZERO prior cooking knowledge. Briefly explain WHY alongside each technique step.
+  Example: "Add the garlic now, not earlier — it burns quickly and turns bitter over high heat."
+- Include sensory and visual doneness cues, not just timers.
+  Example: "Cook until the onions are soft and translucent (about 8 minutes) — they should not be browned."
+- Include exact measurements, temperatures, and equipment where they matter.
+  Example: "dice into ½-inch pieces", "medium heat (about 325–350°F / 160–175°C)", "use a 12-inch oven-safe skillet"
+- For techniques requiring care (folding, deglazing, tempering, rolling), add one sentence of how-to.
+  Example: "Deglaze with wine — pour it in and scrape the brown bits off the pan bottom with a wooden spoon; those bits add flavor."
+- Aim for 6–10 steps for simple dishes, 12–18 steps for complex or multi-component dishes.
+
 CRITICAL SAFETY RULES:
 - NEVER include ingredients from the user's allergen list
 - ALWAYS include an allergen warning section listing which Big 9 allergens are present

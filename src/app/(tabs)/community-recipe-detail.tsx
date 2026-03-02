@@ -82,7 +82,7 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
               <Pressable
                 testID="btn-back"
                 onPress={() => router.back()}
-                className="flex-row items-center gap-1 mb-4 self-start"
+                className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
               >
                 <Text className="text-amber-200 font-nunito-semibold text-sm">← Back</Text>
               </Pressable>

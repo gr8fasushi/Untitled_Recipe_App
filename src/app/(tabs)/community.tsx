@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
 import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useExploreStore } from '@/stores/exploreStore';
 import type { Recipe } from '@/shared/types';
 
 const CATEGORIES = [
@@ -30,13 +31,20 @@ export default function CommunityScreen(): React.JSX.Element {
   const profile = useAuthStore((s) => s.profile);
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('Dinner');
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [excludeTitles, setExcludeTitles] = useState<string[]>([]);
+  const selectedCategory = useExploreStore((s) => s.selectedCategory);
+  const setSelectedCategory = useExploreStore((s) => s.setSelectedCategory);
+  const recipes = useExploreStore((s) => s.recipes);
+  const setRecipes = useExploreStore((s) => s.setRecipes);
+  const appendRecipes = useExploreStore((s) => s.appendRecipes);
+  const excludeTitles = useExploreStore((s) => s.excludeTitles);
+  const appendExcludeTitles = useExploreStore((s) => s.appendExcludeTitles);
+  const clearResults = useExploreStore((s) => s.clearResults);
+  const hasSearched = useExploreStore((s) => s.hasSearched);
+  const setHasSearched = useExploreStore((s) => s.setHasSearched);
+  const error = useExploreStore((s) => s.error);
+  const setError = useExploreStore((s) => s.setError);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const isWeb = Platform.OS === 'web';
   const holiday = useHolidayStore((s) => s.theme);
@@ -50,19 +58,10 @@ export default function CommunityScreen(): React.JSX.Element {
   const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? ['🍝', '🥘', '🍜'];
   const subtitleColor = holiday?.subtitleHexColor ?? '#fde68a';
 
-  // Reset results when category changes
-  useEffect(() => {
-    setRecipes([]);
-    setExcludeTitles([]);
-    setHasSearched(false);
-    setError(null);
-  }, [selectedCategory]);
-
   const handleExplore = useCallback(async (): Promise<void> => {
+    clearResults();
     setIsLoading(true);
     setError(null);
-    setRecipes([]);
-    setExcludeTitles([]);
     try {
       const result = await generateRecipeFn({
         ingredients: [],
@@ -73,14 +72,22 @@ export default function CommunityScreen(): React.JSX.Element {
       });
       const loaded = result.data.recipes;
       setRecipes(loaded);
-      setExcludeTitles(loaded.map((r) => r.title));
+      appendExcludeTitles(loaded.map((r) => r.title));
       setHasSearched(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load recipes');
     } finally {
       setIsLoading(false);
     }
-  }, [profile, selectedCategory]);
+  }, [
+    profile,
+    selectedCategory,
+    clearResults,
+    setRecipes,
+    appendExcludeTitles,
+    setHasSearched,
+    setError,
+  ]);
 
   const handleFindMore = useCallback(async (): Promise<void> => {
     setIsLoadingMore(true);
@@ -95,14 +102,14 @@ export default function CommunityScreen(): React.JSX.Element {
         ...(excludeTitles.length > 0 && { excludeTitles }),
       });
       const newRecipes = result.data.recipes;
-      setRecipes((prev) => [...prev, ...newRecipes]);
-      setExcludeTitles((prev) => [...prev, ...newRecipes.map((r) => r.title)]);
+      appendRecipes(newRecipes);
+      appendExcludeTitles(newRecipes.map((r) => r.title));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load more recipes');
     } finally {
       setIsLoadingMore(false);
     }
-  }, [profile, selectedCategory, excludeTitles]);
+  }, [profile, selectedCategory, excludeTitles, appendRecipes, appendExcludeTitles, setError]);
 
   function handleCardPress(recipe: Recipe): void {
     setCurrentRecipe(recipe);
@@ -175,7 +182,10 @@ export default function CommunityScreen(): React.JSX.Element {
               <Pressable
                 key={cat}
                 testID={`category-pill-${cat}`}
-                onPress={() => setSelectedCategory(cat)}
+                onPress={() => {
+                  setSelectedCategory(cat);
+                  clearResults();
+                }}
                 className={`px-4 py-2 rounded-full mr-2 border ${
                   selectedCategory === cat
                     ? 'bg-amber-500 border-amber-500'
