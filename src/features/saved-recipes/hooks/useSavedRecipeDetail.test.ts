@@ -176,7 +176,7 @@ describe('useSavedRecipeDetail', () => {
     it('uses window.confirm on web and deletes when confirmed', async () => {
       jest.replaceProperty(Platform, 'OS', 'web');
       const confirmMock = jest.fn().mockReturnValue(true);
-      global.confirm = confirmMock;
+      (globalThis as Record<string, unknown>).confirm = confirmMock;
       const { result } = renderHook(() => useSavedRecipeDetail());
       await act(async () => {
         result.current.deleteRecipeHandler();
@@ -185,19 +185,19 @@ describe('useSavedRecipeDetail', () => {
       expect(mockRemoveSavedRecipe).toHaveBeenCalledWith('r1');
       expect(mockDeleteSavedRecipe).toHaveBeenCalledWith('uid1', 'r1');
       expect(mockRouterBack).toHaveBeenCalled();
-      delete (global as { confirm?: unknown }).confirm;
+      delete (globalThis as Record<string, unknown>).confirm;
     });
 
     it('does not delete when web confirm is cancelled', () => {
       jest.replaceProperty(Platform, 'OS', 'web');
-      global.confirm = jest.fn().mockReturnValue(false);
+      (globalThis as Record<string, unknown>).confirm = jest.fn().mockReturnValue(false);
       const { result } = renderHook(() => useSavedRecipeDetail());
       act(() => {
         result.current.deleteRecipeHandler();
       });
       expect(mockRemoveSavedRecipe).not.toHaveBeenCalled();
       expect(mockDeleteSavedRecipe).not.toHaveBeenCalled();
-      delete (global as { confirm?: unknown }).confirm;
+      delete (globalThis as Record<string, unknown>).confirm;
     });
   });
 });
