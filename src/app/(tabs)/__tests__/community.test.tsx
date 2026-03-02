@@ -88,7 +88,12 @@ describe('CommunityScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useExploreStore.setState({
-      selectedCategory: 'Dinner',
+      selectedType: 'Dinner',
+      selectedCuisine: null,
+      selectedOther: null,
+      difficulty: null,
+      cookTimeId: null,
+      servingSize: null,
       recipes: [],
       excludeTitles: [],
       hasSearched: false,
@@ -103,11 +108,31 @@ describe('CommunityScreen', () => {
     expect(getByTestId('community-screen')).toBeTruthy();
   });
 
-  it('renders category pills', () => {
+  it('renders all three category section labels', () => {
     const { getByTestId } = render(<CommunityScreen />);
-    expect(getByTestId('category-pill-Dinner')).toBeTruthy();
-    expect(getByTestId('category-pill-Breakfast')).toBeTruthy();
-    expect(getByTestId('category-pill-Italian')).toBeTruthy();
+    expect(getByTestId('section-label-meal-type')).toBeTruthy();
+    expect(getByTestId('section-label-cuisine')).toBeTruthy();
+    expect(getByTestId('section-label-other')).toBeTruthy();
+  });
+
+  it('renders meal type pills', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    expect(getByTestId('type-pill-Dinner')).toBeTruthy();
+    expect(getByTestId('type-pill-Breakfast')).toBeTruthy();
+    expect(getByTestId('type-pill-Lunch')).toBeTruthy();
+  });
+
+  it('renders cuisine pills from CUISINES constant', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    expect(getByTestId('cuisine-pill-italian')).toBeTruthy();
+    expect(getByTestId('cuisine-pill-american')).toBeTruthy();
+    expect(getByTestId('cuisine-pill-japanese')).toBeTruthy();
+  });
+
+  it('renders other category pills', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    expect(getByTestId('other-pill-Vegetarian')).toBeTruthy();
+    expect(getByTestId('other-pill-Healthy')).toBeTruthy();
   });
 
   it('shows empty state before exploring', () => {
@@ -115,7 +140,7 @@ describe('CommunityScreen', () => {
     expect(getByTestId('community-empty')).toBeTruthy();
   });
 
-  it('calls generateRecipeFn with selected category on explore', async () => {
+  it('calls generateRecipeFn with selected type on explore', async () => {
     mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
     const { getByTestId } = render(<CommunityScreen />);
     await act(async () => {
@@ -123,6 +148,29 @@ describe('CommunityScreen', () => {
     });
     expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
       expect.objectContaining({ cuisines: ['Dinner'], count: 5, ingredients: [] })
+    );
+  });
+
+  it('calls generateRecipeFn with selected cuisine on explore', async () => {
+    useExploreStore.setState({
+      selectedType: null,
+      selectedCuisine: 'italian',
+      selectedOther: null,
+      difficulty: null,
+      cookTimeId: null,
+      servingSize: null,
+      recipes: [],
+      excludeTitles: [],
+      hasSearched: false,
+      error: null,
+    });
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ cuisines: ['italian'], count: 5 })
     );
   });
 
@@ -136,10 +184,38 @@ describe('CommunityScreen', () => {
     expect(getByTestId('community-card-0')).toBeTruthy();
   });
 
-  it('pressing a category pill updates selected category', () => {
+  it('pressing a meal type pill clears cuisine and updates active type', () => {
+    useExploreStore.setState({
+      selectedType: null,
+      selectedCuisine: 'italian',
+      selectedOther: null,
+      difficulty: null,
+      cookTimeId: null,
+      servingSize: null,
+      recipes: [],
+      excludeTitles: [],
+      hasSearched: false,
+      error: null,
+    });
     const { getByTestId } = render(<CommunityScreen />);
-    fireEvent.press(getByTestId('category-pill-Italian'));
-    expect(getByTestId('category-pill-Italian')).toBeTruthy();
+    fireEvent.press(getByTestId('type-pill-Breakfast'));
+    expect(useExploreStore.getState().selectedType).toBe('Breakfast');
+    expect(useExploreStore.getState().selectedCuisine).toBeNull();
+  });
+
+  it('pressing a cuisine pill clears meal type', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    fireEvent.press(getByTestId('cuisine-pill-italian'));
+    expect(useExploreStore.getState().selectedCuisine).toBe('italian');
+    expect(useExploreStore.getState().selectedType).toBeNull();
+  });
+
+  it('pressing an other category pill clears meal type and cuisine', () => {
+    const { getByTestId } = render(<CommunityScreen />);
+    fireEvent.press(getByTestId('other-pill-Vegetarian'));
+    expect(useExploreStore.getState().selectedOther).toBe('Vegetarian');
+    expect(useExploreStore.getState().selectedType).toBeNull();
+    expect(useExploreStore.getState().selectedCuisine).toBeNull();
   });
 
   it('pressing a card sets current recipe and navigates to recipe-detail', async () => {
@@ -184,6 +260,30 @@ describe('CommunityScreen', () => {
     });
     expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
       expect.objectContaining({ excludeTitles: [sampleRecipe.title] })
+    );
+  });
+
+  it('passes difficulty filter to generateRecipeFn', async () => {
+    useExploreStore.setState({ difficulty: 'easy' });
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ difficulty: 'easy' })
+    );
+  });
+
+  it('passes servingSize filter to generateRecipeFn', async () => {
+    useExploreStore.setState({ servingSize: '1-2' });
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ servingSize: '1-2' })
     );
   });
 });

@@ -2,12 +2,26 @@ import { create } from 'zustand';
 import type { Recipe } from '@/shared/types';
 
 interface ExploreState {
-  selectedCategory: string;
+  // Category selection — only one active at a time across all three groups
+  selectedType: string | null;
+  selectedCuisine: string | null;
+  selectedOther: string | null;
+  // Optional filters
+  difficulty: string | null;
+  cookTimeId: string | null;
+  servingSize: string | null;
+  // Results
   recipes: Recipe[];
   excludeTitles: string[];
   hasSearched: boolean;
   error: string | null;
-  setSelectedCategory: (cat: string) => void;
+  // Actions — each selection setter clears the other two groups
+  setSelectedType: (v: string | null) => void;
+  setSelectedCuisine: (v: string | null) => void;
+  setSelectedOther: (v: string | null) => void;
+  setDifficulty: (v: string | null) => void;
+  setCookTimeId: (v: string | null) => void;
+  setServingSize: (v: string | null) => void;
   setRecipes: (recipes: Recipe[]) => void;
   appendRecipes: (recipes: Recipe[]) => void;
   appendExcludeTitles: (titles: string[]) => void;
@@ -17,12 +31,25 @@ interface ExploreState {
 }
 
 export const useExploreStore = create<ExploreState>((set) => ({
-  selectedCategory: 'Dinner',
+  selectedType: 'Dinner',
+  selectedCuisine: null,
+  selectedOther: null,
+  difficulty: null,
+  cookTimeId: null,
+  servingSize: null,
   recipes: [],
   excludeTitles: [],
   hasSearched: false,
   error: null,
-  setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
+  setSelectedType: (selectedType) =>
+    set({ selectedType, selectedCuisine: null, selectedOther: null }),
+  setSelectedCuisine: (selectedCuisine) =>
+    set({ selectedCuisine, selectedType: null, selectedOther: null }),
+  setSelectedOther: (selectedOther) =>
+    set({ selectedOther, selectedType: null, selectedCuisine: null }),
+  setDifficulty: (difficulty) => set({ difficulty }),
+  setCookTimeId: (cookTimeId) => set({ cookTimeId }),
+  setServingSize: (servingSize) => set({ servingSize }),
   setRecipes: (recipes) => set({ recipes }),
   appendRecipes: (newRecipes) => set((s) => ({ recipes: [...s.recipes, ...newRecipes] })),
   appendExcludeTitles: (titles) => set((s) => ({ excludeTitles: [...s.excludeTitles, ...titles] })),

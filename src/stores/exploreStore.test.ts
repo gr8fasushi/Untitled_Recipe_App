@@ -20,7 +20,12 @@ const recipe = (id: string, title: string): Recipe => ({
 
 beforeEach(() => {
   useExploreStore.setState({
-    selectedCategory: 'Dinner',
+    selectedType: 'Dinner',
+    selectedCuisine: null,
+    selectedOther: null,
+    difficulty: null,
+    cookTimeId: null,
+    servingSize: null,
     recipes: [],
     excludeTitles: [],
     hasSearched: false,
@@ -30,15 +35,55 @@ beforeEach(() => {
 
 it('default state', () => {
   const s = useExploreStore.getState();
-  expect(s.selectedCategory).toBe('Dinner');
+  expect(s.selectedType).toBe('Dinner');
+  expect(s.selectedCuisine).toBeNull();
+  expect(s.selectedOther).toBeNull();
   expect(s.recipes).toEqual([]);
   expect(s.hasSearched).toBe(false);
   expect(s.error).toBeNull();
 });
 
-it('setSelectedCategory', () => {
-  useExploreStore.getState().setSelectedCategory('Italian');
-  expect(useExploreStore.getState().selectedCategory).toBe('Italian');
+it('setSelectedType updates type and clears cuisine + other', () => {
+  useExploreStore.getState().setSelectedCuisine('italian');
+  useExploreStore.getState().setSelectedOther('Vegetarian');
+  useExploreStore.getState().setSelectedType('Breakfast');
+  const s = useExploreStore.getState();
+  expect(s.selectedType).toBe('Breakfast');
+  expect(s.selectedCuisine).toBeNull();
+  expect(s.selectedOther).toBeNull();
+});
+
+it('setSelectedCuisine updates cuisine and clears type + other', () => {
+  useExploreStore.getState().setSelectedCuisine('italian');
+  const s = useExploreStore.getState();
+  expect(s.selectedCuisine).toBe('italian');
+  expect(s.selectedType).toBeNull();
+  expect(s.selectedOther).toBeNull();
+});
+
+it('setSelectedOther updates other and clears type + cuisine', () => {
+  useExploreStore.getState().setSelectedOther('Vegetarian');
+  const s = useExploreStore.getState();
+  expect(s.selectedOther).toBe('Vegetarian');
+  expect(s.selectedType).toBeNull();
+  expect(s.selectedCuisine).toBeNull();
+});
+
+it('setDifficulty', () => {
+  useExploreStore.getState().setDifficulty('easy');
+  expect(useExploreStore.getState().difficulty).toBe('easy');
+  useExploreStore.getState().setDifficulty(null);
+  expect(useExploreStore.getState().difficulty).toBeNull();
+});
+
+it('setCookTimeId', () => {
+  useExploreStore.getState().setCookTimeId('15-30');
+  expect(useExploreStore.getState().cookTimeId).toBe('15-30');
+});
+
+it('setServingSize', () => {
+  useExploreStore.getState().setServingSize('1-2');
+  expect(useExploreStore.getState().servingSize).toBe('1-2');
 });
 
 it('setRecipes replaces list', () => {
@@ -73,9 +118,14 @@ it('setError', () => {
   expect(useExploreStore.getState().error).toBeNull();
 });
 
-it('clearResults resets recipes, excludeTitles, hasSearched, error but not category', () => {
+it('clearResults resets recipes, excludeTitles, hasSearched, error but not selection', () => {
   useExploreStore.setState({
-    selectedCategory: 'Italian',
+    selectedType: null,
+    selectedCuisine: 'italian',
+    selectedOther: null,
+    difficulty: null,
+    cookTimeId: null,
+    servingSize: null,
     recipes: [recipe('r1', 'Pasta')],
     excludeTitles: ['Pasta'],
     hasSearched: true,
@@ -83,7 +133,7 @@ it('clearResults resets recipes, excludeTitles, hasSearched, error but not categ
   });
   useExploreStore.getState().clearResults();
   const s = useExploreStore.getState();
-  expect(s.selectedCategory).toBe('Italian'); // preserved
+  expect(s.selectedCuisine).toBe('italian'); // preserved
   expect(s.recipes).toEqual([]);
   expect(s.excludeTitles).toEqual([]);
   expect(s.hasSearched).toBe(false);

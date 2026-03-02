@@ -158,7 +158,7 @@ export default function HomeScreen(): React.JSX.Element {
             <Tile
               emoji="⭐"
               title="Popular Recipes"
-              subtitle="See what the community is cooking"
+              subtitle="Discover AI-curated recipes by cuisine"
               onPress={() => router.push('/(tabs)/community')}
               testID="tile-popular-recipes"
               accentColor={holiday?.tileAccentHex ?? '#fefce8'}
