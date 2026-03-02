@@ -48,7 +48,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Gradient hero banner */}
         <LinearGradient
-          colors={isDark ? ['#1e0a44', '#3b0764', '#5b21b6'] : ['#3b0764', '#6d28d9', '#a78bfa']}
+          colors={isDark ? ['#4c1d95', '#5b21b6', '#7c3aed'] : ['#3b0764', '#6d28d9', '#a78bfa']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >

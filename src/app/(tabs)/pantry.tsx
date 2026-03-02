@@ -91,7 +91,7 @@ export default function PantryScreen(): React.JSX.Element {
   const pantryGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#022c22', '#064e3b', '#065f46'] as const)
+      ? (['#064e3b', '#065f46', '#047857'] as const)
       : (['#064e3b', '#065f46', '#10b981'] as const));
   const pantryEmoji = holiday?.bannerEmoji ?? '🥘';
   const [pSil0, pSil1, pSil2] = holiday?.silhouetteEmojis ?? ['🥦', '🥕', '🍅'];

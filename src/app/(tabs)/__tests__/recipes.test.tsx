@@ -24,15 +24,22 @@ jest.mock('@/features/recipes/hooks/useGenerateRecipe', () => ({
 const mockSetCurrentRecipe = jest.fn();
 const mockToggleCuisine = jest.fn();
 const mockSetStrictIngredients = jest.fn();
+const mockSetRecipes = jest.fn();
 jest.mock('@/features/recipes/store/recipesStore', () => ({
   useRecipesStore: (selector: (s: unknown) => unknown) =>
     selector({
       setCurrentRecipe: mockSetCurrentRecipe,
+      setRecipes: mockSetRecipes,
       selectedCuisines: [],
       toggleCuisine: mockToggleCuisine,
       strictIngredients: false,
       setStrictIngredients: mockSetStrictIngredients,
     }),
+}));
+
+jest.mock('@/features/auth/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) =>
+    sel({ profile: { allergens: [], dietaryPreferences: [] } }),
 }));
 
 const mockRemoveIngredient = jest.fn();
@@ -238,7 +245,7 @@ describe('RecipesScreen', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-generate-recipe'));
     expect(mockGenerate).toHaveBeenCalledTimes(1);
-    expect(mockGenerate).toHaveBeenCalledWith(true); // AI enabled by default
+    expect(mockGenerate).toHaveBeenCalledWith();
   });
 
   it('shows loading indicator while generating', () => {
@@ -301,25 +308,5 @@ describe('RecipesScreen', () => {
     const { queryByTestId } = render(<RecipesScreen />);
     // Per-recipe disclaimers are handled inside each RecipeSummaryCard, not as a page banner
     expect(queryByTestId('ai-disclaimer')).toBeNull();
-  });
-
-  it('shows the AI toggle checkbox', () => {
-    const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('checkbox-use-ai')).toBeTruthy();
-  });
-
-  it('calls generate with useAI=true by default when button is pressed', () => {
-    mockSelectedIngredients = [tomato];
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('btn-generate-recipe'));
-    expect(mockGenerate).toHaveBeenCalledWith(true);
-  });
-
-  it('calls generate with useAI=false after toggling AI off', () => {
-    mockSelectedIngredients = [tomato];
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('checkbox-use-ai')); // Toggle off
-    fireEvent.press(getByTestId('btn-generate-recipe'));
-    expect(mockGenerate).toHaveBeenCalledWith(false);
   });
 });

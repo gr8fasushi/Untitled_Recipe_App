@@ -35,7 +35,7 @@ function Tile({
     <Pressable
       testID={testID}
       onPress={onPress}
-      className="flex-1 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm active:opacity-75"
+      className="flex-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm active:opacity-75"
     >
       <View
         className="w-12 h-12 rounded-full items-center justify-center mb-3"
@@ -43,8 +43,10 @@ function Tile({
       >
         <Text className="text-2xl">{emoji}</Text>
       </View>
-      <Text className="text-base font-nunito-bold text-gray-900 mb-0.5">{title}</Text>
-      <Text className="text-xs font-nunito text-gray-500" numberOfLines={2}>
+      <Text className="text-base font-nunito-bold text-gray-900 dark:text-white mb-0.5">
+        {title}
+      </Text>
+      <Text className="text-xs font-nunito text-gray-500 dark:text-gray-400" numberOfLines={2}>
         {subtitle}
       </Text>
     </Pressable>
@@ -52,7 +54,7 @@ function Tile({
 }
 
 const DEFAULT_GRADIENT = ['#92400e', '#b45309', '#f59e0b'] as const;
-const DEFAULT_GRADIENT_DARK = ['#451a03', '#78350f', '#92400e'] as const;
+const DEFAULT_GRADIENT_DARK = ['#78350f', '#92400e', '#b45309'] as const;
 const DEFAULT_SILHOUETTES = ['🍽️', '🥘', '🍴'] as const;
 const DEFAULT_SUBTITLE_COLOR = '#fde68a'; // amber-200
 
@@ -143,9 +145,9 @@ export default function HomeScreen(): React.JSX.Element {
             />
             <Tile
               emoji="🔍"
-              title="Search Recipes"
-              subtitle="Find a specific dish by name"
-              onPress={() => router.push('/(tabs)/recipe-search')}
+              title="Find My Meal"
+              subtitle="AI-generate recipes from your ingredients"
+              onPress={() => router.push('/(tabs)/recipes')}
               testID="tile-search-recipes"
               accentColor={holiday?.tileAccentHex ?? '#eff6ff'}
             />

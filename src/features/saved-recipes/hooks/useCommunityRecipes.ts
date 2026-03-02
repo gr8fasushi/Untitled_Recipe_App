@@ -6,7 +6,6 @@ import {
   loadSharedRecipes,
   saveToMyCollection,
   incrementSaveCount,
-  fetchMealDbCommunityRecipes,
 } from '../services/communityService';
 import type { SharedRecipe } from '../types';
 
@@ -32,15 +31,10 @@ export function useCommunityRecipes(): UseCommunityRecipesReturn {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([loadSharedRecipes(), fetchMealDbCommunityRecipes()])
-      .then(([firestoreRecipes, mealDbRecipes]) => {
+    loadSharedRecipes()
+      .then((recipes) => {
         if (!cancelled) {
-          const seen = new Set<string>();
-          const merged = [...firestoreRecipes, ...mealDbRecipes].filter((r) => {
-            const key = r.recipe.title.toLowerCase().trim();
-            return seen.has(key) ? false : (seen.add(key), true);
-          });
-          setSharedRecipes(merged);
+          setSharedRecipes(recipes);
         }
       })
       .catch((err: unknown) => {

@@ -7,13 +7,11 @@ import type { Recipe } from '@/shared/types';
 const mockLoadSharedRecipes = jest.fn();
 const mockSaveToMyCollectionFn = jest.fn();
 const mockIncrementSaveCount = jest.fn().mockResolvedValue(undefined);
-const mockFetchMealDbCommunityRecipes = jest.fn();
 
 jest.mock('../services/communityService', () => ({
   loadSharedRecipes: (...args: unknown[]) => mockLoadSharedRecipes(...args),
   saveToMyCollection: (...args: unknown[]) => mockSaveToMyCollectionFn(...args),
   incrementSaveCount: (...args: unknown[]) => mockIncrementSaveCount(...args),
-  fetchMealDbCommunityRecipes: (...args: unknown[]) => mockFetchMealDbCommunityRecipes(...args),
 }));
 
 jest.mock('@/features/auth/store/authStore', () => ({
@@ -124,7 +122,6 @@ const savedVersion: SavedRecipe = {
 describe('useCommunityRecipes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFetchMealDbCommunityRecipes.mockResolvedValue([]);
     // Reset community store state
     const { __state } = jest.requireMock('../store/communityStore') as {
       __state: { sharedRecipes: unknown[]; isLoading: boolean; error: string | null };
@@ -134,39 +131,17 @@ describe('useCommunityRecipes', () => {
     __state.error = null;
   });
 
-  it('calls loadSharedRecipes and fetchMealDbCommunityRecipes on mount', async () => {
+  it('calls loadSharedRecipes on mount and sets shared recipes', async () => {
     mockLoadSharedRecipes.mockResolvedValue([sharedRecipe]);
     const { unmount } = renderHook(() => useCommunityRecipes());
     await act(async () => {});
     expect(mockLoadSharedRecipes).toHaveBeenCalledTimes(1);
-    expect(mockFetchMealDbCommunityRecipes).toHaveBeenCalledTimes(1);
-    unmount();
-  });
-
-  it('merges firestoreRecipes and mealDbRecipes, deduplicating by title', async () => {
-    const mealDbVersion: SharedRecipe = {
-      id: 'mdb1',
-      recipe: { ...sampleRecipe, id: 'mdb1', title: 'Pasta' }, // same title as sharedRecipe
-      sharedBy: { uid: 'themealdb', displayName: 'TheMealDB' },
-      sharedAt: '2026-01-01T00:00:00Z',
-      rating: null,
-      review: '',
-      saveCount: 0,
-    };
-    mockLoadSharedRecipes.mockResolvedValue([sharedRecipe]); // title: 'Pasta'
-    mockFetchMealDbCommunityRecipes.mockResolvedValue([mealDbVersion]); // dup title
-
-    const { unmount } = renderHook(() => useCommunityRecipes());
-    await act(async () => {});
 
     const { useCommunityStore: getStore } = jest.requireMock('../store/communityStore') as {
       useCommunityStore: (sel: (s: { setSharedRecipes: jest.Mock }) => jest.Mock) => jest.Mock;
     };
     const setSharedRecipes = getStore((s) => s.setSharedRecipes);
-    const lastCall = setSharedRecipes.mock.calls[
-      setSharedRecipes.mock.calls.length - 1
-    ][0] as unknown[];
-    expect(lastCall).toHaveLength(1); // deduplicated to one 'Pasta'
+    expect(setSharedRecipes).toHaveBeenCalledWith([sharedRecipe]);
     unmount();
   });
 
@@ -174,7 +149,6 @@ describe('useCommunityRecipes', () => {
     mockLoadSharedRecipes.mockRejectedValue(new Error('network fail'));
     const { result, unmount } = renderHook(() => useCommunityRecipes());
     await act(async () => {});
-    // The hook calls setError — verify store setError was called
     const { useCommunityStore } = jest.requireMock('../store/communityStore') as {
       useCommunityStore: (sel: (s: { setError: jest.Mock }) => jest.Mock) => jest.Mock;
     };

@@ -1,8 +1,9 @@
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
@@ -15,17 +16,25 @@ import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
 export default function RecipesScreen(): React.JSX.Element {
+  const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
   const removeIngredient = usePantryStore((s) => s.removeIngredient);
   const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const setRecipes = useRecipesStore((s) => s.setRecipes);
   const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
   const toggleCuisine = useRecipesStore((s) => s.toggleCuisine);
   const strictIngredients = useRecipesStore((s) => s.strictIngredients);
   const setStrictIngredients = useRecipesStore((s) => s.setStrictIngredients);
   const router = useRouter();
 
-  const [useAI, setUseAI] = useState(true);
+  const allergenKey = (profile?.allergens ?? []).join(',');
+  const dietKey = (profile?.dietaryPreferences ?? []).join(',');
+
+  // Clear recipes when the user's allergen/dietary profile changes
+  useEffect(() => {
+    setRecipes([]);
+  }, [allergenKey, dietKey, setRecipes]);
 
   const hasIngredients = selectedIngredients.length > 0;
   const isWeb = Platform.OS === 'web';
@@ -35,7 +44,7 @@ export default function RecipesScreen(): React.JSX.Element {
   const recipesGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#431407', '#7c2d12', '#9a3412'] as const)
+      ? (['#7c2d12', '#9a3412', '#c2410c'] as const)
       : (['#7c2d12', '#c2410c', '#fb923c'] as const));
   const recipesEmoji = holiday?.bannerEmoji ?? '🍳';
   const [rSil0, rSil1, rSil2] = holiday?.silhouetteEmojis ?? ['🍳', '🔥', '🥄'];
@@ -192,34 +201,11 @@ export default function RecipesScreen(): React.JSX.Element {
             </Text>
           ) : null}
 
-          {/* AI toggle */}
-          <Pressable
-            testID="checkbox-use-ai"
-            onPress={() => setUseAI(!useAI)}
-            className="flex-row items-center gap-2 py-2 mb-1"
-          >
-            <View
-              className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                useAI ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
-              }`}
-            >
-              {useAI ? <Text className="text-white text-xs font-bold">✓</Text> : null}
-            </View>
-            <Text className="text-sm text-gray-700 font-nunito flex-1">
-              Let AI generate recipes
-            </Text>
-          </Pressable>
-          {!useAI ? (
-            <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
-              Only recipes from TheMealDB will be shown
-            </Text>
-          ) : null}
-
           <View className="mt-3">
             <Button
               label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
               onPress={() => {
-                void generate(useAI);
+                void generate();
               }}
               disabled={isLoading || !hasIngredients}
               testID="btn-generate-recipe"
@@ -273,7 +259,7 @@ export default function RecipesScreen(): React.JSX.Element {
                   <Button
                     label="Find More Recipes"
                     onPress={() => {
-                      void loadMore(useAI);
+                      void loadMore();
                     }}
                     variant="ghost"
                     disabled={!hasIngredients}

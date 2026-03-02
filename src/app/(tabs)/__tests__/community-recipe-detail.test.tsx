@@ -164,22 +164,6 @@ describe('CommunityRecipeDetailScreen', () => {
       expect(getByText('Community Tacos')).toBeTruthy();
     });
 
-    it('shows the sharer name', () => {
-      const { getByText } = render(<CommunityRecipeDetailScreen />);
-      expect(getByText('Chef Elena')).toBeTruthy();
-    });
-
-    it('shows the rating', () => {
-      const { getByTestId, getByText } = render(<CommunityRecipeDetailScreen />);
-      expect(getByTestId('community-rating')).toBeTruthy();
-      expect(getByText(/★ 9\/10/)).toBeTruthy();
-    });
-
-    it('shows the review', () => {
-      const { getByTestId } = render(<CommunityRecipeDetailScreen />);
-      expect(getByTestId('community-review')).toBeTruthy();
-    });
-
     it('shows allergen warning when recipe has allergens', () => {
       const { getByText } = render(<CommunityRecipeDetailScreen />);
       expect(getByText(/Contains: gluten/i)).toBeTruthy();

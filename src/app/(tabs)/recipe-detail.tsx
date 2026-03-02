@@ -29,7 +29,7 @@ export default function RecipeDetailScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Gradient hero banner */}
         <LinearGradient
-          colors={isDark ? ['#431407', '#7c2d12', '#9a3412'] : ['#7c2d12', '#c2410c', '#fb923c']}
+          colors={isDark ? ['#7c2d12', '#9a3412', '#c2410c'] : ['#7c2d12', '#c2410c', '#fb923c']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >

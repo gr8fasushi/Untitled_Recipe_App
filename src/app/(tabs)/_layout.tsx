@@ -64,7 +64,6 @@ export default function TabLayout(): React.JSX.Element {
       <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="community" options={{ href: null }} />
-      <Tabs.Screen name="recipe-search" options={{ href: null }} />
       <Tabs.Screen name="recipe-detail" options={{ href: null }} />
       <Tabs.Screen name="saved-recipe-detail" options={{ href: null }} />
       <Tabs.Screen name="community-recipe-detail" options={{ href: null }} />

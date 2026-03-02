@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import type { SharedRecipe, SavedRecipe } from '@/features/saved-recipes/types';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import type { Recipe } from '@/shared/types';
 
 // ---------------------------------------------------------------------------
@@ -11,67 +10,39 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
 }));
 
-jest.mock('@/features/recipes/hooks/useRecipeFilters', () => ({
-  useRecipeFilters: () => ({
-    mode: 'ingredients',
-    setMode: jest.fn(),
-    selectedIngredients: [],
-    addIngredient: jest.fn(),
-    removeIngredient: jest.fn(),
-    selectedCuisines: [],
-    toggleCuisine: jest.fn(),
-    searchName: '',
-    setSearchName: jest.fn(),
-    reset: jest.fn(),
-  }),
+const mockSetCurrentRecipe = jest.fn();
+jest.mock('@/features/recipes/store/recipesStore', () => ({
+  useRecipesStore: (sel: (s: unknown) => unknown) =>
+    sel({ setCurrentRecipe: mockSetCurrentRecipe }),
 }));
 
-jest.mock('@/features/recipes/components/RecipeFilterPanel', () => ({
-  RecipeFilterPanel: ({ testID }: { testID?: string }) => {
-    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-    return <View testID={testID ?? 'community-filter-panel'} />;
-  },
+let mockProfile: { allergens: string[]; dietaryPreferences: string[] } | null = {
+  allergens: [],
+  dietaryPreferences: [],
+};
+jest.mock('@/features/auth/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ profile: mockProfile }),
 }));
 
-const mockSetCurrentSharedRecipe = jest.fn();
-let mockSharedRecipesState: SharedRecipe[] = [];
-let mockIsLoading = false;
-let mockError: string | null = null;
-let mockSavedRecipes: SavedRecipe[] = [];
-
-jest.mock('@/features/saved-recipes/store/communityStore', () => ({
-  useCommunityStore: (sel: (s: unknown) => unknown) =>
-    sel({ setCurrentSharedRecipe: mockSetCurrentSharedRecipe }),
+const mockGenerateRecipeFn = jest.fn();
+jest.mock('@/shared/services/firebase/functions.service', () => ({
+  generateRecipeFn: (...args: unknown[]) => mockGenerateRecipeFn(...args),
 }));
 
-jest.mock('@/features/saved-recipes/store/savedRecipesStore', () => ({
-  useSavedRecipesStore: (sel: (s: unknown) => unknown) => sel({ savedRecipes: mockSavedRecipes }),
-}));
-
-jest.mock('@/features/saved-recipes/hooks/useCommunityRecipes', () => ({
-  useCommunityRecipes: () => ({
-    sharedRecipes: mockSharedRecipesState,
-    isLoading: mockIsLoading,
-    error: mockError,
-    saveToMyCollection: jest.fn(),
-  }),
-}));
-
-jest.mock('@/features/saved-recipes/components/CommunityRecipeCard', () => ({
-  CommunityRecipeCard: ({
-    sharedRecipe,
-    onPress,
+jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
+  RecipeSummaryCard: ({
+    recipe,
+    onViewFull,
     testID,
   }: {
-    sharedRecipe: SharedRecipe;
-    onPress: () => void;
-    isSaved: boolean;
+    recipe: Recipe;
+    onViewFull: () => void;
     testID?: string;
   }) => {
     const { Pressable, Text } = jest.requireActual<typeof import('react-native')>('react-native');
     return (
-      <Pressable testID={testID ?? `community-card-${sharedRecipe.id}`} onPress={onPress}>
-        <Text>{sharedRecipe.recipe.title}</Text>
+      <Pressable testID={testID} onPress={onViewFull}>
+        <Text>{recipe.title}</Text>
       </Pressable>
     );
   },
@@ -85,8 +56,8 @@ import CommunityScreen from '../community';
 // ---------------------------------------------------------------------------
 const sampleRecipe: Recipe = {
   id: 'r1',
-  title: 'Community Pizza',
-  description: 'Shared pizza.',
+  title: 'Pasta Primavera',
+  description: 'Fresh pasta.',
   ingredients: [],
   instructions: [],
   nutrition: {
@@ -108,28 +79,14 @@ const sampleRecipe: Recipe = {
   source: 'ai' as const,
 };
 
-function makeShared(id: string): SharedRecipe {
-  return {
-    id,
-    recipe: { ...sampleRecipe, id },
-    sharedBy: { uid: 'uid2', displayName: 'Chef Bob' },
-    sharedAt: '2026-01-01T00:00:00Z',
-    rating: null,
-    review: '',
-    saveCount: 0,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 describe('CommunityScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSharedRecipesState = [];
-    mockIsLoading = false;
-    mockError = null;
-    mockSavedRecipes = [];
+    mockProfile = { allergens: [], dietaryPreferences: [] };
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [] } });
   });
 
   it('renders the screen container', () => {
@@ -137,55 +94,87 @@ describe('CommunityScreen', () => {
     expect(getByTestId('community-screen')).toBeTruthy();
   });
 
-  it('shows loading indicator when loading', () => {
-    mockIsLoading = true;
+  it('renders category pills', () => {
     const { getByTestId } = render(<CommunityScreen />);
-    expect(getByTestId('community-loading')).toBeTruthy();
+    expect(getByTestId('category-pill-Dinner')).toBeTruthy();
+    expect(getByTestId('category-pill-Breakfast')).toBeTruthy();
+    expect(getByTestId('category-pill-Italian')).toBeTruthy();
   });
 
-  it('shows error banner when error is set', () => {
-    mockError = 'Failed to load';
-    const { getByTestId, getByText } = render(<CommunityScreen />);
-    expect(getByTestId('community-error')).toBeTruthy();
-    expect(getByText('Failed to load')).toBeTruthy();
-  });
-
-  it('shows empty state when no shared recipes', () => {
+  it('shows empty state before exploring', () => {
     const { getByTestId } = render(<CommunityScreen />);
     expect(getByTestId('community-empty')).toBeTruthy();
   });
 
-  it('shows recipe list when shared recipes exist', () => {
-    mockSharedRecipesState = [makeShared('r1'), makeShared('r2')];
+  it('calls generateRecipeFn with selected category on explore', async () => {
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
     const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ cuisines: ['Dinner'], count: 5, ingredients: [] })
+    );
+  });
+
+  it('shows recipe list after explore', async () => {
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
     expect(getByTestId('community-list')).toBeTruthy();
-    expect(getByTestId('community-card-r1')).toBeTruthy();
-    expect(getByTestId('community-card-r2')).toBeTruthy();
+    expect(getByTestId('community-card-0')).toBeTruthy();
   });
 
-  it('pressing a card sets current shared recipe and navigates', () => {
-    mockSharedRecipesState = [makeShared('r1')];
+  it('pressing a category pill updates selected category', () => {
     const { getByTestId } = render(<CommunityScreen />);
-    fireEvent.press(getByTestId('community-card-r1'));
-    expect(mockSetCurrentSharedRecipe).toHaveBeenCalledWith(mockSharedRecipesState[0]);
-    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/community-recipe-detail');
+    fireEvent.press(getByTestId('category-pill-Italian'));
+    expect(getByTestId('category-pill-Italian')).toBeTruthy();
   });
 
-  it('renders the filter panel', () => {
+  it('pressing a card sets current recipe and navigates to recipe-detail', async () => {
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
     const { getByTestId } = render(<CommunityScreen />);
-    expect(getByTestId('community-filter-panel')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    fireEvent.press(getByTestId('community-card-0'));
+    expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
   });
 
-  it('shows load more button when more results are available', () => {
-    // 11 items > DISPLAY_PAGE_SIZE (10)
-    mockSharedRecipesState = Array.from({ length: 11 }, (_, i) => makeShared(`r${i}`));
+  it('shows error banner when generateRecipeFn throws', async () => {
+    mockGenerateRecipeFn.mockRejectedValue(new Error('Network error'));
     const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    expect(getByTestId('community-error')).toBeTruthy();
+  });
+
+  it('shows find more button when recipes are loaded', async () => {
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
     expect(getByTestId('btn-community-load-more')).toBeTruthy();
   });
 
-  it('does not show load more when all results fit on screen', () => {
-    mockSharedRecipesState = [makeShared('r1'), makeShared('r2')];
-    const { queryByTestId } = render(<CommunityScreen />);
-    expect(queryByTestId('btn-community-load-more')).toBeNull();
+  it('calls generateRecipeFn with excludeTitles on find more', async () => {
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [sampleRecipe] } });
+    const { getByTestId } = render(<CommunityScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-explore'));
+    });
+    mockGenerateRecipeFn.mockClear();
+    mockGenerateRecipeFn.mockResolvedValue({ data: { recipes: [] } });
+    await act(async () => {
+      fireEvent.press(getByTestId('btn-community-load-more'));
+    });
+    expect(mockGenerateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ excludeTitles: [sampleRecipe.title] })
+    );
   });
 });

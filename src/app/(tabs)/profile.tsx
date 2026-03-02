@@ -50,7 +50,7 @@ export default function ProfileScreen(): React.JSX.Element {
   const profileGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#0f172a', '#1e3a8a', '#1e40af'] as const)
+      ? (['#1e3a8a', '#1e40af', '#2563eb'] as const)
       : (['#1e3a8a', '#1d4ed8', '#60a5fa'] as const));
   const profileEmoji = holiday?.bannerEmoji ?? '👤';
   const [prSil0, prSil1, prSil2] = holiday?.silhouetteEmojis ?? ['👤', '⚙️', '🔒'];

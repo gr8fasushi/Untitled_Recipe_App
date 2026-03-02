@@ -40,7 +40,7 @@ export default function SavedScreen(): React.JSX.Element {
   const savedGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#1e0a44', '#3b0764', '#5b21b6'] as const)
+      ? (['#4c1d95', '#5b21b6', '#7c3aed'] as const)
       : (['#3b0764', '#6d28d9', '#a78bfa'] as const));
   const savedEmoji = holiday?.bannerEmoji ?? '🔖';
   const [sSil0, sSil1, sSil2] = holiday?.silhouetteEmojis ?? ['🔖', '⭐', '❤️'];

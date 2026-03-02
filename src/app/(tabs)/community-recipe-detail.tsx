@@ -48,7 +48,7 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Gradient hero banner */}
         <LinearGradient
-          colors={isDark ? ['#1c0a00', '#451a03', '#92400e'] : ['#451a03', '#92400e', '#f59e0b']}
+          colors={isDark ? ['#78350f', '#451a03', '#92400e'] : ['#451a03', '#92400e', '#f59e0b']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
@@ -159,35 +159,6 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
                   testID="detail-hero-image"
                 />
               ) : null}
-
-              {/* Sharer info */}
-              <View className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800">
-                <Text
-                  testID="community-sharer"
-                  className="text-sm font-nunito text-gray-600 dark:text-gray-400"
-                >
-                  Shared by{' '}
-                  <Text className="font-nunito-bold text-gray-900 dark:text-gray-100">
-                    {sharedRecipe.sharedBy.displayName}
-                  </Text>
-                </Text>
-                {sharedRecipe.rating !== null && (
-                  <Text
-                    testID="community-rating"
-                    className="mt-1 text-sm font-nunito-bold text-amber-700 dark:text-amber-400"
-                  >
-                    ★ {sharedRecipe.rating}/10
-                  </Text>
-                )}
-                {sharedRecipe.review.length > 0 && (
-                  <Text
-                    testID="community-review"
-                    className="mt-1 text-sm font-nunito text-gray-500 dark:text-gray-400 italic"
-                  >
-                    &quot;{sharedRecipe.review}&quot;
-                  </Text>
-                )}
-              </View>
 
               {/* Allergen warning */}
               {recipe.allergens.length > 0 ? (

@@ -57,7 +57,7 @@ export default function ChatScreen(): React.JSX.Element {
 
       {/* Gradient header — deep indigo AI theme */}
       <LinearGradient
-        colors={isDark ? ['#0f0e24', '#1e1b4b', '#312e81'] : ['#1e1b4b', '#4338ca', '#6366f1']}
+        colors={isDark ? ['#1e1b4b', '#3730a3', '#4338ca'] : ['#1e1b4b', '#4338ca', '#6366f1']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >

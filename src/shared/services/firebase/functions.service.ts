@@ -6,6 +6,10 @@ interface GenerateRecipeInput {
   ingredients: Ingredient[];
   allergens: string[];
   dietaryPreferences: string[];
+  cuisines?: string[];
+  count?: number;
+  excludeTitles?: string[];
+  strictIngredients?: boolean;
 }
 
 type RecipeSnapshot = Pick<
