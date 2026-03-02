@@ -59,6 +59,8 @@ export const generateRecipe = onCall(
       ingredientCount: input.ingredients.length,
       allergenCount: input.allergens.length,
       cuisineCount: (input.cuisines ?? []).length,
+      excludeTitleCount: (input.excludeTitles ?? []).length,
+      sessionToken: input.sessionToken ?? null,
       count,
     });
 

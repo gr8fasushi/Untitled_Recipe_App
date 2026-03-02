@@ -16,6 +16,7 @@ export const GenerateRecipeInputSchema = z.object({
   strictIngredients: z.boolean().nullable().optional(),
   excludeTitles: z.array(z.string().max(200)).max(50).nullable().optional(),
   count: z.number().int().min(1).max(10).nullable().optional(),
+  sessionToken: z.string().max(20).nullable().optional(),
 });
 
 export interface GenerateRecipeInput {
@@ -26,6 +27,7 @@ export interface GenerateRecipeInput {
   strictIngredients?: boolean | null;
   excludeTitles?: string[] | null;
   count: number;
+  sessionToken?: string | null;
 }
 
 const RecipeIngredientSnapshotSchema = z.object({

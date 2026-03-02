@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
@@ -18,6 +18,7 @@ interface UseGenerateRecipeReturn {
 export function useGenerateRecipe(): UseGenerateRecipeReturn {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
+  const seenTitlesRef = useRef<Set<string>>(new Set());
   const {
     recipes,
     isLoading,
@@ -33,12 +34,16 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
   } = useRecipesStore();
 
   const generate = useCallback(async () => {
+    const sessionToken = Math.random().toString(36).slice(2, 8);
+    const excludeTitles = Array.from(seenTitlesRef.current);
     const inputData = {
       ingredients: selectedIngredients,
       allergens: profile?.allergens ?? [],
       dietaryPreferences: profile?.dietaryPreferences ?? [],
       ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
       ...(strictIngredients && { strictIngredients: true as const }),
+      ...(excludeTitles.length > 0 && { excludeTitles }),
+      sessionToken,
     };
     const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
@@ -52,6 +57,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
 
     try {
       const result = await generateRecipeFn(parsed.data);
+      result.data.recipes.forEach((r: Recipe) => seenTitlesRef.current.add(r.title));
       setRecipes(result.data.recipes);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to generate recipe';
@@ -70,7 +76,8 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
   ]);
 
   const loadMore = useCallback(async () => {
-    const excludeTitles = recipes.map((r) => r.title);
+    const sessionToken = Math.random().toString(36).slice(2, 8);
+    const excludeTitles = Array.from(seenTitlesRef.current);
     const inputData = {
       ingredients: selectedIngredients,
       allergens: profile?.allergens ?? [],
@@ -78,6 +85,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
       ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
       ...(strictIngredients && { strictIngredients: true as const }),
       ...(excludeTitles.length > 0 && { excludeTitles }),
+      sessionToken,
     };
     const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
@@ -91,6 +99,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
 
     try {
       const result = await generateRecipeFn(parsed.data);
+      result.data.recipes.forEach((r: Recipe) => seenTitlesRef.current.add(r.title));
       appendRecipes(result.data.recipes);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load more recipes';
@@ -103,7 +112,6 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
     profile,
     selectedCuisines,
     strictIngredients,
-    recipes,
     appendRecipes,
     setLoadingMore,
     setError,
