@@ -197,10 +197,10 @@ describe('SavedRecipeDetailScreen', () => {
     expect(getByTestId('saved-detail-empty')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to saved tab', () => {
     const { getByTestId } = render(<SavedRecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/saved');
   });
 
   describe('with recipe', () => {

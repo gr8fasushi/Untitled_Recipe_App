@@ -147,10 +147,10 @@ describe('CommunityRecipeDetailScreen', () => {
     expect(getByTestId('community-detail-empty')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to explore tab', () => {
     const { getByTestId } = render(<CommunityRecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/community');
   });
 
   describe('with shared recipe', () => {

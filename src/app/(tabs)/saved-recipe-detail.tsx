@@ -74,10 +74,12 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
               {/* Back button */}
               <Pressable
                 testID="btn-back"
-                onPress={() => router.back()}
+                onPress={() => router.push('/(tabs)/saved')}
                 className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
               >
-                <Text className="text-violet-200 font-nunito-semibold text-sm">← Back</Text>
+                <Text className="text-violet-200 font-nunito-semibold text-sm">
+                  ← Back to Saved
+                </Text>
               </Pressable>
 
               {recipe ? (
