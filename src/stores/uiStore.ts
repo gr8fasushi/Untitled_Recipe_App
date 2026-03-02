@@ -66,7 +66,9 @@ export const useUIStore = create<UIState>((set) => ({
   setColorScheme: (scheme) => {
     set({ colorScheme: scheme });
     // Override native Appearance so NativeWind dark: variants respond to user preference
-    Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+    if (Platform.OS !== 'web') {
+      Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+    }
     void writeSecure(COLOR_SCHEME_KEY, scheme);
   },
   setSelectedVoiceId: (id) => {
@@ -80,7 +82,9 @@ export const useUIStore = create<UIState>((set) => ({
     ]);
     const scheme = (storedScheme as ColorSchemePreference | null) ?? 'system';
     // Apply persisted preference to native Appearance so NativeWind dark: variants are correct
-    Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+    if (Platform.OS !== 'web') {
+      Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+    }
     set({
       colorScheme: scheme,
       selectedVoiceId: storedVoice || null,
