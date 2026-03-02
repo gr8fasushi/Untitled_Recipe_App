@@ -14,7 +14,6 @@ export const GenerateRecipeInputSchema = z.object({
   cuisines: z.array(z.string()).optional(),
   strictIngredients: z.boolean().optional(),
   excludeTitles: z.array(z.string()).optional(),
-  useAI: z.boolean().optional(),
 });
 
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;

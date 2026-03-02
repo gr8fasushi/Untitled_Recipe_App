@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import type { Recipe } from '@/shared/types';
 import type { PantryItem } from '@/features/pantry/types';
 
@@ -37,9 +37,12 @@ jest.mock('@/features/recipes/store/recipesStore', () => ({
     }),
 }));
 
+let mockProfile: { allergens: string[]; dietaryPreferences: string[] } | null = {
+  allergens: [],
+  dietaryPreferences: [],
+};
 jest.mock('@/features/auth/store/authStore', () => ({
-  useAuthStore: (sel: (s: unknown) => unknown) =>
-    sel({ profile: { allergens: [], dietaryPreferences: [] } }),
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ profile: mockProfile }),
 }));
 
 const mockRemoveIngredient = jest.fn();
@@ -177,6 +180,7 @@ describe('RecipesScreen', () => {
     mockIsLoadingMore = false;
     mockError = null;
     mockRecipes = [];
+    mockProfile = { allergens: [], dietaryPreferences: [] };
     mockGenerate.mockResolvedValue(undefined);
     mockLoadMore.mockResolvedValue(undefined);
     mockRouterPush.mockReset();
@@ -308,5 +312,67 @@ describe('RecipesScreen', () => {
     const { queryByTestId } = render(<RecipesScreen />);
     // Per-recipe disclaimers are handled inside each RecipeSummaryCard, not as a page banner
     expect(queryByTestId('ai-disclaimer')).toBeNull();
+  });
+
+  it('calls setRecipes([]) on mount to clear stale results', () => {
+    render(<RecipesScreen />);
+    expect(mockSetRecipes).toHaveBeenCalledWith([]);
+  });
+
+  it('calls setRecipes([]) again when allergens change', async () => {
+    const { rerender } = render(<RecipesScreen />);
+    mockSetRecipes.mockClear();
+    mockProfile = { allergens: ['peanuts'], dietaryPreferences: [] };
+    await act(async () => {
+      rerender(<RecipesScreen />);
+    });
+    expect(mockSetRecipes).toHaveBeenCalledWith([]);
+  });
+
+  it('pressing a cuisine pill calls toggleCuisine with the cuisine id', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cuisine-pill-italian'));
+    expect(mockToggleCuisine).toHaveBeenCalledWith('italian');
+  });
+
+  it('pressing the strict ingredients checkbox calls setStrictIngredients with toggled value', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('checkbox-strict-ingredients'));
+    expect(mockSetStrictIngredients).toHaveBeenCalledWith(true);
+  });
+
+  it('shows Find More Recipes button when recipes are loaded', () => {
+    mockRecipes = [recipe1];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more')).toBeTruthy();
+  });
+
+  it('calls loadMore when Find More Recipes button is pressed', () => {
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-load-more'));
+    expect(mockLoadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides Find More button and shows spinner while loading more', () => {
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    mockIsLoadingMore = true;
+    const { queryByTestId } = render(<RecipesScreen />);
+    expect(queryByTestId('btn-load-more')).toBeNull();
+  });
+
+  it('shows Back to Pantry button when recipes are loaded', () => {
+    mockRecipes = [recipe1];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-back-to-pantry')).toBeTruthy();
+  });
+
+  it('pressing Back to Pantry navigates to the pantry tab', () => {
+    mockRecipes = [recipe1];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-back-to-pantry'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/pantry');
   });
 });
