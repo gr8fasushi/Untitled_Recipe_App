@@ -68,7 +68,7 @@ function extractInstructions(raw: string | null): RecipeStep[] {
   return raw
     .split(/\r?\n+/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0)
+    .filter((line) => line.length > 0 && !/^step\s*\d+[:.)]?\s*$/i.test(line))
     .map((instruction, index) => ({
       stepNumber: index + 1,
       instruction,
@@ -93,7 +93,7 @@ export function mapMealDbToRecipe(meal: MealDbMeal): MappedRecipe {
   return {
     id: crypto.randomUUID(),
     title: meal.strMeal,
-    description: `${meal.strArea ?? ''} ${meal.strCategory ?? ''} recipe from TheMealDB`.trim(),
+    description: `${meal.strArea ?? ''} ${meal.strCategory ?? ''} recipe`.trim(),
     ingredients: extractIngredients(meal),
     instructions: extractInstructions(meal.strInstructions ?? null),
     nutrition: {

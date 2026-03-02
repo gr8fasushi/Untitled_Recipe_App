@@ -37,9 +37,9 @@ describe('mapMealDbToRecipe', () => {
     expect(recipe.imageUrl).toBe('https://example.com/thumb.jpg');
   });
 
-  it('builds description from area and category', () => {
+  it('builds description from area and category without source attribution', () => {
     const recipe = mapMealDbToRecipe(baseMeal);
-    expect(recipe.description).toBe('Japanese Chicken recipe from TheMealDB');
+    expect(recipe.description).toBe('Japanese Chicken recipe');
   });
 
   it('extracts ingredients stopping at the first empty name', () => {
@@ -67,6 +67,26 @@ describe('mapMealDbToRecipe', () => {
     expect(recipe.instructions[2]).toEqual({ stepNumber: 3, instruction: 'Bake 30 min.' });
   });
 
+  it('strips standalone STEP N header lines from instructions', () => {
+    const recipe = mapMealDbToRecipe({
+      ...baseMeal,
+      strInstructions: 'STEP 1\n\nMix the sauce.\n\nSTEP 2\n\nAdd chicken and bake.',
+    });
+    expect(recipe.instructions).toHaveLength(2);
+    expect(recipe.instructions[0]).toEqual({ stepNumber: 1, instruction: 'Mix the sauce.' });
+    expect(recipe.instructions[1]).toEqual({ stepNumber: 2, instruction: 'Add chicken and bake.' });
+  });
+
+  it('strips STEP N: prefix variations (colon, period, parenthesis)', () => {
+    const recipe = mapMealDbToRecipe({
+      ...baseMeal,
+      strInstructions: 'Step 1:\n\nPreheat oven.\n\nStep 2.\n\nCook for 30 min.',
+    });
+    expect(recipe.instructions).toHaveLength(2);
+    expect(recipe.instructions[0].instruction).toBe('Preheat oven.');
+    expect(recipe.instructions[1].instruction).toBe('Cook for 30 min.');
+  });
+
   it('returns empty instructions array when strInstructions is null', () => {
     const recipe = mapMealDbToRecipe({ ...baseMeal, strInstructions: null });
     expect(recipe.instructions).toEqual([]);
@@ -83,7 +103,7 @@ describe('mapMealDbToRecipe', () => {
 
   it('handles missing strArea and strMealThumb gracefully', () => {
     const recipe = mapMealDbToRecipe({ ...baseMeal, strArea: null, strMealThumb: null });
-    expect(recipe.description).toBe('Chicken recipe from TheMealDB');
+    expect(recipe.description).toBe('Chicken recipe');
     expect(recipe.imageUrl).toBeUndefined();
     expect(recipe.dietaryTags).not.toContain('Japanese');
     expect(recipe.dietaryTags).toContain('nutrition-unavailable');

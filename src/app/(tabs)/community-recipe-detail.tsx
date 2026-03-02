@@ -1,17 +1,31 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCommunityStore } from '@/features/saved-recipes/store/communityStore';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { useCommunityRecipes } from '@/features/saved-recipes/hooks/useCommunityRecipes';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
-import { Button } from '@/shared/components/ui';
+import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
+import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
+import { BackgroundDecor, Button, DECOR_SETS } from '@/shared/components/ui';
+import { useRecipesStore } from '@/features/recipes/store/recipesStore';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+
+const DIFFICULTY_STYLE: Record<string, string> = {
+  easy: 'bg-emerald-100 text-emerald-700',
+  medium: 'bg-amber-100 text-amber-700',
+  hard: 'bg-red-100 text-red-700',
+};
 
 export default function CommunityRecipeDetailScreen(): React.JSX.Element {
   const router = useRouter();
   const sharedRecipe = useCommunityStore((s) => s.currentSharedRecipe);
   const savedRecipes = useSavedRecipesStore((s) => s.savedRecipes);
   const { saveToMyCollection } = useCommunityRecipes();
+  const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const isDark = useIsDarkMode();
+  const isWeb = Platform.OS === 'web';
 
   const recipe = sharedRecipe?.recipe ?? null;
   const isSaved = sharedRecipe !== null && savedRecipes.some((r) => r.id === sharedRecipe.id);
@@ -22,16 +36,108 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
     router.replace('/(tabs)/saved');
   }
 
+  function handleChatWithAI(): void {
+    if (!recipe) return;
+    setCurrentRecipe(recipe);
+    router.push('/chat');
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="community-detail-screen">
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Header */}
-        <View className="flex-row items-center px-4 py-3 border-b border-gray-100">
-          <Pressable testID="btn-back" onPress={() => router.back()}>
-            <Text className="text-lg text-primary-600 font-medium">← Back</Text>
-          </Pressable>
-          <Text className="ml-3 text-lg font-bold text-gray-900">Community Recipe</Text>
-        </View>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="community-detail-screen">
+      <BackgroundDecor items={DECOR_SETS.community} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Gradient hero banner */}
+        <LinearGradient
+          colors={isDark ? ['#1c0a00', '#451a03', '#92400e'] : ['#451a03', '#92400e', '#f59e0b']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
+            <View
+              className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+            >
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
+              >
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  ⭐
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  👨‍🍳
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  🌟
+                </Text>
+              </View>
+
+              {/* Back button */}
+              <Pressable
+                testID="btn-back"
+                onPress={() => router.back()}
+                className="flex-row items-center gap-1 mb-4 self-start"
+              >
+                <Text className="text-amber-200 font-nunito-semibold text-sm">← Back</Text>
+              </Pressable>
+
+              {recipe ? (
+                <>
+                  <Text className="text-xs font-nunito-bold text-amber-300 uppercase tracking-widest mb-1">
+                    Community Recipe
+                  </Text>
+                  <Text
+                    testID="detail-title"
+                    className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight leading-tight`}
+                  >
+                    {recipe.title}
+                  </Text>
+                  <Text
+                    className="text-amber-200 text-sm mt-2 font-nunito-semibold"
+                    numberOfLines={2}
+                  >
+                    {recipe.description}
+                  </Text>
+                  {/* Quick meta chips */}
+                  <View className="flex-row flex-wrap gap-2 mt-4">
+                    <View className="bg-white/20 rounded-full px-3 py-1">
+                      <Text className="text-xs font-nunito-bold text-white">
+                        🕐 {recipe.prepTime + recipe.cookTime} min total
+                      </Text>
+                    </View>
+                    <View className="bg-white/20 rounded-full px-3 py-1">
+                      <Text className="text-xs font-nunito-bold text-white">
+                        👤 {recipe.servings} servings
+                      </Text>
+                    </View>
+                    <View className="bg-white/20 rounded-full px-3 py-1">
+                      <Text className="text-xs font-nunito-bold text-white capitalize">
+                        {recipe.difficulty === 'easy'
+                          ? '🟢'
+                          : recipe.difficulty === 'medium'
+                            ? '🟡'
+                            : '🔴'}{' '}
+                        {recipe.difficulty}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <Text
+                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+                >
+                  Community Recipe
+                </Text>
+              )}
+            </View>
+          </View>
+        </LinearGradient>
 
         {/* Empty state */}
         {!sharedRecipe || !recipe ? (
@@ -42,146 +148,252 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
             </Text>
           </View>
         ) : (
-          <View className="mx-4 mt-6">
-            {/* Sharer info */}
-            <View className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <Text testID="community-sharer" className="text-sm text-gray-500">
-                Shared by{' '}
-                <Text className="font-semibold text-gray-700">
-                  {sharedRecipe.sharedBy.displayName}
-                </Text>
-              </Text>
-              {sharedRecipe.rating !== null && (
+          <View className="items-center w-full">
+            <View className="w-full max-w-2xl px-4 mt-5">
+              {/* Hero image */}
+              {recipe.imageUrl ? (
+                <Image
+                  source={{ uri: recipe.imageUrl }}
+                  style={{ width: '100%', height: 208, borderRadius: 16, marginBottom: 16 }}
+                  resizeMode="cover"
+                  testID="detail-hero-image"
+                />
+              ) : null}
+
+              {/* Sharer info */}
+              <View className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800">
                 <Text
-                  testID="community-rating"
-                  className="mt-1 text-sm font-semibold text-primary-700"
+                  testID="community-sharer"
+                  className="text-sm font-nunito text-gray-600 dark:text-gray-400"
                 >
-                  ★ {sharedRecipe.rating}/10
-                </Text>
-              )}
-              {sharedRecipe.review.length > 0 && (
-                <Text testID="community-review" className="mt-1 text-sm text-gray-500 italic">
-                  &quot;{sharedRecipe.review}&quot;
-                </Text>
-              )}
-            </View>
-
-            {/* Allergen warning */}
-            {recipe.allergens.length > 0 ? (
-              <View className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-                <Text className="text-xs font-semibold text-red-800 mb-1">Allergen Warning</Text>
-                <Text className="text-xs text-red-700">
-                  Contains: {recipe.allergens.join(', ')}
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Title */}
-            <Text testID="detail-title" className="text-2xl font-bold text-gray-900 mb-1">
-              {recipe.title}
-            </Text>
-            <Text className="text-sm text-gray-500 mb-4">{recipe.description}</Text>
-
-            {/* Meta row */}
-            <View className="flex-row flex-wrap gap-3 mb-5">
-              <View className="rounded-lg bg-gray-100 px-3 py-2">
-                <Text className="text-xs text-gray-500">Prep</Text>
-                <Text className="text-sm font-semibold text-gray-900">{recipe.prepTime} min</Text>
-              </View>
-              <View className="rounded-lg bg-gray-100 px-3 py-2">
-                <Text className="text-xs text-gray-500">Cook</Text>
-                <Text className="text-sm font-semibold text-gray-900">{recipe.cookTime} min</Text>
-              </View>
-              <View className="rounded-lg bg-gray-100 px-3 py-2">
-                <Text className="text-xs text-gray-500">Servings</Text>
-                <Text className="text-sm font-semibold text-gray-900">{recipe.servings}</Text>
-              </View>
-              <View className="rounded-lg bg-gray-100 px-3 py-2">
-                <Text className="text-xs text-gray-500">Difficulty</Text>
-                <Text className="text-sm font-semibold text-gray-900 capitalize">
-                  {recipe.difficulty}
-                </Text>
-              </View>
-            </View>
-
-            {/* Ingredients */}
-            <Text className="text-lg font-bold text-gray-900 mb-2">Ingredients</Text>
-            <View className="mb-5">
-              {recipe.ingredients.map((item, index) => (
-                <View
-                  key={index}
-                  className="flex-row justify-between py-2 border-b border-gray-100"
-                >
-                  <Text className="text-sm text-gray-800">
-                    {item.name}
-                    {item.optional ? ' (optional)' : ''}
+                  Shared by{' '}
+                  <Text className="font-nunito-bold text-gray-900 dark:text-gray-100">
+                    {sharedRecipe.sharedBy.displayName}
                   </Text>
-                  <Text className="text-sm text-gray-500">
-                    {item.amount} {item.unit}
+                </Text>
+                {sharedRecipe.rating !== null && (
+                  <Text
+                    testID="community-rating"
+                    className="mt-1 text-sm font-nunito-bold text-amber-700 dark:text-amber-400"
+                  >
+                    ★ {sharedRecipe.rating}/10
+                  </Text>
+                )}
+                {sharedRecipe.review.length > 0 && (
+                  <Text
+                    testID="community-review"
+                    className="mt-1 text-sm font-nunito text-gray-500 dark:text-gray-400 italic"
+                  >
+                    &quot;{sharedRecipe.review}&quot;
+                  </Text>
+                )}
+              </View>
+
+              {/* Allergen warning */}
+              {recipe.allergens.length > 0 ? (
+                <View className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                  <Text className="text-xs font-nunito-bold text-red-800 mb-1 uppercase tracking-wide">
+                    ⚠️ Allergen Warning
+                  </Text>
+                  <Text className="text-xs font-nunito text-red-700">
+                    Contains: {recipe.allergens.join(', ')}
                   </Text>
                 </View>
-              ))}
-            </View>
+              ) : null}
 
-            {/* Instructions */}
-            <Text className="text-lg font-bold text-gray-900 mb-2">Instructions</Text>
-            <View className="mb-5">
-              {recipe.instructions.map((step) => (
-                <View key={step.stepNumber} className="mb-4">
-                  <View className="flex-row items-start gap-3">
-                    <View className="w-7 h-7 rounded-full bg-primary-600 items-center justify-center mt-0.5">
-                      <Text className="text-xs font-bold text-white">{step.stepNumber}</Text>
+              {/* Dietary tags */}
+              {recipe.dietaryTags.filter((t) => t !== 'nutrition-unavailable').length > 0 ? (
+                <View className="flex-row flex-wrap gap-1.5 mb-4">
+                  {recipe.dietaryTags
+                    .filter((t) => t !== 'nutrition-unavailable')
+                    .map((tag) => (
+                      <View
+                        key={tag}
+                        className="bg-accent-50 border border-accent-200 rounded-full px-2.5 py-1"
+                      >
+                        <Text className="text-xs font-nunito-bold text-accent-700">{tag}</Text>
+                      </View>
+                    ))}
+                </View>
+              ) : null}
+
+              {/* Meta row */}
+              <View className="flex-row flex-wrap gap-2 mb-5">
+                <View className="flex-1 min-w-[80px] rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+                  <Text className="text-xs text-gray-400 font-nunito">Prep</Text>
+                  <Text className="text-sm font-nunito-bold text-gray-900 dark:text-gray-100">
+                    {recipe.prepTime} min
+                  </Text>
+                </View>
+                <View className="flex-1 min-w-[80px] rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+                  <Text className="text-xs text-gray-400 font-nunito">Cook</Text>
+                  <Text className="text-sm font-nunito-bold text-gray-900 dark:text-gray-100">
+                    {recipe.cookTime} min
+                  </Text>
+                </View>
+                <View className="flex-1 min-w-[80px] rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 px-3 py-2.5 shadow-sm">
+                  <Text className="text-xs text-gray-400 font-nunito">Servings</Text>
+                  <Text className="text-sm font-nunito-bold text-gray-900 dark:text-gray-100">
+                    {recipe.servings}
+                  </Text>
+                </View>
+                <View
+                  className={`flex-1 min-w-[80px] rounded-xl px-3 py-2.5 ${DIFFICULTY_STYLE[recipe.difficulty] ?? 'bg-gray-100 text-gray-700'}`}
+                >
+                  <Text className="text-xs opacity-70 font-nunito">Difficulty</Text>
+                  <Text className="text-sm font-nunito-bold capitalize">{recipe.difficulty}</Text>
+                </View>
+              </View>
+
+              {/* Ingredients card */}
+              <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm mb-4 overflow-hidden">
+                <View className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-amber-50 dark:bg-amber-900/20">
+                  <Text className="text-base font-nunito-bold text-gray-900 dark:text-gray-100">
+                    🥗 Ingredients
+                  </Text>
+                </View>
+                <View className="px-4">
+                  {recipe.ingredients.map((item, index) => (
+                    <View
+                      key={index}
+                      className={`flex-row justify-between items-center py-3 ${
+                        index < recipe.ingredients.length - 1
+                          ? 'border-b border-gray-50 dark:border-gray-700'
+                          : ''
+                      }`}
+                    >
+                      <Text className="text-sm font-nunito text-gray-800 dark:text-gray-200 flex-1">
+                        {item.name}
+                        {item.optional ? <Text className="text-gray-400"> (optional)</Text> : null}
+                      </Text>
+                      <Text className="text-sm font-nunito-semibold text-gray-500 ml-3">
+                        {item.amount} {item.unit}
+                      </Text>
                     </View>
-                    <Text className="flex-1 text-sm text-gray-800 leading-5">
-                      {step.instruction}
+                  ))}
+                </View>
+              </View>
+
+              {/* Instructions card */}
+              <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm mb-4 overflow-hidden">
+                <View className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-amber-50 dark:bg-amber-900/20">
+                  <Text className="text-base font-nunito-bold text-gray-900 dark:text-gray-100">
+                    👨‍🍳 Instructions
+                  </Text>
+                </View>
+                <View className="px-4 py-2">
+                  {recipe.instructions.map((step) => (
+                    <View key={step.stepNumber} className="mb-4 mt-2">
+                      <View className="flex-row items-start gap-3">
+                        <View className="w-7 h-7 rounded-full bg-primary-600 items-center justify-center mt-0.5 shrink-0">
+                          <Text className="text-xs font-nunito-bold text-white">
+                            {step.stepNumber}
+                          </Text>
+                        </View>
+                        <Text className="flex-1 text-sm font-nunito text-gray-800 dark:text-gray-200 leading-5">
+                          {step.instruction}
+                        </Text>
+                      </View>
+                      {step.duration != null ? (
+                        <Text className="ml-10 mt-1 text-xs font-nunito text-gray-400">
+                          ~{step.duration} min
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* Safe meat temperatures */}
+              <MeatTemperatureCard ingredients={recipe.ingredients} testID="detail-meat-temps" />
+
+              {/* Nutrition card — suppressed for TheMealDB recipes */}
+              {recipe.source !== 'themealdb' ? (
+                <View className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm mb-5 overflow-hidden">
+                  <View className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-amber-50 dark:bg-amber-900/20">
+                    <Text className="text-base font-nunito-bold text-gray-900 dark:text-gray-100">
+                      📊 Nutrition per serving
                     </Text>
                   </View>
-                  {step.duration != null ? (
-                    <Text className="ml-10 mt-1 text-xs text-gray-400">~{step.duration} min</Text>
-                  ) : null}
+                  <View className="flex-row flex-wrap gap-2 p-4">
+                    {(
+                      [
+                        {
+                          label: 'Calories',
+                          value: `${recipe.nutrition.calories} kcal`,
+                          color: 'bg-orange-50 border-orange-100',
+                        },
+                        {
+                          label: 'Protein',
+                          value: `${recipe.nutrition.protein}g`,
+                          color: 'bg-blue-50 border-blue-100',
+                        },
+                        {
+                          label: 'Carbs',
+                          value: `${recipe.nutrition.carbohydrates}g`,
+                          color: 'bg-amber-50 border-amber-100',
+                        },
+                        {
+                          label: 'Fat',
+                          value: `${recipe.nutrition.fat}g`,
+                          color: 'bg-yellow-50 border-yellow-100',
+                        },
+                        {
+                          label: 'Fiber',
+                          value: `${recipe.nutrition.fiber}g`,
+                          color: 'bg-green-50 border-green-100',
+                        },
+                        {
+                          label: 'Sodium',
+                          value: `${recipe.nutrition.sodium}mg`,
+                          color: 'bg-purple-50 border-purple-100',
+                        },
+                      ] as const
+                    ).map(({ label, value, color }) => (
+                      <View
+                        key={label}
+                        className={`rounded-xl border px-3 py-2 min-w-[80px] ${color}`}
+                      >
+                        <Text className="text-xs text-gray-500 font-nunito">{label}</Text>
+                        <Text className="text-sm font-nunito-bold text-gray-900">{value}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              ))}
-            </View>
+              ) : null}
 
-            {/* Nutrition */}
-            <Text className="text-lg font-bold text-gray-900 mb-2">Nutrition per serving</Text>
-            <View className="flex-row flex-wrap gap-2 mb-6">
-              {(
-                [
-                  { label: 'Calories', value: `${recipe.nutrition.calories} kcal` },
-                  { label: 'Protein', value: `${recipe.nutrition.protein}g` },
-                  { label: 'Carbs', value: `${recipe.nutrition.carbohydrates}g` },
-                  { label: 'Fat', value: `${recipe.nutrition.fat}g` },
-                  { label: 'Fiber', value: `${recipe.nutrition.fiber}g` },
-                  { label: 'Sodium', value: `${recipe.nutrition.sodium}mg` },
-                ] as const
-              ).map(({ label, value }) => (
-                <View key={label} className="rounded-lg bg-gray-50 px-3 py-2 min-w-[80px]">
-                  <Text className="text-xs text-gray-500">{label}</Text>
-                  <Text className="text-sm font-semibold text-gray-900">{value}</Text>
-                </View>
-              ))}
-            </View>
+              {/* Chat with AI */}
+              <View className="mb-3">
+                <Pressable
+                  testID="btn-chat-with-ai"
+                  onPress={handleChatWithAI}
+                  accessibilityState={{ disabled: false }}
+                  className="py-4 rounded-2xl items-center bg-primary-600"
+                >
+                  <Text className="text-base font-nunito-bold text-white">🤖 Chat with AI</Text>
+                </Pressable>
+              </View>
 
-            {/* Save to my collection */}
-            <View className="mb-2">
-              <Button
-                label={isSaved ? 'Already in My Recipes' : 'Save to My Recipes'}
-                variant={isSaved ? 'secondary' : 'primary'}
-                disabled={isSaved}
-                onPress={() => {
-                  void handleSave();
-                }}
-                testID="btn-save-to-collection"
-              />
+              {/* Save to my collection */}
+              <View className="mb-4">
+                <Button
+                  label={isSaved ? 'Already in My Recipes' : 'Save to My Recipes'}
+                  variant={isSaved ? 'secondary' : 'primary'}
+                  disabled={isSaved}
+                  onPress={() => {
+                    void handleSave();
+                  }}
+                  testID="btn-save-to-collection"
+                />
+              </View>
+
+              {/* Source attribution */}
+              <View className="mt-2">
+                {recipe.source === 'ai' ? <AIDisclaimer /> : <MealDbBadge />}
+              </View>
             </View>
           </View>
         )}
-
-        {/* AI Disclaimer */}
-        <View className="mx-4 mt-4">
-          <AIDisclaimer />
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -7,7 +7,45 @@ import { checkRateLimit } from '../../shared/middleware/rateLimit';
 import { validateGenerateRecipeInput } from '../../shared/middleware/validate';
 import { buildRecipePrompt, RECIPE_SYSTEM_PROMPT } from '../../shared/prompts/recipePrompts';
 import { fetchMealsForRecipeGeneration } from '../../shared/utils/mealDbService';
-import { mapMealDbToRecipe } from '../../shared/utils/mealDbMapper';
+import { mapMealDbToRecipe, type RecipeStep } from '../../shared/utils/mealDbMapper';
+import { filterMealsByUserPrefs } from '../../shared/utils/allergenFilter';
+
+/**
+ * Uses Groq to split a single long instruction paragraph into numbered steps.
+ * Only called when a TheMealDB recipe maps to exactly 1 step longer than 300 chars.
+ */
+async function reformatStepsWithAI(steps: RecipeStep[], groq: Groq): Promise<RecipeStep[]> {
+  const rawText = steps.map((s) => s.instruction).join('\n\n');
+  const StepsResponseSchema = z.object({ steps: z.array(z.string()).min(1) });
+  try {
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a recipe formatting assistant. Split the given cooking instructions into clear, concise numbered steps. Return a JSON object with a "steps" array of strings, one string per step. Keep each step focused on a single action. Do not add or remove any cooking information.',
+        },
+        {
+          role: 'user',
+          content: `Split these cooking instructions into numbered steps:\n\n${rawText}`,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      max_tokens: 600,
+    });
+    const content = response.choices[0]?.message?.content ?? '';
+    const validated = StepsResponseSchema.safeParse(JSON.parse(content));
+    if (!validated.success) return steps;
+    return validated.data.steps.map((instruction, index) => ({
+      stepNumber: index + 1,
+      instruction: instruction.trim(),
+    }));
+  } catch {
+    return steps; // Fall back to original on any error
+  }
+}
 
 const RecipeSchema = z.object({
   title: z.string(),
@@ -61,11 +99,38 @@ export const generateRecipe = onCall(
       strictIngredients: input.strictIngredients ?? false,
     });
 
+    const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
+
     // ── Phase 1: TheMealDB ─────────────────────────────────────────────────
     let mealDbRecipes: ReturnType<typeof mapMealDbToRecipe>[] = [];
     try {
-      const meals = await fetchMealsForRecipeGeneration(ingredientNames, cuisines, 5);
-      mealDbRecipes = meals.map(mapMealDbToRecipe);
+      // Fetch extra to have a buffer after filtering already-seen titles
+      const meals = await fetchMealsForRecipeGeneration(ingredientNames, cuisines, 8);
+      const rawMapped = meals.map(mapMealDbToRecipe);
+      // Reformat single-paragraph instructions using AI for better UX
+      const rawReformatted = await Promise.all(
+        rawMapped.map(async (recipe) => {
+          const needsReformat =
+            recipe.instructions.length === 1 &&
+            recipe.instructions[0].instruction.length > 300;
+          if (!needsReformat) return recipe;
+          const reformatted = await reformatStepsWithAI(recipe.instructions, groq);
+          return { ...recipe, instructions: reformatted };
+        })
+      );
+      // Filter out recipes that violate user allergens / dietary preferences
+      const prefFiltered = filterMealsByUserPrefs(
+        rawReformatted,
+        input.allergens,
+        input.dietaryPreferences
+      );
+      // Exclude titles already shown to the user so "Find More" returns fresh results
+      const excludeSet = new Set(
+        (input.excludeTitles ?? []).map((t) => t.toLowerCase().trim())
+      );
+      mealDbRecipes = prefFiltered
+        .filter((r) => !excludeSet.has(r.title.toLowerCase().trim()))
+        .slice(0, 5);
       logger.info('generateRecipe:mealDb', { found: mealDbRecipes.length });
     } catch (err) {
       // Non-fatal — fall through to full AI generation
@@ -73,7 +138,8 @@ export const generateRecipe = onCall(
     }
 
     // ── Phase 2: AI fills the remainder ───────────────────────────────────
-    const aiCount = 5 - mealDbRecipes.length;
+    const useAI = input.useAI ?? true;
+    const aiCount = useAI ? 5 - mealDbRecipes.length : 0;
     let aiRecipes: Array<typeof RecipeSchema._type & { id: string; generatedAt: string; source: 'ai' }> = [];
 
     if (aiCount > 0) {
@@ -82,8 +148,6 @@ export const generateRecipe = onCall(
         ...mealDbTitles,
         ...(input.excludeTitles ?? []),
       ];
-
-      const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });
       let content: string;
       try {
         const response = await groq.chat.completions.create({
