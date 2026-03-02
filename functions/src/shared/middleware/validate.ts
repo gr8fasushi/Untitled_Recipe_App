@@ -9,13 +9,13 @@ const IngredientSchema = z.object({
 });
 
 export const GenerateRecipeInputSchema = z.object({
-  ingredients: z.array(IngredientSchema).min(1).max(30),
+  ingredients: z.array(IngredientSchema).min(0).max(30),
   allergens: z.array(z.string()).max(9).nullable().optional(),
   dietaryPreferences: z.array(z.string()).max(10).nullable().optional(),
   cuisines: z.array(z.string().max(50)).max(14).nullable().optional(),
   strictIngredients: z.boolean().nullable().optional(),
   excludeTitles: z.array(z.string().max(200)).max(50).nullable().optional(),
-  useAI: z.boolean().nullable().optional(),
+  count: z.number().int().min(1).max(10).nullable().optional(),
 });
 
 export interface GenerateRecipeInput {
@@ -25,7 +25,7 @@ export interface GenerateRecipeInput {
   cuisines?: string[] | null;
   strictIngredients?: boolean | null;
   excludeTitles?: string[] | null;
-  useAI?: boolean | null;
+  count: number;
 }
 
 const RecipeIngredientSnapshotSchema = z.object({
@@ -83,6 +83,7 @@ export function validateGenerateRecipeInput(data: unknown): GenerateRecipeInput 
     ...raw,
     allergens: raw.allergens ?? [],
     dietaryPreferences: raw.dietaryPreferences ?? [],
+    count: raw.count ?? 5,
   };
 }
 

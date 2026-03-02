@@ -59,7 +59,8 @@ export function buildRecipePrompt(input: {
   count?: number;
 }): string {
   const count = input.count ?? 5;
-  const ingredientList = input.ingredients.map((i) => i.name).join(', ');
+  const hasIngredients = input.ingredients.length > 0;
+  const ingredientList = hasIngredients ? input.ingredients.map((i) => i.name).join(', ') : '';
   const allergenList = input.allergens.length > 0 ? input.allergens.join(', ') : 'none';
   const dietList = input.dietaryPreferences.length > 0 ? input.dietaryPreferences.join(', ') : 'none';
 
@@ -68,18 +69,22 @@ export function buildRecipePrompt(input: {
       ? `Cuisine filter — ALL ${count} recipes MUST come from these cuisine styles ONLY: ${input.cuisines.join(', ')}.`
       : `No cuisine filter. You MUST spread the ${count} recipes across ${count} DIFFERENT cuisine styles (e.g. American, Italian, Asian, Mexican, Mediterranean). Do not cluster them in similar styles.`;
 
-  const strictText = input.strictIngredients
+  const ingredientText = hasIngredients
+    ? `Available pantry ingredients: ${ingredientList}
+
+${
+  input.strictIngredients
     ? `STRICT MODE: ONLY use the exact ingredients listed as main components. Do NOT add proteins, vegetables, starches, or other main ingredients beyond what is listed. You MAY still use: salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, thyme, rosemary, olive oil, butter, water, broth, flour, sugar, vinegar.`
-    : `You may add common pantry staples (salt, pepper, olive oil, butter, herbs, spices, water, stock) — these are always assumed available.`;
+    : `You may add common pantry staples (salt, pepper, olive oil, butter, herbs, spices, water, stock) — these are always assumed available.`
+}`
+    : `No ingredient constraints — generate ${count} diverse, high-quality recipes freely. Use whatever ingredients make for the best dishes.`;
 
   const excludeText =
     input.excludeTitles && input.excludeTitles.length > 0
       ? `\nDO NOT generate any of these recipes — they have already been shown to the user:\n${input.excludeTitles.map((t) => `- ${t}`).join('\n')}\nCreate ${count} completely different recipes instead.`
       : '';
 
-  return `Available pantry ingredients: ${ingredientList}
-
-${strictText}
+  return `${ingredientText}
 
 ${cuisineText}
 
