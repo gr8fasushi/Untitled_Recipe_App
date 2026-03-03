@@ -45,13 +45,11 @@ jest.mock('@/features/auth/store/authStore', () => ({
   useAuthStore: (sel: (s: unknown) => unknown) => sel({ profile: mockProfile }),
 }));
 
-const mockRemoveIngredient = jest.fn();
 let mockSelectedIngredients: PantryItem[] = [];
 jest.mock('@/features/pantry/store/pantryStore', () => ({
   usePantryStore: (selector: (s: unknown) => unknown) =>
     selector({
       selectedIngredients: mockSelectedIngredients,
-      removeIngredient: mockRemoveIngredient,
     }),
 }));
 
@@ -85,13 +83,6 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   AIDisclaimer: () => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');
     return <View testID="ai-disclaimer" />;
-  },
-}));
-
-jest.mock('@/features/pantry/components/IngredientSearch', () => ({
-  IngredientSearch: () => {
-    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-    return <View testID="ingredient-search" />;
   },
 }));
 
@@ -238,13 +229,6 @@ describe('RecipesScreen', () => {
   it('hides ingredient chips when pantry is empty', () => {
     const { queryByTestId } = render(<RecipesScreen />);
     expect(queryByTestId('banner-ingredient-tomato')).toBeNull();
-  });
-
-  it('pressing an ingredient chip calls removeIngredient', () => {
-    mockSelectedIngredients = [tomato];
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('banner-ingredient-tomato'));
-    expect(mockRemoveIngredient).toHaveBeenCalledWith('tomato');
   });
 
   it('generate button is disabled when no ingredients are selected', () => {
@@ -394,12 +378,12 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('btn-load-more')).toBeNull();
   });
 
-  it('shows Manage Kitchen button always (not just when recipes are loaded)', () => {
+  it('shows Add or Remove Ingredients button always', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('btn-back-to-pantry')).toBeTruthy();
   });
 
-  it('pressing Manage Kitchen navigates to the pantry tab', () => {
+  it('pressing Add or Remove Ingredients navigates to the pantry tab', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-back-to-pantry'));
     expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/pantry');

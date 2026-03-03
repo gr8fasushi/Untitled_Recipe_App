@@ -24,7 +24,6 @@ import {
   DECOR_SETS,
   PageContainer,
 } from '@/shared/components/ui';
-import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { CUISINES } from '@/constants/cuisines';
@@ -61,7 +60,6 @@ const SERVING_SIZES = [
 export default function RecipesScreen(): React.JSX.Element {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const removeIngredient = usePantryStore((s) => s.removeIngredient);
   const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
   const setRecipes = useRecipesStore((s) => s.setRecipes);
@@ -220,8 +218,8 @@ export default function RecipesScreen(): React.JSX.Element {
           </LinearGradient>
         </View>
 
+        <BackgroundDecor items={BODY_DECOR_SETS.recipes} />
         <PageContainer className="px-4 mt-4">
-          <BackgroundDecor items={BODY_DECOR_SETS.recipes} />
           {!hasIngredients && !hasSearch ? (
             <View
               testID="recipes-no-ingredients"
@@ -234,39 +232,31 @@ export default function RecipesScreen(): React.JSX.Element {
             </View>
           ) : null}
 
-          {/* Ingredient search — add/manage pantry without leaving this tab */}
-          <View className="mb-2">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">Your Ingredients</Text>
-            <IngredientSearch />
-          </View>
-
-          {/* Removable ingredient chips */}
+          {/* Read-only ingredient chips */}
           {hasIngredients ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-1">
               {selectedIngredients.map((ingredient) => (
-                <Pressable
+                <View
                   key={ingredient.id}
                   testID={`banner-ingredient-${ingredient.id}`}
-                  onPress={() => removeIngredient(ingredient.id)}
-                  className="flex-row items-center gap-1 bg-primary-50 border border-primary-200 rounded-full px-3 py-1 mr-2"
+                  className="flex-row items-center bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 rounded-full px-3 py-1 mr-2"
                 >
-                  <Text className="text-xs font-nunito-bold text-primary-700">
+                  <Text className="text-xs font-nunito-bold text-primary-700 dark:text-primary-300">
                     {ingredient.name}
                   </Text>
-                  <Text className="text-xs text-primary-400">×</Text>
-                </Pressable>
+                </View>
               ))}
             </ScrollView>
           ) : null}
 
-          {/* Manage Kitchen — full-width prominent button */}
+          {/* Add or Remove Ingredients — navigate to My Kitchen */}
           <Pressable
             testID="btn-back-to-pantry"
             onPress={() => router.push('/(tabs)/pantry')}
             className="flex-row items-center justify-center gap-2 py-3 mb-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-600"
           >
             <Text className="text-sm font-nunito-bold text-emerald-700 dark:text-emerald-300">
-              ← Manage Kitchen
+              Add or Remove Ingredients
             </Text>
           </Pressable>
 

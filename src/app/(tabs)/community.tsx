@@ -291,8 +291,8 @@ export default function CommunityScreen(): React.JSX.Element {
           </LinearGradient>
         </View>
 
+        <BackgroundDecor items={BODY_DECOR_SETS.community} />
         <PageContainer className="px-4 mt-4">
-          <BackgroundDecor items={BODY_DECOR_SETS.community} />
           {/* Section 1: Meal Type */}
           <Text
             testID="section-label-meal-type"

@@ -159,25 +159,25 @@ export default function HomeScreen(): React.JSX.Element {
           </LinearGradient>
         </View>
 
+        <BackgroundDecor items={BODY_DECOR_SETS.home} />
         <PageContainer className="px-4 mt-5">
-          <BackgroundDecor items={BODY_DECOR_SETS.home} />
           {/* Row 1 */}
           <View className="flex-row gap-3 mb-3">
             <Tile
-              emoji="🥘"
-              title="Cook from Kitchen"
-              subtitle="Find a recipe from what you have in your kitchen"
+              emoji="🥦"
+              title="Ingredients"
+              subtitle="View and manage your ingredients"
               onPress={() => router.push('/(tabs)/pantry')}
               testID="tile-cook-pantry"
-              accentColor={holiday?.tileAccentHex ?? '#fff7ed'}
+              accentColor={holiday?.tileAccentHex ?? '#f0fdf4'}
             />
             <Tile
-              emoji="🔍"
-              title="Find My Meal"
-              subtitle="Find recipes from your ingredients"
+              emoji="🍳"
+              title="Get Recipes"
+              subtitle="Chef Jules picks recipes from your ingredients"
               onPress={() => router.push('/(tabs)/recipes')}
               testID="tile-search-recipes"
-              accentColor={holiday?.tileAccentHex ?? '#eff6ff'}
+              accentColor={holiday?.tileAccentHex ?? '#fff7ed'}
             />
           </View>
 
@@ -197,8 +197,47 @@ export default function HomeScreen(): React.JSX.Element {
               subtitle="Recipes you've bookmarked"
               onPress={() => router.push('/(tabs)/saved')}
               testID="tile-my-saved"
-              accentColor={holiday?.tileAccentHex ?? '#f0fdf4'}
+              accentColor={holiday?.tileAccentHex ?? '#f5f3ff'}
             />
+          </View>
+
+          {/* How it works */}
+          <View
+            testID="how-it-works"
+            className="mt-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4"
+          >
+            <Text className="text-sm font-nunito-bold text-gray-900 dark:text-white mb-3">
+              How it works
+            </Text>
+            {(
+              [
+                {
+                  emoji: '🥦',
+                  text: 'Add ingredients to My Kitchen — type, search, or snap a photo',
+                },
+                {
+                  emoji: '🍳',
+                  text: 'Tap Get Recipes — Chef Jules creates meals from what you have',
+                },
+                {
+                  emoji: '🔖',
+                  text: 'Save your favourites and ask Chef Jules cooking questions anytime',
+                },
+              ] as const
+            ).map((step, i) => (
+              <View key={i} className={`flex-row items-start gap-3${i < 2 ? ' mb-3' : ''}`}>
+                <View className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900 items-center justify-center shrink-0">
+                  <Text className="text-xs font-nunito-bold text-primary-700 dark:text-primary-300">
+                    {i + 1}
+                  </Text>
+                </View>
+                <Text className="text-xs font-nunito text-gray-600 dark:text-gray-300 flex-1 pt-0.5">
+                  {step.emoji}
+                  {'  '}
+                  {step.text}
+                </Text>
+              </View>
+            ))}
           </View>
         </PageContainer>
       </ScrollView>

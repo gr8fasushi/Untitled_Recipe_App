@@ -115,8 +115,8 @@ export default function ProfileScreen(): React.JSX.Element {
         </LinearGradient>
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+        <BackgroundDecor items={BODY_DECOR_SETS.profile} />
         <View className="w-full max-w-2xl self-center relative">
-          <BackgroundDecor items={BODY_DECOR_SETS.profile} />
           {/* Account section */}
           <View className="px-4 pt-6">
             <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Account</Text>

@@ -112,9 +112,9 @@ export default function SavedScreen(): React.JSX.Element {
         </LinearGradient>
       </View>
 
+      <BackgroundDecor items={BODY_DECOR_SETS.saved} />
       {/* All post-header content constrained to max-w-2xl on web */}
       <View className="flex-1 w-full max-w-2xl self-center relative">
-        <BackgroundDecor items={BODY_DECOR_SETS.saved} />
         {/* Rating filter pills — only shown when there are recipes */}
         {hasRecipes && (
           <View className="px-4 pt-3 pb-2">

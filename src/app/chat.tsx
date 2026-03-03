@@ -146,7 +146,7 @@ export default function ChatScreen(): React.JSX.Element {
 
       {/* All post-header content constrained to max-w-2xl on web */}
       <View className="flex-1 w-full max-w-2xl self-center relative">
-        {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.chat} />}
+        <BackgroundDecor items={BODY_DECOR_SETS.chat} />
         {/* Empty state */}
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">

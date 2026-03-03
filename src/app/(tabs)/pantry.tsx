@@ -170,125 +170,127 @@ export default function PantryScreen(): React.JSX.Element {
           <Text className="mt-3 text-gray-400 font-nunito">Loading your kitchen…</Text>
         </View>
       ) : (
-        <PageContainer>
+        <>
           <BackgroundDecor items={BODY_DECOR_SETS.pantry} />
-          {/* Ingredient chips + Clear All — now in PageContainer */}
-          {ingredientCount > 0 ? (
-            <View className="px-4 pt-4 pb-2">
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-200">
-                  My Kitchen ({ingredientCount})
+          <PageContainer>
+            {/* Ingredient chips + Clear All — now in PageContainer */}
+            {ingredientCount > 0 ? (
+              <View className="px-4 pt-4 pb-2">
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-200">
+                    My Kitchen ({ingredientCount})
+                  </Text>
+                  <Pressable
+                    testID="btn-clear-pantry"
+                    onPress={clearPantry}
+                    className="flex-row items-center gap-1 bg-red-500/15 border border-red-400/40 rounded-full px-3 py-1 active:opacity-75"
+                  >
+                    <Ionicons name="trash-outline" size={13} color="#f87171" />
+                    <Text className="text-xs font-nunito-bold text-red-400">Clear All</Text>
+                  </Pressable>
+                </View>
+                <View testID="pantry-chips" className="flex-row flex-wrap">
+                  {selectedIngredients.map((ingredient) => (
+                    <IngredientChip
+                      key={ingredient.id}
+                      ingredient={ingredient}
+                      onRemove={() => removeIngredient(ingredient.id)}
+                      testID={`chip-${ingredient.id}`}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {/* Error banner */}
+            {error ? (
+              <View testID="pantry-error" className="mx-4 mt-3 rounded-xl bg-red-50 px-4 py-3">
+                <Text className="text-sm text-red-700 font-nunito">{error}</Text>
+              </View>
+            ) : null}
+
+            {/* Empty hint */}
+            {ingredientCount === 0 ? (
+              <View testID="pantry-empty" className="px-4 pt-3 pb-1">
+                <Text className="text-sm text-gray-400 font-nunito">
+                  No ingredients yet — search or scan below to add some.
                 </Text>
-                <Pressable
-                  testID="btn-clear-pantry"
-                  onPress={clearPantry}
-                  className="flex-row items-center gap-1 bg-red-500/15 border border-red-400/40 rounded-full px-3 py-1 active:opacity-75"
-                >
-                  <Ionicons name="trash-outline" size={13} color="#f87171" />
-                  <Text className="text-xs font-nunito-bold text-red-400">Clear All</Text>
-                </Pressable>
               </View>
-              <View testID="pantry-chips" className="flex-row flex-wrap">
-                {selectedIngredients.map((ingredient) => (
-                  <IngredientChip
-                    key={ingredient.id}
-                    ingredient={ingredient}
-                    onRemove={() => removeIngredient(ingredient.id)}
-                    testID={`chip-${ingredient.id}`}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
+            ) : null}
 
-          {/* Error banner */}
-          {error ? (
-            <View testID="pantry-error" className="mx-4 mt-3 rounded-xl bg-red-50 px-4 py-3">
-              <Text className="text-sm text-red-700 font-nunito">{error}</Text>
-            </View>
-          ) : null}
-
-          {/* Empty hint */}
-          {ingredientCount === 0 ? (
-            <View testID="pantry-empty" className="px-4 pt-3 pb-1">
-              <Text className="text-sm text-gray-400 font-nunito">
-                No ingredients yet — search or scan below to add some.
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Scan buttons */}
-          <View className="px-4 pt-3 pb-1 flex-row gap-2">
-            <Pressable
-              testID="btn-scan-camera"
-              onPress={() => void takePhoto()}
-              disabled={isAnalyzing}
-              className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-primary-200 bg-primary-50 active:opacity-75"
-            >
-              {isAnalyzing ? (
-                <ActivityIndicator size="small" color="#ea580c" />
-              ) : (
-                <>
-                  <Ionicons name="camera-outline" size={18} color="#c2410c" />
-                  <Text className="text-sm font-nunito-bold text-primary-700">Take Photo</Text>
-                </>
-              )}
-            </Pressable>
-            <Pressable
-              testID="btn-scan-gallery"
-              onPress={() => void pickFromGallery()}
-              disabled={isAnalyzing}
-              className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white active:opacity-75"
-            >
-              <Ionicons name="images-outline" size={18} color="#6b7280" />
-              <Text className="text-sm font-nunito-bold text-gray-600">From Gallery</Text>
-            </Pressable>
-          </View>
-
-          {isAnalyzing ? (
-            <View testID="scan-analyzing" className="mx-4 mt-2 rounded-xl bg-orange-50 px-4 py-2">
-              <Text className="text-xs font-nunito text-orange-700 text-center">
-                Scanning photo for ingredients…
-              </Text>
-            </View>
-          ) : null}
-
-          {scanError ? (
-            <View
-              testID="scan-error"
-              className="mx-4 mt-2 rounded-xl bg-red-50 px-4 py-2 border border-red-100"
-            >
-              <Text className="text-xs font-nunito text-red-700 text-center">{scanError}</Text>
-            </View>
-          ) : null}
-
-          {scanStatus === 'done' && accumulatedIngredients.length === 0 && !isAnalyzing ? (
-            <View
-              testID="scan-empty"
-              className="mx-4 mt-2 rounded-xl bg-yellow-50 px-4 py-2 border border-yellow-100"
-            >
-              <Text className="text-xs font-nunito text-yellow-700 text-center">
-                No ingredients detected. Try a clearer photo or add ingredients manually.
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Search + ingredient list */}
-          <IngredientSearch />
-
-          {/* Find Recipes CTA — visible when ingredients are selected */}
-          {ingredientCount > 0 ? (
-            <View className="px-4 mt-2 mb-4">
+            {/* Scan buttons */}
+            <View className="px-4 pt-3 pb-1 flex-row gap-2">
               <Pressable
-                onPress={() => router.push('/(tabs)/recipes')}
-                className="flex-row items-center justify-center gap-2 rounded-xl bg-accent-600 py-3"
-                testID="btn-go-to-recipes"
+                testID="btn-scan-camera"
+                onPress={() => void takePhoto()}
+                disabled={isAnalyzing}
+                className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-primary-200 bg-primary-50 active:opacity-75"
               >
-                <Text className="text-white font-nunito-bold text-base">Find Recipes →</Text>
+                {isAnalyzing ? (
+                  <ActivityIndicator size="small" color="#ea580c" />
+                ) : (
+                  <>
+                    <Ionicons name="camera-outline" size={18} color="#c2410c" />
+                    <Text className="text-sm font-nunito-bold text-primary-700">Take Photo</Text>
+                  </>
+                )}
+              </Pressable>
+              <Pressable
+                testID="btn-scan-gallery"
+                onPress={() => void pickFromGallery()}
+                disabled={isAnalyzing}
+                className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white active:opacity-75"
+              >
+                <Ionicons name="images-outline" size={18} color="#6b7280" />
+                <Text className="text-sm font-nunito-bold text-gray-600">From Gallery</Text>
               </Pressable>
             </View>
-          ) : null}
-        </PageContainer>
+
+            {isAnalyzing ? (
+              <View testID="scan-analyzing" className="mx-4 mt-2 rounded-xl bg-orange-50 px-4 py-2">
+                <Text className="text-xs font-nunito text-orange-700 text-center">
+                  Scanning photo for ingredients…
+                </Text>
+              </View>
+            ) : null}
+
+            {scanError ? (
+              <View
+                testID="scan-error"
+                className="mx-4 mt-2 rounded-xl bg-red-50 px-4 py-2 border border-red-100"
+              >
+                <Text className="text-xs font-nunito text-red-700 text-center">{scanError}</Text>
+              </View>
+            ) : null}
+
+            {scanStatus === 'done' && accumulatedIngredients.length === 0 && !isAnalyzing ? (
+              <View
+                testID="scan-empty"
+                className="mx-4 mt-2 rounded-xl bg-yellow-50 px-4 py-2 border border-yellow-100"
+              >
+                <Text className="text-xs font-nunito text-yellow-700 text-center">
+                  No ingredients detected. Try a clearer photo or add ingredients manually.
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Search + ingredient list */}
+            <IngredientSearch />
+
+            {/* Find Recipes CTA — visible when ingredients are selected */}
+            {ingredientCount > 0 ? (
+              <View className="px-4 mt-2 mb-4">
+                <Pressable
+                  onPress={() => router.push('/(tabs)/recipes')}
+                  className="flex-row items-center justify-center gap-2 rounded-xl bg-accent-600 py-3"
+                  testID="btn-go-to-recipes"
+                >
+                  <Text className="text-white font-nunito-bold text-base">Find Recipes →</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </PageContainer>
+        </>
       )}
     </SafeAreaView>
   );
