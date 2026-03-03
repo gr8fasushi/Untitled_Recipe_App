@@ -95,4 +95,59 @@ describe('MeatTemperatureCard', () => {
     );
     expect(screen.queryByTestId('meat-temp-card')).toBeNull();
   });
+
+  describe('steak doneness chart', () => {
+    it('shows doneness chart when recipe title contains "steak"', () => {
+      render(
+        <MeatTemperatureCard
+          ingredients={[ing('Ribeye'), ing('Butter')]}
+          recipeTitle="Pan-Seared Ribeye Steak"
+        />
+      );
+      expect(screen.getByTestId('steak-doneness-card')).toBeTruthy();
+    });
+
+    it('shows doneness chart when ingredient is ribeye', () => {
+      render(
+        <MeatTemperatureCard ingredients={[ing('Ribeye steak')]} recipeTitle="Grilled Beef" />
+      );
+      expect(screen.getByTestId('steak-doneness-card')).toBeTruthy();
+    });
+
+    it('shows all 5 doneness levels', () => {
+      render(
+        <MeatTemperatureCard ingredients={[ing('Sirloin steak')]} recipeTitle="Sirloin Steak" />
+      );
+      expect(screen.getByTestId('steak-row-rare')).toBeTruthy();
+      expect(screen.getByTestId('steak-row-medium-rare')).toBeTruthy();
+      expect(screen.getByTestId('steak-row-medium')).toBeTruthy();
+      expect(screen.getByTestId('steak-row-medium-well')).toBeTruthy();
+      expect(screen.getByTestId('steak-row-well-done')).toBeTruthy();
+    });
+
+    it('does NOT show doneness chart for chicken recipe', () => {
+      render(
+        <MeatTemperatureCard ingredients={[ing('Chicken breast')]} recipeTitle="Roasted Chicken" />
+      );
+      expect(screen.queryByTestId('steak-doneness-card')).toBeNull();
+    });
+
+    it('shows both USDA card and doneness chart for a steak recipe', () => {
+      render(
+        <MeatTemperatureCard ingredients={[ing('Ribeye steak')]} recipeTitle="Ribeye Steak" />
+      );
+      expect(screen.getByTestId('meat-temp-card')).toBeTruthy();
+      expect(screen.getByTestId('steak-doneness-card')).toBeTruthy();
+    });
+
+    it('returns null when no meat and no steak keywords', () => {
+      const { toJSON } = render(
+        <MeatTemperatureCard
+          ingredients={[ing('Pasta'), ing('Tomato sauce')]}
+          recipeTitle="Pasta Primavera"
+        />
+      );
+      expect(toJSON()).toBeNull();
+    });
+  });
 });

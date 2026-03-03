@@ -126,7 +126,7 @@ export default function RecipesScreen(): React.JSX.Element {
         >
           <View className="items-center w-full">
             <View
-              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
               {/* Emoji silhouettes */}
               <View
@@ -149,10 +149,10 @@ export default function RecipesScreen(): React.JSX.Element {
                   {rSil2}
                 </Text>
               </View>
-              <Text className="text-5xl mb-1">{recipesEmoji}</Text>
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
               <Text
                 testID="recipes-heading"
-                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
                 Find My Meal
               </Text>

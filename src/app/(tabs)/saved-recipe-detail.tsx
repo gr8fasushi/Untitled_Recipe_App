@@ -47,7 +47,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
         >
           <View className="items-center w-full">
             <View
-              className={`w-full max-w-2xl px-6 pt-5 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
               {/* Emoji silhouettes */}
               <View
@@ -271,7 +271,11 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
               </View>
 
               {/* Safe meat temperatures */}
-              <MeatTemperatureCard ingredients={recipe.ingredients} testID="detail-meat-temps" />
+              <MeatTemperatureCard
+                ingredients={recipe.ingredients}
+                recipeTitle={recipe.title}
+                testID="detail-meat-temps"
+              />
 
               {/* Nutrition card — suppressed for TheMealDB recipes */}
               {recipe.source !== 'themealdb' ? (

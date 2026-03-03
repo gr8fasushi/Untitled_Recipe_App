@@ -61,9 +61,7 @@ export default function SavedScreen(): React.JSX.Element {
         end={{ x: 1, y: 1 }}
       >
         <View className="items-center w-full">
-          <View
-            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
-          >
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
             {/* Emoji silhouettes */}
             <View
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
@@ -85,10 +83,10 @@ export default function SavedScreen(): React.JSX.Element {
                 {sSil2}
               </Text>
             </View>
-            <Text className="text-5xl mb-1">{savedEmoji}</Text>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
             <Text
               testID="saved-heading"
-              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
               Saved Recipes
             </Text>
