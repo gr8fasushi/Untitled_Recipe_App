@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import type { SavedRecipe } from '@/features/saved-recipes/types';
@@ -101,7 +101,8 @@ export default function SavedScreen(): React.JSX.Element {
       </LinearGradient>
 
       {/* All post-header content constrained to max-w-2xl on web */}
-      <View className="flex-1 w-full max-w-2xl self-center">
+      <View className="flex-1 w-full max-w-2xl self-center relative">
+        {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.saved} />}
         {/* Rating filter pills — only shown when there are recipes */}
         {hasRecipes && (
           <View className="px-4 pt-3 pb-2">

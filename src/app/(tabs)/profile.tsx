@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { AllergenCard } from '@/features/onboarding/components/AllergenCard';
@@ -104,7 +104,8 @@ export default function ProfileScreen(): React.JSX.Element {
         </View>
       </LinearGradient>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <View className="w-full max-w-2xl self-center">
+        <View className="w-full max-w-2xl self-center relative">
+          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.profile} />}
           {/* Account section */}
           <View className="px-4 pt-6">
             <Text className="mb-4 text-lg font-bold text-gray-900">Account</Text>

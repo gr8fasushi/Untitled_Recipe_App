@@ -3,7 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/features/auth/store/authStore';
-import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import {
+  BackgroundDecor,
+  BODY_DECOR_SETS,
+  DECOR_SETS,
+  PageContainer,
+} from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
@@ -133,12 +138,13 @@ export default function HomeScreen(): React.JSX.Element {
         </LinearGradient>
 
         <PageContainer className="px-4 mt-5">
+          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.home} />}
           {/* Row 1 */}
           <View className="flex-row gap-3 mb-3">
             <Tile
               emoji="🥘"
-              title="Cook from Pantry"
-              subtitle="Use what you have to generate recipes"
+              title="Cook from Kitchen"
+              subtitle="Find a recipe from what you have in your kitchen"
               onPress={() => router.push('/(tabs)/pantry')}
               testID="tile-cook-pantry"
               accentColor={holiday?.tileAccentHex ?? '#fff7ed'}
@@ -146,7 +152,7 @@ export default function HomeScreen(): React.JSX.Element {
             <Tile
               emoji="🔍"
               title="Find My Meal"
-              subtitle="AI-generate recipes from your ingredients"
+              subtitle="Find recipes from your ingredients"
               onPress={() => router.push('/(tabs)/recipes')}
               testID="tile-search-recipes"
               accentColor={holiday?.tileAccentHex ?? '#eff6ff'}
@@ -158,7 +164,7 @@ export default function HomeScreen(): React.JSX.Element {
             <Tile
               emoji="⭐"
               title="Popular Recipes"
-              subtitle="Discover AI-curated recipes by cuisine"
+              subtitle="Discover recipes by your own virtual chef"
               onPress={() => router.push('/(tabs)/community')}
               testID="tile-popular-recipes"
               accentColor={holiday?.tileAccentHex ?? '#fefce8'}

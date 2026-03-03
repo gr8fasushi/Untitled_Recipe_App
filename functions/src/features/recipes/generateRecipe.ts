@@ -66,6 +66,7 @@ export const generateRecipe = onCall(
       difficulty: input.difficulty ?? null,
       maxCookTime: input.maxCookTime ?? null,
       servingSize: input.servingSize ?? null,
+      searchQuery: input.searchQuery ?? null,
     });
 
     const groq = new Groq({ apiKey: process.env['GROQ_API_KEY'] });

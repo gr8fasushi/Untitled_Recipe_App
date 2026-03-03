@@ -1,5 +1,13 @@
 import { useState, useCallback } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -7,7 +15,13 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
-import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import {
+  BackgroundDecor,
+  BODY_DECOR_SETS,
+  Button,
+  DECOR_SETS,
+  PageContainer,
+} from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { useExploreStore } from '@/stores/exploreStore';
@@ -74,6 +88,8 @@ export default function CommunityScreen(): React.JSX.Element {
   const clearResults = useExploreStore((s) => s.clearResults);
   const hasSearched = useExploreStore((s) => s.hasSearched);
   const setHasSearched = useExploreStore((s) => s.setHasSearched);
+  const searchQuery = useExploreStore((s) => s.searchQuery);
+  const setSearchQuery = useExploreStore((s) => s.setSearchQuery);
   const error = useExploreStore((s) => s.error);
   const setError = useExploreStore((s) => s.setError);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +129,7 @@ export default function CommunityScreen(): React.JSX.Element {
         ...(difficulty ? { difficulty } : {}),
         ...(cookTimeEntry?.maxMinutes != null ? { maxCookTime: cookTimeEntry.maxMinutes } : {}),
         ...(servingSize ? { servingSize } : {}),
+        ...(searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {}),
       });
       const loaded = result.data.recipes;
       setRecipes(loaded);
@@ -129,6 +146,7 @@ export default function CommunityScreen(): React.JSX.Element {
     difficulty,
     cookTimeId,
     servingSize,
+    searchQuery,
     clearResults,
     setRecipes,
     appendExcludeTitles,
@@ -151,6 +169,7 @@ export default function CommunityScreen(): React.JSX.Element {
         ...(difficulty ? { difficulty } : {}),
         ...(cookTimeEntry?.maxMinutes != null ? { maxCookTime: cookTimeEntry.maxMinutes } : {}),
         ...(servingSize ? { servingSize } : {}),
+        ...(searchQuery.trim() ? { searchQuery: searchQuery.trim() } : {}),
       });
       const newRecipes = result.data.recipes;
       appendRecipes(newRecipes);
@@ -166,6 +185,7 @@ export default function CommunityScreen(): React.JSX.Element {
     difficulty,
     cookTimeId,
     servingSize,
+    searchQuery,
     excludeTitles,
     appendRecipes,
     appendExcludeTitles,
@@ -228,13 +248,14 @@ export default function CommunityScreen(): React.JSX.Element {
                 style={{ color: subtitleColor }}
                 className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                Discover AI-curated recipes by cuisine or category
+                Discover recipes curated by Chef Jules
               </Text>
             </View>
           </View>
         </LinearGradient>
 
         <PageContainer className="px-4 mt-4">
+          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.community} />}
           {/* Section 1: Meal Type */}
           <Text
             testID="section-label-meal-type"
@@ -406,6 +427,21 @@ export default function CommunityScreen(): React.JSX.Element {
             })}
           </View>
 
+          {/* Keyword search */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
+              Search (optional)
+            </Text>
+            <TextInput
+              testID="input-search-query-explore"
+              placeholder="e.g. ramen, grilled salmon, vegan tacos…"
+              placeholderTextColor="#9ca3af"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-3 text-sm font-nunito text-gray-900 dark:text-gray-100"
+            />
+          </View>
+
           <View className="mb-4">
             <Button
               label={
@@ -477,7 +513,7 @@ export default function CommunityScreen(): React.JSX.Element {
                 Discover new recipes
               </Text>
               <Text className="text-sm font-nunito text-gray-500 dark:text-gray-400 text-center">
-                Pick a category above and tap Explore to get AI-curated recipes.
+                Pick a category above and tap Explore to discover Chef Jules recipes.
               </Text>
             </View>
           ) : null}

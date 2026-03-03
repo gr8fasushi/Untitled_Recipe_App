@@ -9,7 +9,7 @@ import { useChat } from '@/features/chat/hooks/useChat';
 import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import type { ChatMessage } from '@/shared/types';
 
@@ -127,7 +127,8 @@ export default function ChatScreen(): React.JSX.Element {
       </LinearGradient>
 
       {/* All post-header content constrained to max-w-2xl on web */}
-      <View className="flex-1 w-full max-w-2xl self-center">
+      <View className="flex-1 w-full max-w-2xl self-center relative">
+        {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.chat} />}
         {/* Empty state */}
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">

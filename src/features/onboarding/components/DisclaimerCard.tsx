@@ -9,8 +9,8 @@ export function DisclaimerCard(): React.JSX.Element {
       </View>
 
       <Text className="mb-3 text-sm text-amber-900 leading-6">
-        RecipeApp uses AI to generate recipes tailored to your allergen and dietary preferences.
-        While we take allergen safety seriously, AI-generated content{' '}
+        Chef Jules, your virtual chef, generates recipes tailored to your allergen and dietary
+        preferences. While we take allergen safety seriously, Chef Jules recipes{' '}
         <Text className="font-bold">cannot guarantee 100% accuracy.</Text>
       </Text>
 

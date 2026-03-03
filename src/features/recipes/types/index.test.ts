@@ -30,7 +30,7 @@ describe('GenerateRecipeInputSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects empty ingredients array', () => {
+  it('rejects empty ingredients array with no searchQuery', () => {
     const result = GenerateRecipeInputSchema.safeParse({
       ingredients: [],
       allergens: [],
@@ -38,8 +38,30 @@ describe('GenerateRecipeInputSchema', () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0]?.message).toBe('Select at least one ingredient');
+      expect(result.error.issues[0]?.message).toBe(
+        'Add at least one ingredient or enter a search query'
+      );
     }
+  });
+
+  it('accepts empty ingredients when searchQuery is provided', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [],
+      allergens: [],
+      dietaryPreferences: [],
+      searchQuery: 'pasta carbonara',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts optional searchQuery alongside ingredients', () => {
+    const result = GenerateRecipeInputSchema.safeParse({
+      ingredients: [validIngredient],
+      allergens: [],
+      dietaryPreferences: [],
+      searchQuery: 'healthy salad',
+    });
+    expect(result.success).toBe(true);
   });
 
   it('rejects missing ingredients field', () => {

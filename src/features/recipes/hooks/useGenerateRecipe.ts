@@ -11,6 +11,7 @@ export interface RecipeFilterParams {
   difficulty?: string | null;
   maxCookTime?: number | null;
   servingSize?: string | null;
+  searchQuery?: string | null;
 }
 
 interface UseGenerateRecipeReturn {
@@ -56,6 +57,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
         ...(filters?.difficulty && { difficulty: filters.difficulty }),
         ...(filters?.maxCookTime != null && { maxCookTime: filters.maxCookTime }),
         ...(filters?.servingSize && { servingSize: filters.servingSize }),
+        ...(filters?.searchQuery?.trim() && { searchQuery: filters.searchQuery.trim() }),
       };
       const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
@@ -87,6 +89,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
       setLoading,
       setError,
     ]
+    // Note: filters.searchQuery is a call-time argument, not a hook dep — no change needed
   );
 
   const loadMore = useCallback(
@@ -105,6 +108,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
         ...(filters?.difficulty && { difficulty: filters.difficulty }),
         ...(filters?.maxCookTime != null && { maxCookTime: filters.maxCookTime }),
         ...(filters?.servingSize && { servingSize: filters.servingSize }),
+        ...(filters?.searchQuery?.trim() && { searchQuery: filters.searchQuery.trim() }),
       };
       const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 

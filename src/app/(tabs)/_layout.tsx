@@ -35,7 +35,7 @@ export default function TabLayout(): React.JSX.Element {
       <Tabs.Screen
         name="pantry"
         options={{
-          title: 'Pantry',
+          title: 'My Kitchen',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'basket' : 'basket-outline'} size={22} color={color} />
           ),

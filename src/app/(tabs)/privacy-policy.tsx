@@ -60,8 +60,8 @@ export default function PrivacyPolicyScreen(): React.JSX.Element {
         <Section title="How We Use Your Data">
           {`We use your data exclusively to operate and personalise the app:
 
-• Personalise AI-generated recipes based on your allergens and dietary preferences.
-• Power the AI cooking assistant within recipe sessions.
+• Personalise Chef Jules recipes based on your allergens and dietary preferences.
+• Power Chef Jules, your virtual chef, within recipe sessions.
 • Display community-shared recipes to other users.
 • Sync your data across devices via your account.
 

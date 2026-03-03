@@ -80,6 +80,7 @@ export function buildRecipePrompt(input: {
   difficulty?: string | null;
   maxCookTime?: number | null;
   servingSize?: string | null;
+  searchQuery?: string | null;
 }): string {
   const count = input.count ?? 5;
   const hasIngredients = input.ingredients.length > 0;
@@ -123,12 +124,16 @@ ${
     ? `\nSERVING SIZE: Scale every recipe to serve ${input.servingSize} people. Adjust all ingredient amounts accordingly.`
     : '';
 
+  const searchQueryText = input.searchQuery?.trim()
+    ? `\nKEYWORD SEARCH: The user is looking for "${input.searchQuery.trim()}". ALL ${count} recipes MUST closely match this search — consider the dish name, cuisine style, key ingredient, or meal theme.`
+    : '';
+
   return `${ingredientText}
 
 ${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}
-${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}
+${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}${searchQueryText}
 Return valid JSON only. CRITICAL REMINDER: The "recipes" array MUST contain EXACTLY ${count} recipe${count === 1 ? '' : 's'} — not ${count - 1}, not ${count + 1}, always ${count}.`;
 }

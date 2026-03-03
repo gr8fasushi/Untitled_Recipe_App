@@ -17,8 +17,8 @@ describe('DisclaimerCard', () => {
     expect(getByText('This app is not a substitute for medical advice.')).toBeTruthy();
   });
 
-  it('mentions AI-generated content', () => {
+  it('mentions Chef Jules generating recipes', () => {
     const { getByText } = render(<DisclaimerCard />);
-    expect(getByText(/RecipeApp uses AI to generate recipes/i)).toBeTruthy();
+    expect(getByText(/Chef Jules, your virtual chef, generates recipes/i)).toBeTruthy();
   });
 });

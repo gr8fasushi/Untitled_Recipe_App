@@ -373,12 +373,12 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('btn-load-more')).toBeNull();
   });
 
-  it('shows Manage Pantry button always (not just when recipes are loaded)', () => {
+  it('shows Manage Kitchen button always (not just when recipes are loaded)', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('btn-back-to-pantry')).toBeTruthy();
   });
 
-  it('pressing Manage Pantry navigates to the pantry tab', () => {
+  it('pressing Manage Kitchen navigates to the pantry tab', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-back-to-pantry'));
     expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/pantry');

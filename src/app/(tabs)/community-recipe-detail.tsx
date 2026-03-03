@@ -8,7 +8,7 @@ import { useCommunityRecipes } from '@/features/saved-recipes/hooks/useCommunity
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
 import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
-import { BackgroundDecor, Button, DECOR_SETS } from '@/shared/components/ui';
+import { BackgroundDecor, BODY_DECOR_SETS, Button, DECOR_SETS } from '@/shared/components/ui';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
@@ -151,7 +151,8 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
           </View>
         ) : (
           <View className="items-center w-full">
-            <View className="w-full max-w-2xl px-4 mt-5">
+            <View className="w-full max-w-2xl px-4 mt-5 relative">
+              {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.community} />}
               {/* Hero image */}
               {recipe.imageUrl ? (
                 <Image

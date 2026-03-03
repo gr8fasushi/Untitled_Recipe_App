@@ -21,6 +21,7 @@ export const GenerateRecipeInputSchema = z.object({
   difficulty: z.string().max(20).nullable().optional(),
   maxCookTime: z.number().int().min(1).max(300).nullable().optional(),
   servingSize: z.string().max(20).nullable().optional(),
+  searchQuery: z.string().max(200).nullable().optional(),
 });
 
 export interface GenerateRecipeInput {
@@ -36,6 +37,7 @@ export interface GenerateRecipeInput {
   difficulty?: string | null;
   maxCookTime?: number | null;
   servingSize?: string | null;
+  searchQuery?: string | null;
 }
 
 const RecipeIngredientSnapshotSchema = z.object({

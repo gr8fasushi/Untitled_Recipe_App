@@ -1,4 +1,12 @@
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,7 +16,13 @@ import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
-import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import {
+  BackgroundDecor,
+  BODY_DECOR_SETS,
+  Button,
+  DECOR_SETS,
+  PageContainer,
+} from '@/shared/components/ui';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
@@ -60,6 +74,7 @@ export default function RecipesScreen(): React.JSX.Element {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [selectedCookTimeId, setSelectedCookTimeId] = useState<string | null>(null);
   const [selectedServingSize, setSelectedServingSize] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const allergenKey = (profile?.allergens ?? []).join(',');
   const dietKey = (profile?.dietaryPreferences ?? []).join(',');
@@ -70,6 +85,7 @@ export default function RecipesScreen(): React.JSX.Element {
   }, [allergenKey, dietKey, setRecipes]);
 
   const hasIngredients = selectedIngredients.length > 0;
+  const hasSearch = searchQuery.trim().length > 0;
   const isWeb = Platform.OS === 'web';
 
   const holiday = useHolidayStore((s) => s.theme);
@@ -90,6 +106,7 @@ export default function RecipesScreen(): React.JSX.Element {
       difficulty: selectedDifficulty,
       maxCookTime: cookTimeEntry?.maxMinutes ?? null,
       servingSize: selectedServingSize,
+      searchQuery: searchQuery.trim() || null,
     };
   }
 
@@ -169,14 +186,15 @@ export default function RecipesScreen(): React.JSX.Element {
         </LinearGradient>
 
         <PageContainer className="px-4 mt-4">
-          {!hasIngredients ? (
+          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.recipes} />}
+          {!hasIngredients && !hasSearch ? (
             <View
               testID="recipes-no-ingredients"
               className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 mb-4"
             >
               <Text className="text-sm font-nunito text-blue-700">
-                Head to the Pantry tab, select your ingredients, save them, then come back here to
-                generate recipes tailored to what you have.
+                Head to the My Kitchen tab, select your ingredients, save them, then come back here
+                to generate recipes tailored to what you have.
               </Text>
             </View>
           ) : null}
@@ -206,16 +224,31 @@ export default function RecipesScreen(): React.JSX.Element {
             </ScrollView>
           ) : null}
 
-          {/* Manage Pantry — full-width prominent button */}
+          {/* Manage Kitchen — full-width prominent button */}
           <Pressable
             testID="btn-back-to-pantry"
             onPress={() => router.push('/(tabs)/pantry')}
             className="flex-row items-center justify-center gap-2 py-3 mb-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-600"
           >
             <Text className="text-sm font-nunito-bold text-emerald-700 dark:text-emerald-300">
-              ← Manage Pantry
+              ← Manage Kitchen
             </Text>
           </Pressable>
+
+          {/* Keyword search */}
+          <View className="mb-4">
+            <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-200 mb-2">
+              Search (optional)
+            </Text>
+            <TextInput
+              testID="input-search-query-recipes"
+              placeholder="e.g. pasta, chicken stir fry, healthy salad…"
+              placeholderTextColor="#9ca3af"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-3 text-sm font-nunito text-gray-900 dark:text-gray-100"
+            />
+          </View>
 
           {/* Meal type filter */}
           <View className="mb-4">
@@ -398,7 +431,7 @@ export default function RecipesScreen(): React.JSX.Element {
               onPress={() => {
                 void generate(buildFilters());
               }}
-              disabled={isLoading || !hasIngredients}
+              disabled={isLoading || (!hasIngredients && !hasSearch)}
               testID="btn-generate-recipe"
             />
           </View>
@@ -419,7 +452,7 @@ export default function RecipesScreen(): React.JSX.Element {
           {recipes.length > 0 && !isLoading ? (
             <View testID="recipes-list" className="mt-6">
               <Text className="text-base font-nunito-semibold text-gray-700 mb-3">
-                {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
+                {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your kitchen`}
               </Text>
               {recipes.map((recipe, index) => (
                 <RecipeSummaryCard

@@ -6,7 +6,7 @@ import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
 import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
+import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
@@ -131,7 +131,8 @@ export default function RecipeDetailScreen(): React.JSX.Element {
           </View>
         ) : (
           <View className="items-center w-full">
-            <View testID="recipe-detail-content" className="w-full max-w-2xl px-4 mt-5">
+            <View testID="recipe-detail-content" className="w-full max-w-2xl px-4 mt-5 relative">
+              {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.recipes} />}
               {/* Allergen warning */}
               {recipe.allergens.length > 0 ? (
                 <View

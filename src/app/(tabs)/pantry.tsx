@@ -10,7 +10,12 @@ import { loadPantry, savePantry } from '@/features/pantry/services/pantryService
 import { useScan } from '@/features/scan/hooks/useScan';
 import { IngredientChip } from '@/features/pantry/components/IngredientChip';
 import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
-import { BackgroundDecor, DECOR_SETS, PageContainer } from '@/shared/components/ui';
+import {
+  BackgroundDecor,
+  BODY_DECOR_SETS,
+  DECOR_SETS,
+  PageContainer,
+} from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
@@ -134,7 +139,7 @@ export default function PantryScreen(): React.JSX.Element {
             <Text
               className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              My Pantry
+              My Kitchen
             </Text>
             <Text
               style={{ color: pantrySubtitleColor }}
@@ -154,6 +159,7 @@ export default function PantryScreen(): React.JSX.Element {
         </View>
       ) : (
         <PageContainer>
+          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.pantry} />}
           {/* Ingredient chips + Clear All — now in PageContainer */}
           {ingredientCount > 0 ? (
             <View className="px-4 pt-4 pb-2">

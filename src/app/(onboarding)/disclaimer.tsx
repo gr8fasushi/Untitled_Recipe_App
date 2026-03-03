@@ -22,7 +22,7 @@ export default function DisclaimerScreen(): React.JSX.Element {
 
         <Text className="mb-2 text-2xl font-bold text-gray-900">Before We Begin</Text>
         <Text className="mb-6 text-base text-gray-500">
-          Please read this important information about AI-generated recipes and allergen safety.
+          Please read this important information about Chef Jules recipes and allergen safety.
         </Text>
 
         <DisclaimerCard />

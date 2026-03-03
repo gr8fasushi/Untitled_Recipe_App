@@ -157,7 +157,7 @@ describe('useGenerateRecipe', () => {
     expect(mockSetLoading).toHaveBeenCalledWith(false);
   });
 
-  it('sets error when no ingredients are selected without calling generateRecipeFn', async () => {
+  it('sets error when no ingredients and no search query without calling generateRecipeFn', async () => {
     (usePantryStore as unknown as jest.Mock).mockImplementation(
       (selector: (s: unknown) => unknown) => selector({ selectedIngredients: [] })
     );
@@ -165,9 +165,38 @@ describe('useGenerateRecipe', () => {
     await act(async () => {
       await result.current.generate();
     });
-    expect(mockSetError).toHaveBeenCalledWith('Select at least one ingredient');
+    expect(mockSetError).toHaveBeenCalledWith(
+      'Add at least one ingredient or enter a search query'
+    );
     expect(generateRecipeFn).not.toHaveBeenCalled();
     expect(mockSetLoading).not.toHaveBeenCalled();
+  });
+
+  it('calls CF with searchQuery when provided with no ingredients', async () => {
+    (usePantryStore as unknown as jest.Mock).mockImplementation(
+      (selector: (s: unknown) => unknown) => selector({ selectedIngredients: [] })
+    );
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate({ searchQuery: 'pasta' });
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ searchQuery: 'pasta' })
+    );
+    expect(mockSetLoading).toHaveBeenCalledWith(true);
+  });
+
+  it('includes searchQuery in CF payload when provided alongside ingredients', async () => {
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate({ searchQuery: 'chicken stir fry' });
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        searchQuery: 'chicken stir fry',
+        ingredients: [{ id: 'tomato', name: 'Tomato', emoji: '🍅' }],
+      })
+    );
   });
 
   it('uses empty allergens and dietaryPreferences when profile is null', async () => {

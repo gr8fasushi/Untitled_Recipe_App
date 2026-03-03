@@ -10,6 +10,7 @@ interface ExploreState {
   difficulty: string | null;
   cookTimeId: string | null;
   servingSize: string | null;
+  searchQuery: string;
   // Results
   recipes: Recipe[];
   excludeTitles: string[];
@@ -22,6 +23,7 @@ interface ExploreState {
   setDifficulty: (v: string | null) => void;
   setCookTimeId: (v: string | null) => void;
   setServingSize: (v: string | null) => void;
+  setSearchQuery: (v: string) => void;
   setRecipes: (recipes: Recipe[]) => void;
   appendRecipes: (recipes: Recipe[]) => void;
   appendExcludeTitles: (titles: string[]) => void;
@@ -37,6 +39,7 @@ export const useExploreStore = create<ExploreState>((set) => ({
   difficulty: null,
   cookTimeId: null,
   servingSize: null,
+  searchQuery: '',
   recipes: [],
   excludeTitles: [],
   hasSearched: false,
@@ -50,10 +53,12 @@ export const useExploreStore = create<ExploreState>((set) => ({
   setDifficulty: (difficulty) => set({ difficulty }),
   setCookTimeId: (cookTimeId) => set({ cookTimeId }),
   setServingSize: (servingSize) => set({ servingSize }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
   setRecipes: (recipes) => set({ recipes }),
   appendRecipes: (newRecipes) => set((s) => ({ recipes: [...s.recipes, ...newRecipes] })),
   appendExcludeTitles: (titles) => set((s) => ({ excludeTitles: [...s.excludeTitles, ...titles] })),
   setHasSearched: (hasSearched) => set({ hasSearched }),
   setError: (error) => set({ error }),
-  clearResults: () => set({ recipes: [], excludeTitles: [], hasSearched: false, error: null }),
+  clearResults: () =>
+    set({ recipes: [], excludeTitles: [], hasSearched: false, error: null, searchQuery: '' }),
 }));
