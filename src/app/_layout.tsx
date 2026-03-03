@@ -8,7 +8,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 import '../../global.css';
 import { subscribeToAuthState, fetchUserProfile } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -48,12 +48,7 @@ export default function RootLayout(): React.JSX.Element | null {
   const markEffectShown = useHolidayStore((s) => s.markEffectShown);
   const holidayTheme = useHolidayTheme();
 
-  // System color scheme from device
-  const systemScheme = useColorScheme();
-
-  // Resolve the effective scheme
-  const effectiveScheme = colorScheme === 'system' ? (systemScheme ?? 'light') : colorScheme;
-  const isDark = effectiveScheme === 'dark';
+  const isDark = colorScheme === 'dark';
 
   // Load persisted UI preferences on mount
   useEffect(() => {

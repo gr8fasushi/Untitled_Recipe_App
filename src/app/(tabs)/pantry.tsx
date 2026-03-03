@@ -62,7 +62,7 @@ export default function PantryScreen(): React.JSX.Element {
       clearPantry();
       ingredients.forEach((item) => addIngredient(item));
     } catch {
-      setError('Failed to load pantry. Please try again.');
+      setError('Failed to load your kitchen. Please try again.');
     } finally {
       setLoading(false);
       isLoaded.current = true;
@@ -106,73 +106,86 @@ export default function PantryScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="pantry-screen">
       <BackgroundDecor items={DECOR_SETS.pantry} />
       {/* Gradient header — emerald/green fresh ingredients theme */}
-      <LinearGradient
-        colors={[pantryGradient[0], pantryGradient[1], pantryGradient[2]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 6,
+        }}
       >
-        <View className="items-center w-full">
-          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
-            {/* Emoji silhouettes */}
+        <LinearGradient
+          colors={[pantryGradient[0], pantryGradient[1], pantryGradient[2]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
             <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              <Text
-                style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
               >
-                {pSil0}
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  {pSil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  {pSil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  {pSil2}
+                </Text>
+              </View>
+              {/* Emoji + title stacked (matching other tabs) */}
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{pantryEmoji}</Text>
+              <Text
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
+                My Kitchen
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                style={{ color: pantrySubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                {pSil1}
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-              >
-                {pSil2}
+                {subtitle}
               </Text>
             </View>
-            {/* Emoji + title stacked (matching other tabs) */}
-            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{pantryEmoji}</Text>
-            <Text
-              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-            >
-              My Kitchen
-            </Text>
-            <Text
-              style={{ color: pantrySubtitleColor }}
-              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-            >
-              {subtitle}
-            </Text>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
 
       {/* Loading state (initial load only) */}
       {isLoading && ingredientCount === 0 ? (
         <View testID="pantry-loading" className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#ea580c" />
-          <Text className="mt-3 text-gray-400 font-nunito">Loading pantry…</Text>
+          <Text className="mt-3 text-gray-400 font-nunito">Loading your kitchen…</Text>
         </View>
       ) : (
         <PageContainer>
-          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.pantry} />}
+          <BackgroundDecor items={BODY_DECOR_SETS.pantry} />
           {/* Ingredient chips + Clear All — now in PageContainer */}
           {ingredientCount > 0 ? (
             <View className="px-4 pt-4 pb-2">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-sm font-nunito-bold text-gray-700">
-                  Your Pantry ({ingredientCount})
+                <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-200">
+                  My Kitchen ({ingredientCount})
                 </Text>
                 <Pressable
                   testID="btn-clear-pantry"
                   onPress={clearPantry}
-                  className="active:opacity-75"
+                  className="flex-row items-center gap-1 bg-red-500/15 border border-red-400/40 rounded-full px-3 py-1 active:opacity-75"
                 >
-                  <Text className="text-xs font-nunito-bold text-red-400">Clear all</Text>
+                  <Ionicons name="trash-outline" size={13} color="#f87171" />
+                  <Text className="text-xs font-nunito-bold text-red-400">Clear All</Text>
                 </Pressable>
               </View>
               <View testID="pantry-chips" className="flex-row flex-wrap">

@@ -21,7 +21,6 @@ import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 const APPEARANCE_OPTIONS: { label: string; value: ColorSchemePreference; emoji: string }[] = [
   { label: 'Light', value: 'light', emoji: '☀️' },
   { label: 'Dark', value: 'dark', emoji: '🌙' },
-  { label: 'System', value: 'system', emoji: '⚙️' },
 ];
 
 export default function ProfileScreen(): React.JSX.Element {
@@ -60,55 +59,67 @@ export default function ProfileScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="profile-screen">
       <BackgroundDecor items={DECOR_SETS.profile} />
       {/* Gradient header — navy/blue account theme */}
-      <LinearGradient
-        colors={[profileGradient[0], profileGradient[1], profileGradient[2]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 6,
+        }}
       >
-        <View className="items-center w-full">
-          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
-            {/* Emoji silhouettes */}
+        <LinearGradient
+          colors={[profileGradient[0], profileGradient[1], profileGradient[2]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
             <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              <Text
-                style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
               >
-                {prSil0}
+                <Text
+                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                >
+                  {prSil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                >
+                  {prSil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
+                >
+                  {prSil2}
+                </Text>
+              </View>
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{profileEmoji}</Text>
+              <Text
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
+                Profile
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                style={{ color: profileSubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                {prSil1}
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-              >
-                {prSil2}
+                Manage your account and preferences
               </Text>
             </View>
-            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{profileEmoji}</Text>
-            <Text
-              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-            >
-              Profile
-            </Text>
-            <Text
-              style={{ color: profileSubtitleColor }}
-              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-            >
-              Manage your account and preferences
-            </Text>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         <View className="w-full max-w-2xl self-center relative">
-          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.profile} />}
+          <BackgroundDecor items={BODY_DECOR_SETS.profile} />
           {/* Account section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900">Account</Text>
+            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">Account</Text>
             <Input
               label="Display Name"
               value={displayName}
@@ -129,7 +140,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Allergens section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900">Allergens</Text>
+            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+              Allergens
+            </Text>
             {BIG_9_ALLERGENS.map((allergen) => (
               <AllergenCard
                 key={allergen.id}
@@ -145,7 +158,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Dietary preferences section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900">Dietary Preferences</Text>
+            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+              Dietary Preferences
+            </Text>
             {DIETARY_PREFERENCES.map((pref) => (
               <DietaryPreferenceCard
                 key={pref.id}
@@ -161,7 +176,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Appearance section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900">Appearance</Text>
+            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+              Appearance
+            </Text>
             <View className="flex-row gap-2">
               {APPEARANCE_OPTIONS.map(({ label, value, emoji }) => {
                 const isActive = colorScheme === value;
@@ -225,7 +242,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Account actions */}
           <View className="mx-4 mt-8 border-t border-gray-100 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900">Account Actions</Text>
+            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
+              Account Actions
+            </Text>
             <Button
               label="Sign Out"
               variant="secondary"

@@ -100,7 +100,7 @@ export default function ScanScreen(): React.JSX.Element {
 
             <View className="mt-4">
               <Button
-                label={`Add ${count} to Pantry`}
+                label={`Add ${count} to My Kitchen`}
                 onPress={addAllToPantry}
                 testID="btn-add-all"
               />

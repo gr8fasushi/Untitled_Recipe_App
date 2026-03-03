@@ -85,60 +85,82 @@ export default function HomeScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.home} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header */}
-        <LinearGradient
-          colors={[gradient[0], gradient[1], gradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 6,
+          }}
         >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
-            >
-              {/* Emoji silhouettes */}
+          <LinearGradient
+            colors={[gradient[0], gradient[1], gradient[2]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View className="items-center w-full">
               <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
+                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
               >
-                <Text
-                  style={{
-                    position: 'absolute',
-                    fontSize: 100,
-                    opacity: 0.18,
-                    top: -10,
-                    right: 10,
-                  }}
+                {/* Emoji silhouettes */}
+                <View
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  pointerEvents="none"
                 >
-                  {sil0}
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 100,
+                      opacity: 0.18,
+                      top: -10,
+                      right: 10,
+                    }}
+                  >
+                    {sil0}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 75,
+                      opacity: 0.15,
+                      top: 20,
+                      right: 105,
+                    }}
+                  >
+                    {sil1}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 85,
+                      opacity: 0.15,
+                      top: -5,
+                      right: 185,
+                    }}
+                  >
+                    {sil2}
+                  </Text>
+                </View>
+                <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
+                <Text
+                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+                >
+                  {headingText}
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 105 }}
+                  style={{ color: subtitleColor }}
+                  className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
                 >
-                  {sil1}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 85, opacity: 0.15, top: -5, right: 185 }}
-                >
-                  {sil2}
+                  What would you like to cook today?
                 </Text>
               </View>
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
-              <Text
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                {headingText}
-              </Text>
-              <Text
-                style={{ color: subtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                What would you like to cook today?
-              </Text>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
 
         <PageContainer className="px-4 mt-5">
-          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.home} />}
+          <BackgroundDecor items={BODY_DECOR_SETS.home} />
           {/* Row 1 */}
           <View className="flex-row gap-3 mb-3">
             <Tile

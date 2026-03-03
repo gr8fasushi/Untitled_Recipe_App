@@ -40,99 +40,127 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.saved} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Gradient hero banner */}
-        <LinearGradient
-          colors={isDark ? ['#4c1d95', '#5b21b6', '#7c3aed'] : ['#3b0764', '#6d28d9', '#a78bfa']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 6,
+          }}
         >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
-            >
-              {/* Emoji silhouettes */}
+          <LinearGradient
+            colors={isDark ? ['#4c1d95', '#5b21b6', '#7c3aed'] : ['#3b0764', '#6d28d9', '#a78bfa']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View className="items-center w-full">
               <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
+                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
               >
-                <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                {/* Emoji silhouettes */}
+                <View
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  pointerEvents="none"
                 >
-                  🔖
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
-                >
-                  ⭐
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-                >
-                  ❤️
-                </Text>
-              </View>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 95,
+                      opacity: 0.18,
+                      top: -8,
+                      right: 12,
+                    }}
+                  >
+                    🔖
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 70,
+                      opacity: 0.15,
+                      top: 22,
+                      right: 105,
+                    }}
+                  >
+                    ⭐
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 80,
+                      opacity: 0.15,
+                      top: -5,
+                      right: 185,
+                    }}
+                  >
+                    ❤️
+                  </Text>
+                </View>
 
-              {/* Back button */}
-              <Pressable
-                testID="btn-back"
-                onPress={() => router.push('/(tabs)/saved')}
-                className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
-              >
-                <Text className="text-violet-200 font-nunito-semibold text-sm">
-                  ← Back to Saved
-                </Text>
-              </Pressable>
+                {/* Back button */}
+                <Pressable
+                  testID="btn-back"
+                  onPress={() => router.push('/(tabs)/saved')}
+                  className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
+                >
+                  <Text className="text-violet-200 font-nunito-semibold text-sm">
+                    ← Back to Saved
+                  </Text>
+                </Pressable>
 
-              {recipe ? (
-                <>
-                  <Text className="text-xs font-nunito-bold text-violet-300 uppercase tracking-widest mb-1">
+                {recipe ? (
+                  <>
+                    <Text className="text-xs font-nunito-bold text-violet-300 uppercase tracking-widest mb-1">
+                      Saved Recipe
+                    </Text>
+                    <Text
+                      testID="detail-title"
+                      className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight leading-tight`}
+                    >
+                      {recipe.title}
+                    </Text>
+                    <Text
+                      className="text-violet-200 text-sm mt-2 font-nunito-semibold"
+                      numberOfLines={2}
+                    >
+                      {recipe.description}
+                    </Text>
+                    {/* Quick meta chips */}
+                    <View className="flex-row flex-wrap gap-2 mt-4">
+                      <View className="bg-white/20 rounded-full px-3 py-1">
+                        <Text className="text-xs font-nunito-bold text-white">
+                          🕐 {recipe.prepTime + recipe.cookTime} min total
+                        </Text>
+                      </View>
+                      <View className="bg-white/20 rounded-full px-3 py-1">
+                        <Text className="text-xs font-nunito-bold text-white">
+                          👤 {recipe.servings} servings
+                        </Text>
+                      </View>
+                      <View className="bg-white/20 rounded-full px-3 py-1">
+                        <Text className="text-xs font-nunito-bold text-white capitalize">
+                          {recipe.difficulty === 'easy'
+                            ? '🟢'
+                            : recipe.difficulty === 'medium'
+                              ? '🟡'
+                              : '🔴'}{' '}
+                          {recipe.difficulty}
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                ) : (
+                  <Text
+                    className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+                  >
                     Saved Recipe
                   </Text>
-                  <Text
-                    testID="detail-title"
-                    className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight leading-tight`}
-                  >
-                    {recipe.title}
-                  </Text>
-                  <Text
-                    className="text-violet-200 text-sm mt-2 font-nunito-semibold"
-                    numberOfLines={2}
-                  >
-                    {recipe.description}
-                  </Text>
-                  {/* Quick meta chips */}
-                  <View className="flex-row flex-wrap gap-2 mt-4">
-                    <View className="bg-white/20 rounded-full px-3 py-1">
-                      <Text className="text-xs font-nunito-bold text-white">
-                        🕐 {recipe.prepTime + recipe.cookTime} min total
-                      </Text>
-                    </View>
-                    <View className="bg-white/20 rounded-full px-3 py-1">
-                      <Text className="text-xs font-nunito-bold text-white">
-                        👤 {recipe.servings} servings
-                      </Text>
-                    </View>
-                    <View className="bg-white/20 rounded-full px-3 py-1">
-                      <Text className="text-xs font-nunito-bold text-white capitalize">
-                        {recipe.difficulty === 'easy'
-                          ? '🟢'
-                          : recipe.difficulty === 'medium'
-                            ? '🟡'
-                            : '🔴'}{' '}
-                        {recipe.difficulty}
-                      </Text>
-                    </View>
-                  </View>
-                </>
-              ) : (
-                <Text
-                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-                >
-                  Saved Recipe
-                </Text>
-              )}
+                )}
+              </View>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
 
         {/* Empty state */}
         {!savedRecipe || !recipe ? (
@@ -145,7 +173,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
         ) : (
           <View className="items-center w-full">
             <View className="w-full max-w-2xl px-4 mt-5 relative">
-              {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.saved} />}
+              <BackgroundDecor items={BODY_DECOR_SETS.saved} />
               {/* Hero image */}
               {recipe.imageUrl ? (
                 <Image

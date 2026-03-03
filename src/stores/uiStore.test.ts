@@ -5,7 +5,7 @@ beforeEach(() => {
     isLoading: false,
     toastMessage: null,
     toastType: 'info',
-    colorScheme: 'system',
+    colorScheme: 'light',
   });
 });
 
@@ -37,8 +37,8 @@ it('clears toast', () => {
   expect(useUIStore.getState().toastMessage).toBeNull();
 });
 
-it('defaults colorScheme to system', () => {
-  expect(useUIStore.getState().colorScheme).toBe('system');
+it('defaults colorScheme to light', () => {
+  expect(useUIStore.getState().colorScheme).toBe('light');
 });
 
 it('sets colorScheme to light', () => {

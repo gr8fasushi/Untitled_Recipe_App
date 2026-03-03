@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -19,6 +19,7 @@ import {
   BackgroundDecor,
   BODY_DECOR_SETS,
   Button,
+  CollapsibleSection,
   DECOR_SETS,
   PageContainer,
 } from '@/shared/components/ui';
@@ -96,6 +97,14 @@ export default function CommunityScreen(): React.JSX.Element {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const isWeb = Platform.OS === 'web';
+
+  // Clear cached explore results when allergens or dietary preferences change
+  const allergenKey = (profile?.allergens ?? []).join(',');
+  const dietKey = (profile?.dietaryPreferences ?? []).join(',');
+  useEffect(() => {
+    clearResults();
+  }, [allergenKey, dietKey, clearResults]);
+
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
   const gradient =
@@ -208,54 +217,82 @@ export default function CommunityScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.community} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — amber/gold explore theme */}
-        <LinearGradient
-          colors={[gradient[0], gradient[1], gradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 6,
+          }}
         >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
-            >
-              {/* Emoji silhouettes */}
+          <LinearGradient
+            colors={[gradient[0], gradient[1], gradient[2]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View className="items-center w-full">
               <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
+                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
               >
-                <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                {/* Emoji silhouettes */}
+                <View
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  pointerEvents="none"
                 >
-                  {sil0}
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 95,
+                      opacity: 0.18,
+                      top: -8,
+                      right: 12,
+                    }}
+                  >
+                    {sil0}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 70,
+                      opacity: 0.15,
+                      top: 22,
+                      right: 105,
+                    }}
+                  >
+                    {sil1}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 80,
+                      opacity: 0.15,
+                      top: -5,
+                      right: 185,
+                    }}
+                  >
+                    {sil2}
+                  </Text>
+                </View>
+                <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
+                <Text
+                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+                >
+                  Explore
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                  style={{ color: subtitleColor }}
+                  className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
                 >
-                  {sil1}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-                >
-                  {sil2}
+                  Discover recipes curated by Chef Jules
                 </Text>
               </View>
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
-              <Text
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                Explore
-              </Text>
-              <Text
-                style={{ color: subtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                Discover recipes curated by Chef Jules
-              </Text>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
 
         <PageContainer className="px-4 mt-4">
-          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.community} />}
+          <BackgroundDecor items={BODY_DECOR_SETS.community} />
           {/* Section 1: Meal Type */}
           <Text
             testID="section-label-meal-type"
@@ -337,95 +374,102 @@ export default function CommunityScreen(): React.JSX.Element {
             })}
           </View>
 
-          {/* Difficulty filter */}
-          <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
-            Difficulty (optional)
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {DIFFICULTIES.map((d) => {
-              const isActive = difficulty === d.id;
-              return (
-                <Pressable
-                  key={d.id}
-                  testID={`explore-difficulty-pill-${d.id}`}
-                  onPress={() => setDifficulty(isActive ? null : d.id)}
-                  className={`px-3 py-1.5 rounded-full border ${
-                    isActive
-                      ? 'bg-amber-500 border-amber-500'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-nunito-bold ${
-                      isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+          {/* Collapsible: Difficulty / Time / Serving Size */}
+          <CollapsibleSection
+            title="Refine Results"
+            badge={(difficulty ? 1 : 0) + (cookTimeId ? 1 : 0) + (servingSize ? 1 : 0)}
+            testID="collapsible-refine"
+          >
+            {/* Difficulty */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Difficulty
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {DIFFICULTIES.map((d) => {
+                const isActive = difficulty === d.id;
+                return (
+                  <Pressable
+                    key={d.id}
+                    testID={`explore-difficulty-pill-${d.id}`}
+                    onPress={() => setDifficulty(isActive ? null : d.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive
+                        ? 'bg-amber-500 border-amber-500'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    {d.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {d.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          {/* Time to Cook filter */}
-          <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
-            Time to Cook (optional)
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {COOK_TIMES.map((ct) => {
-              const isActive = cookTimeId === ct.id;
-              return (
-                <Pressable
-                  key={ct.id}
-                  testID={`explore-cook-time-pill-${ct.id}`}
-                  onPress={() => setCookTimeId(isActive ? null : ct.id)}
-                  className={`px-3 py-1.5 rounded-full border ${
-                    isActive
-                      ? 'bg-amber-500 border-amber-500'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-nunito-bold ${
-                      isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+            {/* Time to Cook */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Time to Cook
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {COOK_TIMES.map((ct) => {
+                const isActive = cookTimeId === ct.id;
+                return (
+                  <Pressable
+                    key={ct.id}
+                    testID={`explore-cook-time-pill-${ct.id}`}
+                    onPress={() => setCookTimeId(isActive ? null : ct.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive
+                        ? 'bg-amber-500 border-amber-500'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    {ct.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {ct.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          {/* Serving Size filter */}
-          <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
-            Serving Size (optional)
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-5">
-            {SERVING_SIZES.map((ss) => {
-              const isActive = servingSize === ss.id;
-              return (
-                <Pressable
-                  key={ss.id}
-                  testID={`explore-serving-size-pill-${ss.id}`}
-                  onPress={() => setServingSize(isActive ? null : ss.id)}
-                  className={`px-3 py-1.5 rounded-full border ${
-                    isActive
-                      ? 'bg-amber-500 border-amber-500'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-nunito-bold ${
-                      isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+            {/* Serving Size */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Serving Size
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {SERVING_SIZES.map((ss) => {
+                const isActive = servingSize === ss.id;
+                return (
+                  <Pressable
+                    key={ss.id}
+                    testID={`explore-serving-size-pill-${ss.id}`}
+                    onPress={() => setServingSize(isActive ? null : ss.id)}
+                    className={`px-3 py-1.5 rounded-full border ${
+                      isActive
+                        ? 'bg-amber-500 border-amber-500'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
-                    {ss.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text
+                      className={`text-xs font-nunito-bold ${
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {ss.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </CollapsibleSection>
 
           {/* Keyword search */}
           <View className="mb-4">

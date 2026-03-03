@@ -51,7 +51,7 @@ export default function PrivacyPolicyScreen(): React.JSX.Element {
 
 • Account information: email address and display name (via Firebase Authentication).
 • Dietary profile: allergens and dietary preferences you enter during onboarding or in settings.
-• Pantry data: ingredient selections you make within the app.
+• My Kitchen data: ingredient selections you make within the app.
 • Saved recipes: recipes you save, including your personal notes (private) and reviews (public when shared).
 • Community content: recipes and reviews you choose to share publicly.
 • Ingredient photos: photos you submit for scanning are processed on our servers and immediately discarded — they are never stored.`}

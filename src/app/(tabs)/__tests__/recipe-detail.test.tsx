@@ -25,6 +25,7 @@ jest.mock('@/shared/components/ui', () => ({
     return <View testID="background-decor" />;
   },
   DECOR_SETS: { recipes: [] },
+  BODY_DECOR_SETS: { recipes: [] },
 }));
 
 jest.mock('@/features/recipes/components/AIDisclaimer', () => ({

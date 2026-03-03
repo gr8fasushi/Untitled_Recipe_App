@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
@@ -27,6 +27,9 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
   const seenTitlesRef = useRef<Set<string>>(new Set());
+  const isFirstRenderRef = useRef(true);
+  const allergenKey = (profile?.allergens ?? []).join(',');
+  const dietKey = (profile?.dietaryPreferences ?? []).join(',');
   const {
     recipes,
     isLoading,
@@ -40,6 +43,16 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
     setLoadingMore,
     setError,
   } = useRecipesStore();
+
+  // Clear seen-titles cache and displayed results when allergens/diet prefs change (skip mount)
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    seenTitlesRef.current = new Set();
+    setRecipes([]);
+  }, [allergenKey, dietKey, setRecipes]);
 
   const generate = useCallback(
     async (filters?: RecipeFilterParams) => {

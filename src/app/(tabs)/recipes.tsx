@@ -20,6 +20,7 @@ import {
   BackgroundDecor,
   BODY_DECOR_SETS,
   Button,
+  CollapsibleSection,
   DECOR_SETS,
   PageContainer,
 } from '@/shared/components/ui';
@@ -87,6 +88,12 @@ export default function RecipesScreen(): React.JSX.Element {
   const hasIngredients = selectedIngredients.length > 0;
   const hasSearch = searchQuery.trim().length > 0;
   const isWeb = Platform.OS === 'web';
+  const activeFilterCount =
+    (selectedMealType ? 1 : 0) +
+    selectedCuisines.length +
+    (selectedDifficulty ? 1 : 0) +
+    (selectedCookTimeId ? 1 : 0) +
+    (selectedServingSize ? 1 : 0);
 
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
@@ -136,57 +143,85 @@ export default function RecipesScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.recipes} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — deep red/orange cooking theme */}
-        <LinearGradient
-          colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <View
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.15,
+            shadowRadius: 6,
+            elevation: 6,
+          }}
         >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
-            >
-              {/* Emoji silhouettes */}
+          <LinearGradient
+            colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View className="items-center w-full">
               <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
+                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
               >
-                <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
+                {/* Emoji silhouettes */}
+                <View
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  pointerEvents="none"
                 >
-                  {rSil0}
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 95,
+                      opacity: 0.18,
+                      top: -8,
+                      right: 12,
+                    }}
+                  >
+                    {rSil0}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 70,
+                      opacity: 0.15,
+                      top: 22,
+                      right: 105,
+                    }}
+                  >
+                    {rSil1}
+                  </Text>
+                  <Text
+                    style={{
+                      position: 'absolute',
+                      fontSize: 80,
+                      opacity: 0.15,
+                      top: -5,
+                      right: 185,
+                    }}
+                  >
+                    {rSil2}
+                  </Text>
+                </View>
+                <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
+                <Text
+                  testID="recipes-heading"
+                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+                >
+                  Find My Meal
                 </Text>
                 <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
+                  style={{ color: recipesSubtitleColor }}
+                  className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
                 >
-                  {rSil1}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-                >
-                  {rSil2}
+                  {hasIngredients
+                    ? "Turn what's in your kitchen into something delicious"
+                    : 'Add ingredients below to get started'}
                 </Text>
               </View>
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
-              <Text
-                testID="recipes-heading"
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                Find My Meal
-              </Text>
-              <Text
-                style={{ color: recipesSubtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                {hasIngredients
-                  ? "Turn what's in your kitchen into something delicious"
-                  : 'Add ingredients below to get started'}
-              </Text>
             </View>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </View>
 
         <PageContainer className="px-4 mt-4">
-          {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.recipes} />}
+          <BackgroundDecor items={BODY_DECOR_SETS.recipes} />
           {!hasIngredients && !hasSearch ? (
             <View
               testID="recipes-no-ingredients"
@@ -250,12 +285,17 @@ export default function RecipesScreen(): React.JSX.Element {
             />
           </View>
 
-          {/* Meal type filter */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Meal Type (optional)
+          {/* Collapsible filter panel */}
+          <CollapsibleSection
+            title="Filters"
+            badge={activeFilterCount}
+            testID="collapsible-filters"
+          >
+            {/* Meal type */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Meal Type
             </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2 mb-4">
               {MEAL_TYPES.map((mt) => {
                 const isActive = selectedMealType === mt.id;
                 return (
@@ -264,13 +304,15 @@ export default function RecipesScreen(): React.JSX.Element {
                     testID={`meal-type-pill-${mt.id}`}
                     onPress={() => toggleMealType(mt.id)}
                     className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                      isActive
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text className="text-sm">{mt.emoji}</Text>
                     <Text
                       className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {mt.label}
@@ -279,14 +321,12 @@ export default function RecipesScreen(): React.JSX.Element {
                 );
               })}
             </View>
-          </View>
 
-          {/* Cuisine selector */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Cuisine (optional — pick one or more)
+            {/* Cuisine */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Cuisine
             </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2 mb-4">
               {CUISINES.map((cuisine) => {
                 const isActive = selectedCuisines.includes(cuisine.id);
                 return (
@@ -295,13 +335,15 @@ export default function RecipesScreen(): React.JSX.Element {
                     testID={`cuisine-pill-${cuisine.id}`}
                     onPress={() => toggleCuisine(cuisine.id)}
                     className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                      isActive
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text className="text-sm">{cuisine.emoji}</Text>
                     <Text
                       className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {cuisine.label}
@@ -310,14 +352,12 @@ export default function RecipesScreen(): React.JSX.Element {
                 );
               })}
             </View>
-          </View>
 
-          {/* Difficulty filter */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Difficulty (optional)
+            {/* Difficulty */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Difficulty
             </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2 mb-4">
               {DIFFICULTIES.map((d) => {
                 const isActive = selectedDifficulty === d.id;
                 return (
@@ -326,12 +366,14 @@ export default function RecipesScreen(): React.JSX.Element {
                     testID={`difficulty-pill-${d.id}`}
                     onPress={() => toggleDifficulty(d.id)}
                     className={`px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                      isActive
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text
                       className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {d.label}
@@ -340,14 +382,12 @@ export default function RecipesScreen(): React.JSX.Element {
                 );
               })}
             </View>
-          </View>
 
-          {/* Time to Cook filter */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Time to Cook (optional)
+            {/* Time to Cook */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Time to Cook
             </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-row flex-wrap gap-2 mb-4">
               {COOK_TIMES.map((ct) => {
                 const isActive = selectedCookTimeId === ct.id;
                 return (
@@ -356,12 +396,14 @@ export default function RecipesScreen(): React.JSX.Element {
                     testID={`cook-time-pill-${ct.id}`}
                     onPress={() => toggleCookTime(ct.id)}
                     className={`px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                      isActive
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text
                       className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {ct.label}
@@ -370,12 +412,10 @@ export default function RecipesScreen(): React.JSX.Element {
                 );
               })}
             </View>
-          </View>
 
-          {/* Serving Size filter */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Serving Size (optional)
+            {/* Serving Size */}
+            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Serving Size
             </Text>
             <View className="flex-row flex-wrap gap-2">
               {SERVING_SIZES.map((ss) => {
@@ -386,12 +426,14 @@ export default function RecipesScreen(): React.JSX.Element {
                     testID={`serving-size-pill-${ss.id}`}
                     onPress={() => toggleServingSize(ss.id)}
                     className={`px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
+                      isActive
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <Text
                       className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
+                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {ss.label}
@@ -400,7 +442,7 @@ export default function RecipesScreen(): React.JSX.Element {
                 );
               })}
             </View>
-          </View>
+          </CollapsibleSection>
 
           {/* Strict ingredients checkbox */}
           <Pressable
@@ -416,7 +458,7 @@ export default function RecipesScreen(): React.JSX.Element {
               {strictIngredients ? <Text className="text-white text-xs font-bold">✓</Text> : null}
             </View>
             <Text className="text-sm text-gray-700 font-nunito flex-1">
-              Only use my exact pantry ingredients
+              Only use my exact kitchen ingredients
             </Text>
           </Pressable>
           {strictIngredients ? (

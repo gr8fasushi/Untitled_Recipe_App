@@ -22,19 +22,33 @@ RECIPE QUALITY RULES:
 INSTRUCTION DETAIL RULES:
 - Write each instruction step as ONE atomic action — one thing to do at a time, never a bundle.
   BAD: "Season and sear the beef, then let it cool and wrap in pastry."
-  GOOD: Step 1 "Pat the beef dry with paper towels — moisture prevents browning."
+  GOOD: Step 1 "Pat the beef dry with paper towels — wet protein steams instead of searing, so you won't get a golden crust."
         Step 2 "Season all sides generously with salt and black pepper."
-        Step 3 "Heat oil in a skillet over high heat until it shimmers (about 2 minutes)."
-        Step 4 "Sear the beef for 2 minutes per side, including the ends, until a deep brown crust forms."
-- Assume ZERO prior cooking knowledge. Briefly explain WHY alongside each technique step.
+        Step 3 "Heat a 12-inch skillet over high heat for 1–2 minutes until very hot."
+        Step 4 "Add 2 tablespoons of vegetable oil — it will shimmer immediately when the pan is ready."
+        Step 5 "Sear the beef for 2 minutes per side, including the ends, until a deep brown crust forms."
+- Assume ZERO prior cooking knowledge. EVERY technique step MUST include a WHY explanation — this is mandatory, not optional.
   Example: "Add the garlic now, not earlier — it burns quickly and turns bitter over high heat."
-- Include sensory and visual doneness cues, not just timers.
-  Example: "Cook until the onions are soft and translucent (about 8 minutes) — they should not be browned."
-- Include exact measurements, temperatures, and equipment where they matter.
-  Example: "dice into ½-inch pieces", "medium heat (about 325–350°F / 160–175°C)", "use a 12-inch oven-safe skillet"
+  Example: "Let the meat rest 5 minutes before cutting — the juices redistribute so they don't all pour out when you slice."
+- OIL & FAT RULES — MANDATORY for every recipe that uses oil, butter, or fat:
+  * Specify the EXACT TYPE (olive oil, vegetable oil, sesame oil, unsalted butter) and EXACT AMOUNT ("2 tablespoons", not "some oil").
+  * Explain why that fat was chosen when it matters: "Use vegetable oil here — olive oil has a lower smoke point and will burn at searing heat."
+  * Always include a dedicated pan-prep step BEFORE adding food — tell the user how to add the fat.
+  Example: "Heat the pan over medium-high heat for 1 minute, then add 2 tablespoons of vegetable oil and swirl to coat — the oil is ready when it shimmers and flows freely."
+- HEAT LEVEL RULES — always name the heat level AND provide temperature ranges:
+  * Low heat: ~200–275°F / 95–135°C — gentle simmer, melting chocolate, keeping warm
+  * Medium-low: ~275–325°F / 135–165°C — slow cooking, sweating vegetables without browning
+  * Medium: ~325–375°F / 165–190°C — everyday sautéing, pancakes, scrambled eggs
+  * Medium-high: ~375–450°F / 190–230°C — stir-frying, pan sauces, browning vegetables
+  * High: ~450–500°F / 230–260°C — hard searing, bringing water to a boil, wok cooking
+  * Oven temperatures: always include both °F and °C
+- Include sensory and visual doneness cues alongside timers.
+  Example: "Cook until the onions are deeply golden and smell sweet (12–15 minutes) — this caramelization is the flavor base of the entire dish."
+- Include exact measurements and equipment where they matter.
+  Example: "dice into ½-inch / 1.5 cm cubes", "use a 12-inch oven-safe skillet"
 - For techniques requiring care (folding, deglazing, tempering, rolling), add one sentence of how-to.
-  Example: "Deglaze with wine — pour it in and scrape the brown bits off the pan bottom with a wooden spoon; those bits add flavor."
-- Aim for 6–10 steps for simple dishes, 12–18 steps for complex or multi-component dishes.
+  Example: "Deglaze with wine — pour it in and immediately scrape the browned bits off the pan bottom with a wooden spoon; those bits are concentrated flavor."
+- Aim for 8–12 steps for simple dishes, 16–22 steps for complex or multi-component dishes.
 
 CRITICAL SAFETY RULES:
 - NEVER include ingredients from the user's allergen list
@@ -125,15 +139,15 @@ ${
     : '';
 
   const searchQueryText = input.searchQuery?.trim()
-    ? `\nKEYWORD SEARCH: The user is looking for "${input.searchQuery.trim()}". ALL ${count} recipes MUST closely match this search — consider the dish name, cuisine style, key ingredient, or meal theme.`
+    ? `CRITICAL SEARCH REQUIREMENT — READ THIS FIRST AND DO NOT IGNORE IT: The user searched for "${input.searchQuery.trim()}". This is NON-NEGOTIABLE — ALL ${count} recipes MUST be "${input.searchQuery.trim()}" or a direct named variant of it (e.g. different regional styles, different preparations of the same dish). DO NOT include recipes that merely share an ingredient with the search term. DO NOT silently return unrelated recipes. Every recipe title must clearly reflect the search term.`
     : '';
 
-  return `${ingredientText}
+  return `${searchQueryText ? `${searchQueryText}\n\n` : ''}${ingredientText}
 
 ${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}
-${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}${searchQueryText}
+${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}
 Return valid JSON only. CRITICAL REMINDER: The "recipes" array MUST contain EXACTLY ${count} recipe${count === 1 ? '' : 's'} — not ${count - 1}, not ${count + 1}, always ${count}.`;
 }

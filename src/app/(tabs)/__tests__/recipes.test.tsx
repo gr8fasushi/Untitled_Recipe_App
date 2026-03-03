@@ -107,7 +107,28 @@ jest.mock('expo-linear-gradient', () => ({
   },
 }));
 
-jest.mock('@/shared/components/ui', () => jest.requireActual('@/shared/components/ui'));
+jest.mock('@/shared/components/ui', () => {
+  // Use the real module but override CollapsibleSection to always render children
+  // (always expanded) so filter pill tests work without having to click to expand.
+  const actual =
+    jest.requireActual<typeof import('@/shared/components/ui')>('@/shared/components/ui');
+  return {
+    ...actual,
+    CollapsibleSection: ({
+      children,
+      testID,
+      title,
+    }: {
+      children: React.ReactNode;
+      testID?: string;
+      title: string;
+      badge?: number;
+    }) => {
+      const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+      return <View testID={testID ?? `collapsible-${title}`}>{children}</View>;
+    },
+  };
+});
 
 jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
   RecipeSummaryCard: ({

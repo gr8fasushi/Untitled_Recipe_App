@@ -185,7 +185,7 @@ describe('ScanScreen', () => {
     it('shows Add to Pantry button with count', () => {
       const { getByTestId, getByText } = render(<ScanScreen />);
       expect(getByTestId('btn-add-all')).toBeTruthy();
-      expect(getByText('Add 2 to Pantry')).toBeTruthy();
+      expect(getByText('Add 2 to My Kitchen')).toBeTruthy();
     });
 
     it('shows Clear button', () => {

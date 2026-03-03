@@ -56,75 +56,93 @@ export default function ChatScreen(): React.JSX.Element {
       <BackgroundDecor items={DECOR_SETS.chat} />
 
       {/* Gradient header — deep indigo AI theme */}
-      <LinearGradient
-        colors={isDark ? ['#1e1b4b', '#3730a3', '#4338ca'] : ['#1e1b4b', '#4338ca', '#6366f1']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 6,
+        }}
       >
-        <View className="items-center w-full">
-          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
-            {/* Emoji silhouettes */}
+        <LinearGradient
+          colors={isDark ? ['#1e1b4b', '#3730a3', '#4338ca'] : ['#1e1b4b', '#4338ca', '#6366f1']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
             <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              <Text
-                style={{ position: 'absolute', fontSize: 100, opacity: 0.18, top: -10, right: 10 }}
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
               >
-                👨‍🍳
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 110 }}
-              >
-                🍳
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 190 }}
-              >
-                💬
-              </Text>
-            </View>
+                <Text
+                  style={{
+                    position: 'absolute',
+                    fontSize: 100,
+                    opacity: 0.18,
+                    top: -10,
+                    right: 10,
+                  }}
+                >
+                  👨‍🍳
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 110 }}
+                >
+                  🍳
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 190 }}
+                >
+                  💬
+                </Text>
+              </View>
 
-            {/* Back + Mute row */}
-            <View className="flex-row justify-between mb-4">
-              <Pressable testID="btn-back" onPress={() => router.back()}>
-                <Text className="text-indigo-200 font-nunito-semibold text-sm">← Back</Text>
-              </Pressable>
-              <Pressable
-                testID="btn-toggle-mute"
-                onPress={toggleMute}
-                accessibilityLabel={isVoiceMuted ? 'Unmute voice' : 'Mute voice'}
-                accessibilityState={{ selected: isVoiceMuted }}
-                className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
-              >
-                <Text className="text-base">{isVoiceMuted ? '🔇' : '🔊'}</Text>
-              </Pressable>
-            </View>
+              {/* Back + Mute row */}
+              <View className="flex-row justify-between mb-4">
+                <Pressable testID="btn-back" onPress={() => router.back()}>
+                  <Text className="text-indigo-200 font-nunito-semibold text-sm">← Back</Text>
+                </Pressable>
+                <Pressable
+                  testID="btn-toggle-mute"
+                  onPress={toggleMute}
+                  accessibilityLabel={isVoiceMuted ? 'Unmute voice' : 'Mute voice'}
+                  accessibilityState={{ selected: isVoiceMuted }}
+                  className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
+                >
+                  <Text className="text-base">{isVoiceMuted ? '🔇' : '🔊'}</Text>
+                </Pressable>
+              </View>
 
-            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>👨‍🍳</Text>
-            <Text
-              testID="chat-heading"
-              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-            >
-              Chef Jules
-            </Text>
-            {currentRecipe ? (
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>👨‍🍳</Text>
               <Text
-                className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-                numberOfLines={1}
+                testID="chat-heading"
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
-                About: {currentRecipe.title}
+                Chef Jules
               </Text>
-            ) : (
-              <Text
-                className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                Your personal virtual chef
-              </Text>
-            )}
+              {currentRecipe ? (
+                <Text
+                  className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+                  numberOfLines={1}
+                >
+                  About: {currentRecipe.title}
+                </Text>
+              ) : (
+                <Text
+                  className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+                >
+                  Your personal virtual chef
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
 
       {/* All post-header content constrained to max-w-2xl on web */}
       <View className="flex-1 w-full max-w-2xl self-center relative">

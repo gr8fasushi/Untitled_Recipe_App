@@ -1,5 +1,9 @@
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
+const isWeb = Platform.OS === 'web';
+const TAB_ICON_SIZE = isWeb ? 28 : 22;
 
 export default function TabLayout(): React.JSX.Element {
   return (
@@ -12,14 +16,18 @@ export default function TabLayout(): React.JSX.Element {
           backgroundColor: '#1c1917',
           borderTopColor: '#292524',
           borderTopWidth: 1,
-          height: 68,
-          paddingBottom: 10,
-          paddingTop: 6,
+          ...Platform.select({
+            web: { height: 88, paddingBottom: 16, paddingTop: 10 },
+            default: { height: 68, paddingBottom: 10, paddingTop: 6 },
+          }),
         },
         tabBarLabelStyle: {
           fontFamily: 'Nunito_600SemiBold',
-          fontSize: 11,
           letterSpacing: 0.2,
+          ...Platform.select({
+            web: { fontSize: 14 },
+            default: { fontSize: 11 },
+          }),
         },
       }}
     >
@@ -28,7 +36,7 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={TAB_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -37,7 +45,11 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'My Kitchen',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'basket' : 'basket-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'basket' : 'basket-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
           ),
         }}
       />
@@ -46,7 +58,11 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Saved',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'bookmark' : 'bookmark-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
           ),
         }}
       />
@@ -55,7 +71,11 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
           ),
         }}
       />

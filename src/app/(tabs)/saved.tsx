@@ -55,54 +55,66 @@ export default function SavedScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="saved-screen">
       <BackgroundDecor items={DECOR_SETS.saved} />
       {/* Gradient header — full width gradient, content constrained inside */}
-      <LinearGradient
-        colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 6,
+        }}
       >
-        <View className="items-center w-full">
-          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
-            {/* Emoji silhouettes */}
+        <LinearGradient
+          colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View className="items-center w-full">
             <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              <Text
-                style={{ position: 'absolute', fontSize: 90, opacity: 0.18, top: -8, right: 16 }}
+              {/* Emoji silhouettes */}
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                pointerEvents="none"
               >
-                {sSil0}
+                <Text
+                  style={{ position: 'absolute', fontSize: 90, opacity: 0.18, top: -8, right: 16 }}
+                >
+                  {sSil0}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 20, right: 100 }}
+                >
+                  {sSil1}
+                </Text>
+                <Text
+                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 180 }}
+                >
+                  {sSil2}
+                </Text>
+              </View>
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
+              <Text
+                testID="saved-heading"
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+              >
+                Saved Recipes
               </Text>
               <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 20, right: 100 }}
+                style={{ color: savedSubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                {sSil1}
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 180 }}
-              >
-                {sSil2}
+                Your bookmarked collection
               </Text>
             </View>
-            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
-            <Text
-              testID="saved-heading"
-              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-            >
-              Saved Recipes
-            </Text>
-            <Text
-              style={{ color: savedSubtitleColor }}
-              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-            >
-              Your bookmarked collection
-            </Text>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
 
       {/* All post-header content constrained to max-w-2xl on web */}
       <View className="flex-1 w-full max-w-2xl self-center relative">
-        {Platform.OS === 'web' && <BackgroundDecor items={BODY_DECOR_SETS.saved} />}
+        <BackgroundDecor items={BODY_DECOR_SETS.saved} />
         {/* Rating filter pills — only shown when there are recipes */}
         {hasRecipes && (
           <View className="px-4 pt-3 pb-2">
