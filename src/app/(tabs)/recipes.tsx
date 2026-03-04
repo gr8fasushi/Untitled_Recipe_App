@@ -7,10 +7,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
@@ -75,6 +75,9 @@ export default function RecipesScreen(): React.JSX.Element {
   const [selectedServingSize, setSelectedServingSize] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { autoSearch } = useLocalSearchParams<{ autoSearch?: string }>();
+  const autoSearchTriggered = useRef(false);
+
   const allergenKey = (profile?.allergens ?? []).join(',');
   const dietKey = (profile?.dietaryPreferences ?? []).join(',');
 
@@ -114,6 +117,15 @@ export default function RecipesScreen(): React.JSX.Element {
       searchQuery: searchQuery.trim() || null,
     };
   }
+
+  // Auto-trigger search when arriving from pantry "Find Recipes" button
+  useEffect(() => {
+    if (autoSearch === 'true' && !autoSearchTriggered.current && hasIngredients) {
+      autoSearchTriggered.current = true;
+      void generate(buildFilters());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSearch, hasIngredients]);
 
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);

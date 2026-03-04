@@ -152,7 +152,7 @@ export default function HomeScreen(): React.JSX.Element {
                   style={{ color: subtitleColor }}
                   className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
                 >
-                  What would you like to cook today?
+                  {"Let's cook up a tasty meal!"}
                 </Text>
               </View>
             </View>
@@ -165,7 +165,7 @@ export default function HomeScreen(): React.JSX.Element {
           <View className="flex-row gap-3 mb-3">
             <Tile
               emoji="🥦"
-              title="Ingredients"
+              title="Ingredient List"
               subtitle="View and manage your ingredients"
               onPress={() => router.push('/(tabs)/pantry')}
               testID="tile-cook-pantry"
@@ -213,7 +213,7 @@ export default function HomeScreen(): React.JSX.Element {
               [
                 {
                   emoji: '🥦',
-                  text: 'Add ingredients to My Kitchen — type, search, or snap a photo',
+                  text: 'Add ingredients by tapping Ingredients - type, search, or snap a photo',
                 },
                 {
                   emoji: '🍳',

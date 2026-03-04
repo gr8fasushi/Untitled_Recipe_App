@@ -1,7 +1,7 @@
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { AIDisclaimer } from '@/features/recipes/components/AIDisclaimer';
 import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
@@ -19,6 +19,7 @@ const DIFFICULTY_STYLE: Record<string, string> = {
 export default function RecipeDetailScreen(): React.JSX.Element {
   const { currentRecipe: recipe } = useRecipesStore();
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { isSaved, isSaving, toggleSave } = useSaveRecipe(recipe);
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
@@ -89,11 +90,13 @@ export default function RecipeDetailScreen(): React.JSX.Element {
                 {/* Back button */}
                 <Pressable
                   testID="btn-back"
-                  onPress={() => router.push('/(tabs)/recipes')}
+                  onPress={() =>
+                    router.push(from === 'community' ? '/(tabs)/community' : '/(tabs)/recipes')
+                  }
                   className="flex-row items-center gap-1 mb-4 self-start px-3 py-1.5 rounded-full bg-black/15 border border-white/20"
                 >
                   <Text className="text-orange-200 font-nunito-semibold text-sm">
-                    ← Back to Recipes
+                    {from === 'community' ? '← Back to Popular Recipes' : '← Back to Recipes'}
                   </Text>
                 </Pressable>
 

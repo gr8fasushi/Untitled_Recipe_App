@@ -203,7 +203,7 @@ export default function CommunityScreen(): React.JSX.Element {
 
   function handleCardPress(recipe: Recipe): void {
     setCurrentRecipe(recipe);
-    router.push('/(tabs)/recipe-detail');
+    router.push('/(tabs)/recipe-detail?from=community');
   }
 
   const pillBase = 'flex-row items-center gap-1 px-3 py-1.5 rounded-full border';
@@ -293,93 +293,100 @@ export default function CommunityScreen(): React.JSX.Element {
 
         <BackgroundDecor items={BODY_DECOR_SETS.community} />
         <PageContainer className="px-4 mt-4">
-          {/* Section 1: Meal Type */}
-          <Text
-            testID="section-label-meal-type"
-            className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2"
-          >
-            Meal Type
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {MEAL_TYPES.map((mt) => {
-              const isActive = selectedType === mt.id;
-              return (
-                <Pressable
-                  key={mt.id}
-                  testID={`type-pill-${mt.id}`}
-                  onPress={() => {
-                    setSelectedType(isActive ? null : mt.id);
-                    clearResults();
-                  }}
-                  className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                >
-                  <Text className="text-sm">{mt.emoji}</Text>
-                  <Text className={isActive ? textActive : textInactive}>{mt.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Section 2: Cuisine */}
-          <Text
-            testID="section-label-cuisine"
-            className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2"
-          >
-            Cuisine
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {CUISINES.map((cuisine) => {
-              const isActive = selectedCuisine === cuisine.id;
-              return (
-                <Pressable
-                  key={cuisine.id}
-                  testID={`cuisine-pill-${cuisine.id}`}
-                  onPress={() => {
-                    setSelectedCuisine(isActive ? null : cuisine.id);
-                    clearResults();
-                  }}
-                  className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                >
-                  <Text className="text-sm">{cuisine.emoji}</Text>
-                  <Text className={isActive ? textActive : textInactive}>{cuisine.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Section 3: Other */}
-          <Text
-            testID="section-label-other"
-            className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2"
-          >
-            Other
-          </Text>
-          <View className="flex-row flex-wrap gap-2 mb-5">
-            {OTHER_CATEGORIES.map((cat) => {
-              const isActive = selectedOther === cat.id;
-              return (
-                <Pressable
-                  key={cat.id}
-                  testID={`other-pill-${cat.id}`}
-                  onPress={() => {
-                    setSelectedOther(isActive ? null : cat.id);
-                    clearResults();
-                  }}
-                  className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                >
-                  <Text className="text-sm">{cat.emoji}</Text>
-                  <Text className={isActive ? textActive : textInactive}>{cat.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Collapsible: Difficulty / Time / Serving Size */}
+          {/* Collapsible filters — Meal Type, Cuisine, Other, Difficulty, Time, Serving */}
           <CollapsibleSection
-            title="Refine Results"
-            badge={(difficulty ? 1 : 0) + (cookTimeId ? 1 : 0) + (servingSize ? 1 : 0)}
-            testID="collapsible-refine"
+            title="Filters"
+            badge={
+              (selectedType ? 1 : 0) +
+              (selectedCuisine ? 1 : 0) +
+              (selectedOther ? 1 : 0) +
+              (difficulty ? 1 : 0) +
+              (cookTimeId ? 1 : 0) +
+              (servingSize ? 1 : 0)
+            }
+            testID="collapsible-filters"
           >
+            {/* Meal Type */}
+            <Text
+              testID="section-label-meal-type"
+              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+            >
+              Meal Type
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {MEAL_TYPES.map((mt) => {
+                const isActive = selectedType === mt.id;
+                return (
+                  <Pressable
+                    key={mt.id}
+                    testID={`type-pill-${mt.id}`}
+                    onPress={() => {
+                      setSelectedType(isActive ? null : mt.id);
+                      clearResults();
+                    }}
+                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                  >
+                    <Text className="text-sm">{mt.emoji}</Text>
+                    <Text className={isActive ? textActive : textInactive}>{mt.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Cuisine */}
+            <Text
+              testID="section-label-cuisine"
+              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+            >
+              Cuisine
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {CUISINES.map((cuisine) => {
+                const isActive = selectedCuisine === cuisine.id;
+                return (
+                  <Pressable
+                    key={cuisine.id}
+                    testID={`cuisine-pill-${cuisine.id}`}
+                    onPress={() => {
+                      setSelectedCuisine(isActive ? null : cuisine.id);
+                      clearResults();
+                    }}
+                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                  >
+                    <Text className="text-sm">{cuisine.emoji}</Text>
+                    <Text className={isActive ? textActive : textInactive}>{cuisine.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Other */}
+            <Text
+              testID="section-label-other"
+              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+            >
+              Other
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {OTHER_CATEGORIES.map((cat) => {
+                const isActive = selectedOther === cat.id;
+                return (
+                  <Pressable
+                    key={cat.id}
+                    testID={`other-pill-${cat.id}`}
+                    onPress={() => {
+                      setSelectedOther(isActive ? null : cat.id);
+                      clearResults();
+                    }}
+                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                  >
+                    <Text className="text-sm">{cat.emoji}</Text>
+                    <Text className={isActive ? textActive : textInactive}>{cat.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             {/* Difficulty */}
             <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
               Difficulty

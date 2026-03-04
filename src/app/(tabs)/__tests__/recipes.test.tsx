@@ -89,6 +89,7 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('expo-linear-gradient', () => ({

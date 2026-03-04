@@ -17,6 +17,7 @@ const mockRouterPush = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockRouterBack, push: mockRouterPush }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('@/shared/components/ui', () => ({

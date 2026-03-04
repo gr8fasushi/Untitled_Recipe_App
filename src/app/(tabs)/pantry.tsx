@@ -277,11 +277,43 @@ export default function PantryScreen(): React.JSX.Element {
             {/* Search + ingredient list */}
             <IngredientSearch />
 
+            {/* How it works */}
+            <View
+              testID="pantry-how-it-works"
+              className="mx-4 mt-4 mb-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4"
+            >
+              <Text className="text-sm font-nunito-bold text-gray-900 dark:text-white mb-3">
+                How it works
+              </Text>
+              {(
+                [
+                  { emoji: '🥦', text: 'Search or scan to add your ingredients' },
+                  {
+                    emoji: '🍳',
+                    text: 'Tap Find Recipes — Chef Jules will create meals from what you have',
+                  },
+                ] as const
+              ).map((step, i) => (
+                <View key={i} className={`flex-row items-start gap-3${i < 1 ? ' mb-3' : ''}`}>
+                  <View className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900 items-center justify-center shrink-0">
+                    <Text className="text-xs font-nunito-bold text-primary-700 dark:text-primary-300">
+                      {i + 1}
+                    </Text>
+                  </View>
+                  <Text className="text-xs font-nunito text-gray-600 dark:text-gray-300 flex-1 pt-0.5">
+                    {step.emoji}
+                    {'  '}
+                    {step.text}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
             {/* Find Recipes CTA — visible when ingredients are selected */}
             {ingredientCount > 0 ? (
               <View className="px-4 mt-2 mb-4">
                 <Pressable
-                  onPress={() => router.push('/(tabs)/recipes')}
+                  onPress={() => router.push('/(tabs)/recipes?autoSearch=true')}
                   className="flex-row items-center justify-center gap-2 rounded-xl bg-accent-600 py-3"
                   testID="btn-go-to-recipes"
                 >

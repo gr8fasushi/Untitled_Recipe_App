@@ -8,6 +8,7 @@ import type { Recipe } from '@/shared/types';
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
+  useLocalSearchParams: () => ({}),
 }));
 
 const mockSetCurrentRecipe = jest.fn();
@@ -47,6 +48,28 @@ jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
     );
   },
 }));
+
+// Override CollapsibleSection to always render children (expanded) so filter pill tests work.
+jest.mock('@/shared/components/ui', () => {
+  const actual =
+    jest.requireActual<typeof import('@/shared/components/ui')>('@/shared/components/ui');
+  return {
+    ...actual,
+    CollapsibleSection: ({
+      children,
+      testID,
+      title,
+    }: {
+      children: React.ReactNode;
+      testID?: string;
+      title: string;
+      badge?: number;
+    }) => {
+      const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+      return <View testID={testID ?? `collapsible-${title}`}>{children}</View>;
+    },
+  };
+});
 
 // eslint-disable-next-line import/first
 import CommunityScreen from '../community';
@@ -226,7 +249,7 @@ describe('CommunityScreen', () => {
     });
     fireEvent.press(getByTestId('community-card-0'));
     expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);
-    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail');
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/recipe-detail?from=community');
   });
 
   it('shows error banner when generateRecipeFn throws', async () => {
