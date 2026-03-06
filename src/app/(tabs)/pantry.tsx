@@ -29,15 +29,7 @@ export default function PantryScreen(): React.JSX.Element {
   const router = useRouter();
   const isLoaded = useRef(false);
 
-  const {
-    takePhoto,
-    pickFromGallery,
-    isAnalyzing,
-    status: scanStatus,
-    error: scanError,
-    accumulatedIngredients,
-    clearAll,
-  } = useScan();
+  const { accumulatedIngredients, clearAll } = useScan();
 
   // Auto-add scanned ingredients to pantry when scan completes
   useEffect(() => {
@@ -181,65 +173,6 @@ export default function PantryScreen(): React.JSX.Element {
                 <View testID="pantry-empty" className="px-4 pt-3 pb-1">
                   <Text className="text-sm text-gray-400 font-nunito">
                     No ingredients yet — search or scan below to add some.
-                  </Text>
-                </View>
-              ) : null}
-
-              {/* Scan buttons */}
-              <View className="px-4 pt-3 pb-1 flex-row gap-2">
-                <Pressable
-                  testID="btn-scan-camera"
-                  onPress={() => void takePhoto()}
-                  disabled={isAnalyzing}
-                  className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-primary-200 bg-primary-50 active:opacity-75"
-                >
-                  {isAnalyzing ? (
-                    <ActivityIndicator size="small" color="#ea580c" />
-                  ) : (
-                    <>
-                      <Ionicons name="camera-outline" size={18} color="#c2410c" />
-                      <Text className="text-sm font-nunito-bold text-primary-700">Take Photo</Text>
-                    </>
-                  )}
-                </Pressable>
-                <Pressable
-                  testID="btn-scan-gallery"
-                  onPress={() => void pickFromGallery()}
-                  disabled={isAnalyzing}
-                  className="flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white active:opacity-75"
-                >
-                  <Ionicons name="images-outline" size={18} color="#6b7280" />
-                  <Text className="text-sm font-nunito-bold text-gray-600">From Gallery</Text>
-                </Pressable>
-              </View>
-
-              {isAnalyzing ? (
-                <View
-                  testID="scan-analyzing"
-                  className="mx-4 mt-2 rounded-xl bg-orange-50 px-4 py-2"
-                >
-                  <Text className="text-xs font-nunito text-orange-700 text-center">
-                    Scanning photo for ingredients…
-                  </Text>
-                </View>
-              ) : null}
-
-              {scanError ? (
-                <View
-                  testID="scan-error"
-                  className="mx-4 mt-2 rounded-xl bg-red-50 px-4 py-2 border border-red-100"
-                >
-                  <Text className="text-xs font-nunito text-red-700 text-center">{scanError}</Text>
-                </View>
-              ) : null}
-
-              {scanStatus === 'done' && accumulatedIngredients.length === 0 && !isAnalyzing ? (
-                <View
-                  testID="scan-empty"
-                  className="mx-4 mt-2 rounded-xl bg-yellow-50 px-4 py-2 border border-yellow-100"
-                >
-                  <Text className="text-xs font-nunito text-yellow-700 text-center">
-                    No ingredients detected. Try a clearer photo or add ingredients manually.
                   </Text>
                 </View>
               ) : null}

@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useScanStore } from '@/features/scan/store/scanStore';
 import { analyzePhoto } from '@/features/scan/services/scanService';
@@ -7,19 +6,12 @@ import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import type { PantryItem } from '@/features/pantry/types';
 import type { ScanMimeType, ScanStatus } from '@/features/scan/types';
 
-function deriveMimeType(mimeType: string | undefined): ScanMimeType {
-  if (mimeType === 'image/png') return 'image/png';
-  if (mimeType === 'image/webp') return 'image/webp';
-  return 'image/jpeg';
-}
-
 interface UseScanReturn {
   status: ScanStatus;
   error: string | null;
   accumulatedIngredients: PantryItem[];
   isAnalyzing: boolean;
-  takePhoto: () => Promise<void>;
-  pickFromGallery: () => Promise<void>;
+  runScan: (base64: string, mimeType: ScanMimeType) => Promise<void>;
   addManually: (ingredient: PantryItem) => void;
   removeIngredient: (id: string) => void;
   addAllToPantry: () => void;
@@ -57,52 +49,6 @@ export function useScan(): UseScanReturn {
     [setStatus, setError, mergeIngredients]
   );
 
-  const takePhoto = useCallback(async (): Promise<void> => {
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    if (cameraStatus !== 'granted') {
-      setError('Camera permission is required to take photos.');
-      setStatus('error');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      base64: true,
-      quality: 0.7,
-      exif: false,
-    });
-
-    const base64 = result.assets?.[0]?.base64;
-    if (result.canceled || !base64) return;
-
-    const asset = result.assets[0];
-    const mimeType = deriveMimeType(asset.mimeType ?? undefined);
-    await runScan(base64, mimeType);
-  }, [runScan]);
-
-  const pickFromGallery = useCallback(async (): Promise<void> => {
-    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (libraryStatus !== 'granted') {
-      setError('Photo library permission is required to pick images.');
-      setStatus('error');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      base64: true,
-      quality: 0.7,
-      exif: false,
-    });
-
-    const base64 = result.assets?.[0]?.base64;
-    if (result.canceled || !base64) return;
-
-    const asset = result.assets[0];
-    const mimeType = deriveMimeType(asset.mimeType ?? undefined);
-    await runScan(base64, mimeType);
-  }, [runScan]);
-
   const addAllToPantry = useCallback((): void => {
     accumulatedIngredients.forEach((ingredient) => addIngredient(ingredient));
     reset();
@@ -125,8 +71,7 @@ export function useScan(): UseScanReturn {
     error,
     accumulatedIngredients,
     isAnalyzing: status === 'analyzing',
-    takePhoto,
-    pickFromGallery,
+    runScan,
     addManually,
     removeIngredient,
     addAllToPantry,
