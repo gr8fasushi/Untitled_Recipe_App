@@ -12,8 +12,8 @@ function Section({
 }): React.JSX.Element {
   return (
     <View className="mb-6" testID={testID}>
-      <Text className="mb-2 text-base font-bold text-gray-900">{title}</Text>
-      <Text className="text-sm leading-6 text-gray-600">{children}</Text>
+      <Text className="mb-2 text-base font-bold text-gray-900 dark:text-gray-100">{title}</Text>
+      <Text className="text-sm leading-6 text-gray-600 dark:text-gray-400">{children}</Text>
     </View>
   );
 }
@@ -22,16 +22,18 @@ export default function PrivacyPolicyScreen(): React.JSX.Element {
   const router = useRouter();
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="privacy-policy-screen">
-      <View className="flex-row items-center border-b border-gray-100 px-4 py-3">
+      <View className="flex-row items-center border-b border-gray-100 dark:border-gray-700 px-4 py-3">
         <Pressable
           testID="btn-back"
           onPress={() => {
             router.back();
           }}
         >
-          <Text className="text-lg font-medium text-primary-600">← Back</Text>
+          <Text className="text-lg font-medium text-primary-600 dark:text-primary-400">← Back</Text>
         </Pressable>
-        <Text className="ml-3 text-lg font-bold text-gray-900">Privacy Policy</Text>
+        <Text className="ml-3 text-lg font-bold text-gray-900 dark:text-gray-100">
+          Privacy Policy
+        </Text>
       </View>
 
       <ScrollView
@@ -40,7 +42,7 @@ export default function PrivacyPolicyScreen(): React.JSX.Element {
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         <Text className="mb-1 text-xs text-gray-400">Effective date: February 24, 2026</Text>
-        <Text className="mb-6 text-sm leading-6 text-gray-600">
+        <Text className="mb-6 text-sm leading-6 text-gray-600 dark:text-gray-400">
           This Privacy Policy explains how RecipeApp (&quot;we&quot;, &quot;our&quot;, or
           &quot;us&quot;) collects, uses, and protects your information when you use our mobile
           application.

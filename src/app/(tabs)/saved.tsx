@@ -171,7 +171,7 @@ export default function SavedScreen(): React.JSX.Element {
               No saved recipes yet
             </Text>
             <Text className="text-sm text-gray-500 text-center">
-              Generate a recipe and tap &quot;Save Recipe&quot; to add it here.
+              Find a recipe and tap &apos;Save Recipe&apos; to add it here.
             </Text>
           </View>
         )}

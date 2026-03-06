@@ -3,7 +3,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
+import {
+  BackgroundDecor,
+  BODY_DECOR_SETS,
+  DECOR_SETS,
+  CollapsibleSection,
+} from '@/shared/components/ui';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { AllergenCard } from '@/features/onboarding/components/AllergenCard';
@@ -140,38 +145,39 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Allergens section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
-              Allergens
-            </Text>
-            {BIG_9_ALLERGENS.map((allergen) => (
-              <AllergenCard
-                key={allergen.id}
-                allergen={allergen}
-                isSelected={selectedAllergens.includes(allergen.id)}
-                onToggle={() => {
-                  toggleAllergen(allergen.id);
-                }}
-                testID={`card-allergen-${allergen.id}`}
-              />
-            ))}
+            <CollapsibleSection title="Allergens" badge={selectedAllergens.length}>
+              {BIG_9_ALLERGENS.map((allergen) => (
+                <AllergenCard
+                  key={allergen.id}
+                  allergen={allergen}
+                  isSelected={selectedAllergens.includes(allergen.id)}
+                  onToggle={() => {
+                    toggleAllergen(allergen.id);
+                  }}
+                  testID={`card-allergen-${allergen.id}`}
+                />
+              ))}
+            </CollapsibleSection>
           </View>
 
           {/* Dietary preferences section */}
           <View className="px-4 pt-6">
-            <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-100">
-              Dietary Preferences
-            </Text>
-            {DIETARY_PREFERENCES.map((pref) => (
-              <DietaryPreferenceCard
-                key={pref.id}
-                preference={pref}
-                isSelected={selectedDietaryPreferences.includes(pref.id)}
-                onToggle={() => {
-                  toggleDietaryPreference(pref.id);
-                }}
-                testID={`card-dietary-${pref.id}`}
-              />
-            ))}
+            <CollapsibleSection
+              title="Dietary Preferences"
+              badge={selectedDietaryPreferences.length}
+            >
+              {DIETARY_PREFERENCES.map((pref) => (
+                <DietaryPreferenceCard
+                  key={pref.id}
+                  preference={pref}
+                  isSelected={selectedDietaryPreferences.includes(pref.id)}
+                  onToggle={() => {
+                    toggleDietaryPreference(pref.id);
+                  }}
+                  testID={`card-dietary-${pref.id}`}
+                />
+              ))}
+            </CollapsibleSection>
           </View>
 
           {/* Appearance section */}
@@ -216,7 +222,9 @@ export default function ProfileScreen(): React.JSX.Element {
 
           {/* Feedback section */}
           <View className="px-4 pt-6">
-            <FeedbackSection />
+            <CollapsibleSection title="Send Feedback">
+              <FeedbackSection />
+            </CollapsibleSection>
           </View>
 
           {/* Disclaimer + Save */}

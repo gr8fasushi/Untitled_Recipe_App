@@ -150,7 +150,7 @@ export default function PantryScreen(): React.JSX.Element {
               <Text
                 className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
-                My Kitchen
+                Add Your Ingredients
               </Text>
               <Text
                 style={{ color: pantrySubtitleColor }}
@@ -183,7 +183,7 @@ export default function PantryScreen(): React.JSX.Element {
                   <Pressable
                     testID="btn-clear-pantry"
                     onPress={clearPantry}
-                    className="flex-row items-center gap-1 bg-red-500/15 border border-red-400/40 rounded-full px-3 py-1 active:opacity-75"
+                    className="flex-row items-center gap-1 bg-red-500/15 web:bg-red-500/30 border border-red-400/40 web:border-red-400/70 rounded-full px-3 py-1 active:opacity-75"
                   >
                     <Ionicons name="trash-outline" size={13} color="#f87171" />
                     <Text className="text-xs font-nunito-bold text-red-400">Clear All</Text>

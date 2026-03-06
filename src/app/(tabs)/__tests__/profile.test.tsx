@@ -138,6 +138,13 @@ jest.mock('@/features/onboarding/components/DisclaimerCard', () => ({
   },
 }));
 
+jest.mock('@/shared/components/ui/CollapsibleSection', () => ({
+  CollapsibleSection: ({ children }: { children: React.ReactNode }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View>{children}</View>;
+  },
+}));
+
 jest.mock('@/features/profile/components/FeedbackSection', () => ({
   FeedbackSection: () => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -192,7 +199,7 @@ describe('ProfileScreen', () => {
     expect(emailInput.props.editable).toBe(false);
   });
 
-  it('renders all 9 allergen cards', () => {
+  it('renders allergen cards', () => {
     const { getByTestId } = render(<ProfileScreen />);
     const allergenIds = [
       'milk',
@@ -210,7 +217,7 @@ describe('ProfileScreen', () => {
     });
   });
 
-  it('renders all 9 dietary preference cards', () => {
+  it('renders dietary preference cards', () => {
     const { getByTestId } = render(<ProfileScreen />);
     const prefIds = [
       'vegetarian',

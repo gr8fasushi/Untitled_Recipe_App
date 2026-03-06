@@ -60,6 +60,42 @@ export const BIG_9_ALLERGENS: Allergen[] = [
     icon: '🌿',
     description: 'Sesame seeds, tahini, sesame oil',
   },
+  {
+    id: 'celery',
+    name: 'Celery',
+    icon: '🥬',
+    description: 'Stalks, leaves, seeds, and celeriac',
+  },
+  {
+    id: 'mustard',
+    name: 'Mustard',
+    icon: '🌭',
+    description: 'Seeds, leaves, oil, and prepared mustard',
+  },
+  {
+    id: 'lupin',
+    name: 'Lupin',
+    icon: '🌼',
+    description: 'Lupin flour and seeds used in baked goods and pasta',
+  },
+  {
+    id: 'molluscs',
+    name: 'Molluscs',
+    icon: '🐚',
+    description: 'Squid, octopus, mussels, oysters, scallops, snails',
+  },
+  {
+    id: 'sulphites',
+    name: 'Sulphites',
+    icon: '🍷',
+    description: 'Sulphur dioxide in wine, dried fruit, and processed foods',
+  },
+  {
+    id: 'corn',
+    name: 'Corn',
+    icon: '🌽',
+    description: 'Corn syrup, cornstarch, corn flour, and popcorn',
+  },
 ];
 
 export const DIETARY_PREFERENCES = [
