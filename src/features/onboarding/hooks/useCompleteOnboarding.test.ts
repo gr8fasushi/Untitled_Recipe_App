@@ -134,6 +134,32 @@ describe('useCompleteOnboarding', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  it('sets a valid profile (not null) when profile is null in store at completion time', async () => {
+    // Reproduces the B1 bug: social auth hook sets profile AFTER onAuthStateChanged fires,
+    // leaving profile temporarily null. completeOnboarding must not call setProfile(null).
+    useAuthStore.getState().setUser(mockUser as never);
+    // Do NOT set profile — leave it null in the store
+
+    act(() => {
+      useOnboardingStore.getState().toggleAllergen('eggs');
+    });
+
+    mockUpdateUserProfile.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useCompleteOnboarding());
+
+    await act(async () => {
+      await result.current.completeOnboarding();
+    });
+
+    const updatedProfile = useAuthStore.getState().profile;
+    expect(updatedProfile).not.toBeNull();
+    expect(updatedProfile?.uid).toBe('user-123');
+    expect(updatedProfile?.onboardingComplete).toBe(true);
+    expect(updatedProfile?.allergens).toEqual(['eggs']);
+    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/home');
+  });
+
   it('clears error before attempting save', async () => {
     useAuthStore.getState().setUser(mockUser as never);
     useAuthStore.getState().setProfile(mockProfile);

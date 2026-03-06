@@ -69,8 +69,18 @@ export default function RootLayout(): React.JSX.Element | null {
     const unsubscribe = subscribeToAuthState(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser.uid);
-        setProfile(profile);
+        // Skip Firestore fetch if the store already has a valid profile for this uid.
+        // Social auth hooks (useGoogleSignIn, useAppleSignIn) set the profile themselves
+        // after creating it; a concurrent fetch here would race and may overwrite with null.
+        const existing = useAuthStore.getState().profile;
+        if (existing?.uid !== firebaseUser.uid) {
+          try {
+            const profile = await fetchUserProfile(firebaseUser.uid);
+            setProfile(profile);
+          } catch {
+            setProfile(null);
+          }
+        }
       } else {
         setProfile(null);
       }

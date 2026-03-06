@@ -39,17 +39,19 @@ export function useCompleteOnboarding(): UseCompleteOnboardingReturn {
         onboardingComplete: true,
       });
 
-      // Update store directly — avoids a re-fetch that could return stale data
-      setProfile(
-        profile
-          ? {
-              ...profile,
-              allergens: selectedAllergens,
-              dietaryPreferences,
-              onboardingComplete: true,
-            }
-          : null
-      );
+      // Update store directly — avoids a re-fetch that could return stale data.
+      // Build from profile if available; otherwise construct from user data so we never
+      // set profile to null (which would cause index.tsx to redirect back to onboarding).
+      setProfile({
+        uid: user.uid,
+        email: user.email ?? '',
+        displayName: user.displayName ?? null,
+        createdAt: profile?.createdAt ?? new Date(),
+        ...(profile ?? {}),
+        allergens: selectedAllergens,
+        dietaryPreferences,
+        onboardingComplete: true,
+      });
 
       router.replace('/(tabs)/home');
     } catch {
