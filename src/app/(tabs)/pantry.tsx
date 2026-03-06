@@ -177,6 +177,18 @@ export default function PantryScreen(): React.JSX.Element {
                 </View>
               ) : null}
 
+              {/* Scan shortcut */}
+              <Pressable
+                testID="btn-scan-shortcut"
+                onPress={() => router.push('/(tabs)/scan')}
+                className="mx-4 mt-3 mb-1 flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950 active:opacity-75"
+              >
+                <Ionicons name="camera-outline" size={18} color="#0f766e" />
+                <Text className="text-sm font-nunito-bold text-teal-700 dark:text-teal-400">
+                  Scan Ingredients
+                </Text>
+              </Pressable>
+
               {/* Search + ingredient list */}
               <IngredientSearch />
 
