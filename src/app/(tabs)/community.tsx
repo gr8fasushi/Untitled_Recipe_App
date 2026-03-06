@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
+  ImageBackground,
   Platform,
   Pressable,
   ScrollView,
@@ -15,16 +16,10 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
-import {
-  BackgroundDecor,
-  BODY_DECOR_SETS,
-  Button,
-  CollapsibleSection,
-  DECOR_SETS,
-  PageContainer,
-} from '@/shared/components/ui';
+import { Button, CollapsibleSection, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 import { useExploreStore } from '@/stores/exploreStore';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
@@ -113,7 +108,6 @@ export default function CommunityScreen(): React.JSX.Element {
       ? (['#78350f', '#92400e', '#b45309'] as const)
       : (['#451a03', '#92400e', '#f59e0b'] as const));
   const bannerEmoji = holiday?.bannerEmoji ?? '🌎';
-  const [sil0, sil1, sil2] = holiday?.silhouetteEmojis ?? ['🍝', '🥘', '🍜'];
   const subtitleColor = holiday?.subtitleHexColor ?? '#fde68a';
 
   // Active selection feeds into cuisines CF param — meal type, cuisine, and other all use the same param
@@ -214,7 +208,6 @@ export default function CommunityScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="community-screen">
-      <BackgroundDecor items={DECOR_SETS.community} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — amber/gold explore theme */}
         <View
@@ -235,45 +228,6 @@ export default function CommunityScreen(): React.JSX.Element {
               <View
                 className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
               >
-                {/* Emoji silhouettes */}
-                <View
-                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                  pointerEvents="none"
-                >
-                  <Text
-                    style={{
-                      position: 'absolute',
-                      fontSize: 95,
-                      opacity: 0.18,
-                      top: -8,
-                      right: 12,
-                    }}
-                  >
-                    {sil0}
-                  </Text>
-                  <Text
-                    style={{
-                      position: 'absolute',
-                      fontSize: 70,
-                      opacity: 0.15,
-                      top: 22,
-                      right: 105,
-                    }}
-                  >
-                    {sil1}
-                  </Text>
-                  <Text
-                    style={{
-                      position: 'absolute',
-                      fontSize: 80,
-                      opacity: 0.15,
-                      top: -5,
-                      right: 185,
-                    }}
-                  >
-                    {sil2}
-                  </Text>
-                </View>
                 <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
                 <Text
                   className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
@@ -291,284 +245,292 @@ export default function CommunityScreen(): React.JSX.Element {
           </LinearGradient>
         </View>
 
-        <BackgroundDecor items={BODY_DECOR_SETS.community} />
-        <PageContainer className="px-4 mt-4">
-          {/* Collapsible filters — Meal Type, Cuisine, Other, Difficulty, Time, Serving */}
-          <CollapsibleSection
-            title="Filters"
-            badge={
-              (selectedType ? 1 : 0) +
-              (selectedCuisine ? 1 : 0) +
-              (selectedOther ? 1 : 0) +
-              (difficulty ? 1 : 0) +
-              (cookTimeId ? 1 : 0) +
-              (servingSize ? 1 : 0)
-            }
-            testID="collapsible-filters"
-          >
-            {/* Meal Type */}
-            <Text
-              testID="section-label-meal-type"
-              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
-            >
-              Meal Type
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {MEAL_TYPES.map((mt) => {
-                const isActive = selectedType === mt.id;
-                return (
-                  <Pressable
-                    key={mt.id}
-                    testID={`type-pill-${mt.id}`}
-                    onPress={() => {
-                      setSelectedType(isActive ? null : mt.id);
-                      clearResults();
-                    }}
-                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                  >
-                    <Text className="text-sm">{mt.emoji}</Text>
-                    <Text className={isActive ? textActive : textInactive}>{mt.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Cuisine */}
-            <Text
-              testID="section-label-cuisine"
-              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
-            >
-              Cuisine
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {CUISINES.map((cuisine) => {
-                const isActive = selectedCuisine === cuisine.id;
-                return (
-                  <Pressable
-                    key={cuisine.id}
-                    testID={`cuisine-pill-${cuisine.id}`}
-                    onPress={() => {
-                      setSelectedCuisine(isActive ? null : cuisine.id);
-                      clearResults();
-                    }}
-                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                  >
-                    <Text className="text-sm">{cuisine.emoji}</Text>
-                    <Text className={isActive ? textActive : textInactive}>{cuisine.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Other */}
-            <Text
-              testID="section-label-other"
-              className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
-            >
-              Other
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {OTHER_CATEGORIES.map((cat) => {
-                const isActive = selectedOther === cat.id;
-                return (
-                  <Pressable
-                    key={cat.id}
-                    testID={`other-pill-${cat.id}`}
-                    onPress={() => {
-                      setSelectedOther(isActive ? null : cat.id);
-                      clearResults();
-                    }}
-                    className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
-                  >
-                    <Text className="text-sm">{cat.emoji}</Text>
-                    <Text className={isActive ? textActive : textInactive}>{cat.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Difficulty */}
-            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-              Difficulty
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {DIFFICULTIES.map((d) => {
-                const isActive = difficulty === d.id;
-                return (
-                  <Pressable
-                    key={d.id}
-                    testID={`explore-difficulty-pill-${d.id}`}
-                    onPress={() => setDifficulty(isActive ? null : d.id)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      isActive
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {d.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Time to Cook */}
-            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-              Time to Cook
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-4">
-              {COOK_TIMES.map((ct) => {
-                const isActive = cookTimeId === ct.id;
-                return (
-                  <Pressable
-                    key={ct.id}
-                    testID={`explore-cook-time-pill-${ct.id}`}
-                    onPress={() => setCookTimeId(isActive ? null : ct.id)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      isActive
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {ct.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* Serving Size */}
-            <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-              Serving Size
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {SERVING_SIZES.map((ss) => {
-                const isActive = servingSize === ss.id;
-                return (
-                  <Pressable
-                    key={ss.id}
-                    testID={`explore-serving-size-pill-${ss.id}`}
-                    onPress={() => setServingSize(isActive ? null : ss.id)}
-                    className={`px-3 py-1.5 rounded-full border ${
-                      isActive
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      {ss.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </CollapsibleSection>
-
-          {/* Keyword search */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
-              Search (optional)
-            </Text>
-            <TextInput
-              testID="input-search-query-explore"
-              placeholder="e.g. ramen, grilled salmon, vegan tacos…"
-              placeholderTextColor="#9ca3af"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-3 text-sm font-nunito text-gray-900 dark:text-gray-100"
-            />
-          </View>
-
-          <View className="mb-4">
-            <Button
-              label={
-                isLoading ? 'Finding recipes…' : `🌎 Explore${activeLabel ? ` ${activeLabel}` : ''}`
+        <ImageBackground
+          source={BACKGROUND_IMAGES.community}
+          resizeMode="cover"
+          style={{ flex: 1 }}
+          imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
+        >
+          <PageContainer className="px-4 mt-4">
+            {/* Collapsible filters — Meal Type, Cuisine, Other, Difficulty, Time, Serving */}
+            <CollapsibleSection
+              title="Filters"
+              badge={
+                (selectedType ? 1 : 0) +
+                (selectedCuisine ? 1 : 0) +
+                (selectedOther ? 1 : 0) +
+                (difficulty ? 1 : 0) +
+                (cookTimeId ? 1 : 0) +
+                (servingSize ? 1 : 0)
               }
-              onPress={() => {
-                void handleExplore();
-              }}
-              disabled={isLoading}
-              testID="btn-explore"
-            />
-          </View>
-
-          {error ? (
-            <View
-              testID="community-error"
-              className="mt-3 rounded-xl bg-red-50 px-4 py-3 border border-red-200"
+              testID="collapsible-filters"
             >
-              <Text className="text-sm font-nunito text-red-700">{error}</Text>
-            </View>
-          ) : null}
-
-          {isLoading ? (
-            <View testID="community-loading" className="mt-8 items-center">
-              <ActivityIndicator size="large" color="#d97706" />
-              <Text className="mt-3 font-nunito text-gray-400">Finding recipes…</Text>
-            </View>
-          ) : null}
-
-          {!isLoading && recipes.length > 0 ? (
-            <View testID="community-list" className="mt-2">
-              <Text className="text-sm font-nunito-semibold text-gray-500 dark:text-gray-400 mb-3">
-                {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+              {/* Meal Type */}
+              <Text
+                testID="section-label-meal-type"
+                className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              >
+                Meal Type
               </Text>
-              {recipes.map((recipe, index) => (
-                <RecipeSummaryCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onViewFull={() => handleCardPress(recipe)}
-                  testID={`community-card-${index}`}
-                />
-              ))}
-              <View className="mt-4">
-                {isLoadingMore ? (
-                  <View className="items-center py-4">
-                    <ActivityIndicator size="small" color="#d97706" />
-                    <Text className="mt-2 font-nunito text-gray-400 text-sm">
-                      Finding more recipes…
-                    </Text>
-                  </View>
-                ) : (
-                  <Button
-                    label="Find More Recipes"
-                    onPress={() => {
-                      void handleFindMore();
-                    }}
-                    variant="ghost"
-                    testID="btn-community-load-more"
-                  />
-                )}
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {MEAL_TYPES.map((mt) => {
+                  const isActive = selectedType === mt.id;
+                  return (
+                    <Pressable
+                      key={mt.id}
+                      testID={`type-pill-${mt.id}`}
+                      onPress={() => {
+                        setSelectedType(isActive ? null : mt.id);
+                        clearResults();
+                      }}
+                      className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                    >
+                      <Text className="text-sm">{mt.emoji}</Text>
+                      <Text className={isActive ? textActive : textInactive}>{mt.label}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </View>
-          ) : null}
 
-          {!isLoading && !hasSearched && recipes.length === 0 ? (
-            <View testID="community-empty" className="mt-8 items-center px-4">
-              <Text className="text-4xl mb-3">🌎</Text>
-              <Text className="text-base font-nunito-bold text-gray-700 dark:text-gray-300 text-center mb-1">
-                Discover new recipes
+              {/* Cuisine */}
+              <Text
+                testID="section-label-cuisine"
+                className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              >
+                Cuisine
               </Text>
-              <Text className="text-sm font-nunito text-gray-500 dark:text-gray-400 text-center">
-                Pick a category above and tap Explore to discover Chef Jules recipes.
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {CUISINES.map((cuisine) => {
+                  const isActive = selectedCuisine === cuisine.id;
+                  return (
+                    <Pressable
+                      key={cuisine.id}
+                      testID={`cuisine-pill-${cuisine.id}`}
+                      onPress={() => {
+                        setSelectedCuisine(isActive ? null : cuisine.id);
+                        clearResults();
+                      }}
+                      className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                    >
+                      <Text className="text-sm">{cuisine.emoji}</Text>
+                      <Text className={isActive ? textActive : textInactive}>{cuisine.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Other */}
+              <Text
+                testID="section-label-other"
+                className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+              >
+                Other
               </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {OTHER_CATEGORIES.map((cat) => {
+                  const isActive = selectedOther === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      testID={`other-pill-${cat.id}`}
+                      onPress={() => {
+                        setSelectedOther(isActive ? null : cat.id);
+                        clearResults();
+                      }}
+                      className={`${pillBase} ${isActive ? pillActive : pillInactive}`}
+                    >
+                      <Text className="text-sm">{cat.emoji}</Text>
+                      <Text className={isActive ? textActive : textInactive}>{cat.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Difficulty */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Difficulty
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {DIFFICULTIES.map((d) => {
+                  const isActive = difficulty === d.id;
+                  return (
+                    <Pressable
+                      key={d.id}
+                      testID={`explore-difficulty-pill-${d.id}`}
+                      onPress={() => setDifficulty(isActive ? null : d.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-amber-500 border-amber-500'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Time to Cook */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Time to Cook
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {COOK_TIMES.map((ct) => {
+                  const isActive = cookTimeId === ct.id;
+                  return (
+                    <Pressable
+                      key={ct.id}
+                      testID={`explore-cook-time-pill-${ct.id}`}
+                      onPress={() => setCookTimeId(isActive ? null : ct.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-amber-500 border-amber-500'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {ct.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Serving Size */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Serving Size
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {SERVING_SIZES.map((ss) => {
+                  const isActive = servingSize === ss.id;
+                  return (
+                    <Pressable
+                      key={ss.id}
+                      testID={`explore-serving-size-pill-${ss.id}`}
+                      onPress={() => setServingSize(isActive ? null : ss.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-amber-500 border-amber-500'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {ss.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </CollapsibleSection>
+
+            {/* Keyword search */}
+            <View className="mb-4">
+              <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
+                Search (optional)
+              </Text>
+              <TextInput
+                testID="input-search-query-explore"
+                placeholder="e.g. ramen, grilled salmon, vegan tacos…"
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-3 text-sm font-nunito text-gray-900 dark:text-gray-100"
+              />
             </View>
-          ) : null}
-        </PageContainer>
+
+            <View className="mb-4">
+              <Button
+                label={
+                  isLoading
+                    ? 'Finding recipes…'
+                    : `🌎 Explore${activeLabel ? ` ${activeLabel}` : ''}`
+                }
+                onPress={() => {
+                  void handleExplore();
+                }}
+                disabled={isLoading}
+                testID="btn-explore"
+              />
+            </View>
+
+            {error ? (
+              <View
+                testID="community-error"
+                className="mt-3 rounded-xl bg-red-50 px-4 py-3 border border-red-200"
+              >
+                <Text className="text-sm font-nunito text-red-700">{error}</Text>
+              </View>
+            ) : null}
+
+            {isLoading ? (
+              <View testID="community-loading" className="mt-8 items-center">
+                <ActivityIndicator size="large" color="#d97706" />
+                <Text className="mt-3 font-nunito text-gray-400">Finding recipes…</Text>
+              </View>
+            ) : null}
+
+            {!isLoading && recipes.length > 0 ? (
+              <View testID="community-list" className="mt-2">
+                <Text className="text-sm font-nunito-semibold text-gray-500 dark:text-gray-400 mb-3">
+                  {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+                </Text>
+                {recipes.map((recipe, index) => (
+                  <RecipeSummaryCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    onViewFull={() => handleCardPress(recipe)}
+                    testID={`community-card-${index}`}
+                  />
+                ))}
+                <View className="mt-4">
+                  {isLoadingMore ? (
+                    <View className="items-center py-4">
+                      <ActivityIndicator size="small" color="#d97706" />
+                      <Text className="mt-2 font-nunito text-gray-400 text-sm">
+                        Finding more recipes…
+                      </Text>
+                    </View>
+                  ) : (
+                    <Button
+                      label="Find More Recipes"
+                      onPress={() => {
+                        void handleFindMore();
+                      }}
+                      variant="ghost"
+                      testID="btn-community-load-more"
+                    />
+                  )}
+                </View>
+              </View>
+            ) : null}
+
+            {!isLoading && !hasSearched && recipes.length === 0 ? (
+              <View testID="community-empty" className="mt-8 items-center px-4">
+                <Text className="text-4xl mb-3">🌎</Text>
+                <Text className="text-base font-nunito-bold text-gray-700 dark:text-gray-300 text-center mb-1">
+                  Discover new recipes
+                </Text>
+                <Text className="text-sm font-nunito text-gray-500 dark:text-gray-400 text-center">
+                  Pick a category above and tap Explore to discover Chef Jules recipes.
+                </Text>
+              </View>
+            ) : null}
+          </PageContainer>
+        </ImageBackground>
       </ScrollView>
     </SafeAreaView>
   );

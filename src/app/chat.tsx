@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  ImageBackground,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
@@ -9,8 +17,8 @@ import { useChat } from '@/features/chat/hooks/useChat';
 import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
-import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 import type { ChatMessage } from '@/shared/types';
 
 export default function ChatScreen(): React.JSX.Element {
@@ -53,7 +61,6 @@ export default function ChatScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="chat-screen">
       {/* Suppress Expo Router's native header — the gradient banner has its own back button */}
       <Stack.Screen options={{ headerShown: false }} />
-      <BackgroundDecor items={DECOR_SETS.chat} />
 
       {/* Gradient header — deep indigo AI theme */}
       <View
@@ -74,34 +81,6 @@ export default function ChatScreen(): React.JSX.Element {
             <View
               className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              {/* Emoji silhouettes */}
-              <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
-              >
-                <Text
-                  style={{
-                    position: 'absolute',
-                    fontSize: 100,
-                    opacity: 0.18,
-                    top: -10,
-                    right: 10,
-                  }}
-                >
-                  👨‍🍳
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 110 }}
-                >
-                  🍳
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 190 }}
-                >
-                  💬
-                </Text>
-              </View>
-
               {/* Back + Mute row */}
               <View className="flex-row justify-between mb-4">
                 <Pressable testID="btn-back" onPress={() => router.back()}>
@@ -145,8 +124,12 @@ export default function ChatScreen(): React.JSX.Element {
       </View>
 
       {/* All post-header content constrained to max-w-2xl on web */}
-      <View className="flex-1 w-full max-w-2xl self-center relative">
-        <BackgroundDecor items={BODY_DECOR_SETS.chat} />
+      <ImageBackground
+        source={BACKGROUND_IMAGES.chat}
+        resizeMode="cover"
+        className="flex-1 w-full max-w-2xl self-center"
+        imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
+      >
         {/* Empty state */}
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
@@ -204,7 +187,7 @@ export default function ChatScreen(): React.JSX.Element {
 
         {/* Input */}
         <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
-      </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }

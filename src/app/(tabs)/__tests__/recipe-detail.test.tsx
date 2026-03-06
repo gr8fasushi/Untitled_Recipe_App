@@ -20,15 +20,6 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
-jest.mock('@/shared/components/ui', () => ({
-  BackgroundDecor: () => {
-    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-    return <View testID="background-decor" />;
-  },
-  DECOR_SETS: { recipes: [] },
-  BODY_DECOR_SETS: { recipes: [] },
-}));
-
 jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   AIDisclaimer: () => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');

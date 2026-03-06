@@ -1,13 +1,21 @@
-import { FlatList, Platform, Pressable, Text, View, ActivityIndicator } from 'react-native';
+import {
+  FlatList,
+  ImageBackground,
+  Platform,
+  Pressable,
+  Text,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
-import { BackgroundDecor, BODY_DECOR_SETS, DECOR_SETS } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
 const RATING_FILTERS: { label: string; value: number | null }[] = [
@@ -43,7 +51,6 @@ export default function SavedScreen(): React.JSX.Element {
       ? (['#4c1d95', '#5b21b6', '#7c3aed'] as const)
       : (['#3b0764', '#6d28d9', '#a78bfa'] as const));
   const savedEmoji = holiday?.bannerEmoji ?? '🔖';
-  const [sSil0, sSil1, sSil2] = holiday?.silhouetteEmojis ?? ['🔖', '⭐', '❤️'];
   const savedSubtitleColor = holiday?.subtitleHexColor ?? '#ddd6fe'; // violet-200
 
   function handleCardPress(item: SavedRecipe): void {
@@ -53,7 +60,6 @@ export default function SavedScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="saved-screen">
-      <BackgroundDecor items={DECOR_SETS.saved} />
       {/* Gradient header — full width gradient, content constrained inside */}
       <View
         style={{
@@ -73,27 +79,6 @@ export default function SavedScreen(): React.JSX.Element {
             <View
               className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              {/* Emoji silhouettes */}
-              <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
-              >
-                <Text
-                  style={{ position: 'absolute', fontSize: 90, opacity: 0.18, top: -8, right: 16 }}
-                >
-                  {sSil0}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 20, right: 100 }}
-                >
-                  {sSil1}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 180 }}
-                >
-                  {sSil2}
-                </Text>
-              </View>
               <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
               <Text
                 testID="saved-heading"
@@ -112,9 +97,13 @@ export default function SavedScreen(): React.JSX.Element {
         </LinearGradient>
       </View>
 
-      <BackgroundDecor items={BODY_DECOR_SETS.saved} />
       {/* All post-header content constrained to max-w-2xl on web */}
-      <View className="flex-1 w-full max-w-2xl self-center relative">
+      <ImageBackground
+        source={BACKGROUND_IMAGES.saved}
+        resizeMode="cover"
+        className="flex-1 w-full max-w-2xl self-center"
+        imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
+      >
         {/* Rating filter pills — only shown when there are recipes */}
         {hasRecipes && (
           <View className="px-4 pt-3 pb-2">
@@ -195,7 +184,7 @@ export default function SavedScreen(): React.JSX.Element {
             )}
           />
         )}
-      </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 }

@@ -107,9 +107,6 @@ jest.mock('@/features/recipes/components/MeatTemperatureCard', () => ({
 }));
 
 jest.mock('@/shared/components/ui', () => ({
-  BackgroundDecor: () => null,
-  DECOR_SETS: { saved: [] },
-  BODY_DECOR_SETS: { saved: [] },
   Button: ({
     label,
     onPress,
