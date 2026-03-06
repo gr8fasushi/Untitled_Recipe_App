@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { ActivityIndicator, ImageBackground, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,7 +13,6 @@ import { IngredientSearch } from '@/features/pantry/components/IngredientSearch'
 import { PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 
 export default function PantryScreen(): React.JSX.Element {
   const { user } = useAuthStore();
@@ -100,41 +99,36 @@ export default function PantryScreen(): React.JSX.Element {
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="pantry-screen">
       {/* Gradient header — emerald/green fresh ingredients theme */}
-      <View
+      <LinearGradient
+        colors={[pantryGradient[0], pantryGradient[1], pantryGradient[2]]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={{
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
         }}
       >
-        <LinearGradient
-          colors={[pantryGradient[0], pantryGradient[1], pantryGradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+        <View className="items-center w-full">
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
+            {/* Emoji + title stacked (matching other tabs) */}
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{pantryEmoji}</Text>
+            <Text
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              {/* Emoji + title stacked (matching other tabs) */}
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{pantryEmoji}</Text>
-              <Text
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                Add Your Ingredients
-              </Text>
-              <Text
-                style={{ color: pantrySubtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                {subtitle}
-              </Text>
-            </View>
+              Add Your Ingredients
+            </Text>
+            <Text
+              style={{ color: pantrySubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+            >
+              {subtitle}
+            </Text>
           </View>
-        </LinearGradient>
-      </View>
+        </View>
+      </LinearGradient>
 
       {/* Loading state (initial load only) */}
       {isLoading && ingredientCount === 0 ? (
@@ -144,12 +138,7 @@ export default function PantryScreen(): React.JSX.Element {
         </View>
       ) : (
         <>
-          <ImageBackground
-            source={BACKGROUND_IMAGES.pantry}
-            resizeMode="cover"
-            style={{ flex: 1 }}
-            imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-          >
+          <View style={{ flex: 1 }}>
             <PageContainer>
               {/* Ingredient chips + Clear All — now in PageContainer */}
               {ingredientCount > 0 ? (
@@ -303,7 +292,7 @@ export default function PantryScreen(): React.JSX.Element {
                 </View>
               ) : null}
             </PageContainer>
-          </ImageBackground>
+          </View>
         </>
       )}
     </SafeAreaView>

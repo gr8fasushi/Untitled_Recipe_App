@@ -1,13 +1,5 @@
 import { useEffect, useRef } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  ImageBackground,
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
@@ -18,7 +10,7 @@ import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
+
 import type { ChatMessage } from '@/shared/types';
 
 export default function ChatScreen(): React.JSX.Element {
@@ -63,73 +55,63 @@ export default function ChatScreen(): React.JSX.Element {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Gradient header — deep indigo AI theme */}
-      <View
+      <LinearGradient
+        colors={isDark ? ['#0f0e2e', '#1e1b4b', '#3730a3'] : ['#1e1b4b', '#4338ca', '#6366f1']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={{
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
         }}
       >
-        <LinearGradient
-          colors={isDark ? ['#1e1b4b', '#3730a3', '#4338ca'] : ['#1e1b4b', '#4338ca', '#6366f1']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
-            >
-              {/* Back + Mute row */}
-              <View className="flex-row justify-between mb-4">
-                <Pressable testID="btn-back" onPress={() => router.back()}>
-                  <Text className="text-indigo-200 font-nunito-semibold text-sm">← Back</Text>
-                </Pressable>
-                <Pressable
-                  testID="btn-toggle-mute"
-                  onPress={toggleMute}
-                  accessibilityLabel={isVoiceMuted ? 'Unmute voice' : 'Mute voice'}
-                  accessibilityState={{ selected: isVoiceMuted }}
-                  className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
-                >
-                  <Text className="text-base">{isVoiceMuted ? '🔇' : '🔊'}</Text>
-                </Pressable>
-              </View>
-
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>👨‍🍳</Text>
-              <Text
-                testID="chat-heading"
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+        <View className="items-center w-full">
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
+            {/* Back + Mute row */}
+            <View className="flex-row justify-between mb-4">
+              <Pressable testID="btn-back" onPress={() => router.back()}>
+                <Text className="text-indigo-200 font-nunito-semibold text-sm">← Back</Text>
+              </Pressable>
+              <Pressable
+                testID="btn-toggle-mute"
+                onPress={toggleMute}
+                accessibilityLabel={isVoiceMuted ? 'Unmute voice' : 'Mute voice'}
+                accessibilityState={{ selected: isVoiceMuted }}
+                className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
               >
-                Chef Jules
-              </Text>
-              {currentRecipe ? (
-                <Text
-                  className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-                  numberOfLines={1}
-                >
-                  About: {currentRecipe.title}
-                </Text>
-              ) : (
-                <Text
-                  className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-                >
-                  Your personal virtual chef
-                </Text>
-              )}
+                <Text className="text-base">{isVoiceMuted ? '🔇' : '🔊'}</Text>
+              </Pressable>
             </View>
+
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>👨‍🍳</Text>
+            <Text
+              testID="chat-heading"
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+            >
+              Chef Jules
+            </Text>
+            {currentRecipe ? (
+              <Text
+                className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+                numberOfLines={1}
+              >
+                About: {currentRecipe.title}
+              </Text>
+            ) : (
+              <Text
+                className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
+                Your personal virtual chef
+              </Text>
+            )}
           </View>
-        </LinearGradient>
-      </View>
+        </View>
+      </LinearGradient>
 
       {/* All post-header content constrained to max-w-2xl on web */}
-      <ImageBackground
-        source={BACKGROUND_IMAGES.chat}
-        resizeMode="cover"
-        className="flex-1 w-full max-w-2xl self-center"
-        imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-      >
+      <View className="flex-1 w-full max-w-2xl self-center">
         {/* Empty state */}
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
@@ -187,7 +169,7 @@ export default function ChatScreen(): React.JSX.Element {
 
         {/* Input */}
         <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
-      </ImageBackground>
+      </View>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,7 @@
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { useScan } from '@/features/scan/hooks/useScan';
 import { ScanResultCard } from '@/features/scan/components/ScanResultCard';
 import { ManualIngredientSearch } from '@/features/scan/components/ManualIngredientSearch';
@@ -20,18 +22,42 @@ export default function ScanScreen(): React.JSX.Element {
   } = useScan();
 
   const count = accumulatedIngredients.length;
+  const isDark = useIsDarkMode();
+  const isWeb = Platform.OS === 'web';
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-950" testID="scan-screen">
-      <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View className="px-4 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-gray-900">Scan Ingredients</Text>
-          <Text className="mt-1 text-sm text-gray-500">
-            Take a photo to identify food ingredients, or search manually below.
-          </Text>
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="scan-screen">
+      {/* Gradient header — teal/cyan photo scan theme */}
+      <LinearGradient
+        colors={isDark ? ['#042f2e', '#134e4a', '#0f766e'] : ['#134e4a', '#0f766e', '#14b8a6']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
+      >
+        <View className="items-center w-full">
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-8' : 'pb-6'}`}>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>📷</Text>
+            <Text
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
+            >
+              Scan Ingredients
+            </Text>
+            <Text
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              style={{ color: '#99f6e4' }}
+            >
+              Take a photo or search to add ingredients
+            </Text>
+          </View>
         </View>
-
+      </LinearGradient>
+      <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
         {/* Camera / Gallery buttons */}
         <View className="flex-row gap-3 px-4 pb-4">
           <View className="flex-1">

@@ -1,4 +1,4 @@
-import { ImageBackground, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -6,7 +6,6 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -36,7 +35,14 @@ function Tile({
     <Pressable
       testID={testID}
       onPress={onPress}
-      className="flex-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm active:opacity-75"
+      className="flex-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 active:opacity-75"
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      }}
     >
       <View
         className="w-12 h-12 rounded-full items-center justify-center mb-3"
@@ -54,8 +60,8 @@ function Tile({
   );
 }
 
-const DEFAULT_GRADIENT = ['#92400e', '#b45309', '#f59e0b'] as const;
-const DEFAULT_GRADIENT_DARK = ['#78350f', '#92400e', '#b45309'] as const;
+const DEFAULT_GRADIENT = ['#7c2d12', '#c2410c', '#f59e0b'] as const;
+const DEFAULT_GRADIENT_DARK = ['#431407', '#7c2d12', '#c2410c'] as const;
 const DEFAULT_SILHOUETTES = ['🍽️', '🥘', '🍴'] as const;
 const DEFAULT_SUBTITLE_COLOR = '#fde68a'; // amber-200
 
@@ -79,47 +85,37 @@ export default function HomeScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="home-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header */}
-        <View
+        <LinearGradient
+          colors={[gradient[0], gradient[1], gradient[2]]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
           style={{
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 6,
+            shadowOffset: { width: 0, height: 5 },
+            shadowOpacity: 0.28,
+            shadowRadius: 10,
+            elevation: 10,
           }}
         >
-          <LinearGradient
-            colors={[gradient[0], gradient[1], gradient[2]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View className="items-center w-full">
-              <View
-                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+          <View className="items-center w-full">
+            <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-8' : 'pb-6'}`}>
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
+              <Text
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
-                <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{bannerEmoji}</Text>
-                <Text
-                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-                >
-                  {headingText}
-                </Text>
-                <Text
-                  style={{ color: subtitleColor }}
-                  className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-                >
-                  {"Let's cook up a tasty meal!"}
-                </Text>
-              </View>
+                {headingText}
+              </Text>
+              <Text
+                style={{ color: subtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
+                {"Let's cook up a tasty meal!"}
+              </Text>
             </View>
-          </LinearGradient>
-        </View>
+          </View>
+        </LinearGradient>
 
-        <ImageBackground
-          source={BACKGROUND_IMAGES.home}
-          resizeMode="cover"
-          style={{ flex: 1 }}
-          imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-        >
+        <View style={{ flex: 1 }}>
           <PageContainer className="px-4 mt-5">
             {/* Row 1 */}
             <View className="flex-row gap-3 mb-3">
@@ -200,7 +196,7 @@ export default function HomeScreen(): React.JSX.Element {
               ))}
             </View>
           </PageContainer>
-        </ImageBackground>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

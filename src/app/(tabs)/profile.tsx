@@ -1,12 +1,4 @@
-import {
-  ActivityIndicator,
-  ImageBackground,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -25,7 +17,6 @@ import { useUIStore } from '@/stores/uiStore';
 import type { ColorSchemePreference } from '@/stores/uiStore';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
 
 const APPEARANCE_OPTIONS: { label: string; value: ColorSchemePreference; emoji: string }[] = [
   { label: 'Light', value: 'light', emoji: '☀️' },
@@ -66,47 +57,37 @@ export default function ProfileScreen(): React.JSX.Element {
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="profile-screen">
       {/* Gradient header — navy/blue account theme */}
-      <View
+      <LinearGradient
+        colors={[profileGradient[0], profileGradient[1], profileGradient[2]]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={{
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
         }}
       >
-        <LinearGradient
-          colors={[profileGradient[0], profileGradient[1], profileGradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+        <View className="items-center w-full">
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{profileEmoji}</Text>
+            <Text
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{profileEmoji}</Text>
-              <Text
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                Profile
-              </Text>
-              <Text
-                style={{ color: profileSubtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                Manage your account and preferences
-              </Text>
-            </View>
+              Profile
+            </Text>
+            <Text
+              style={{ color: profileSubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+            >
+              Manage your account and preferences
+            </Text>
           </View>
-        </LinearGradient>
-      </View>
+        </View>
+      </LinearGradient>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-        <ImageBackground
-          source={BACKGROUND_IMAGES.profile}
-          resizeMode="cover"
-          style={{ flex: 1 }}
-          imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-        >
+        <View style={{ flex: 1 }}>
           <View className="w-full max-w-2xl self-center">
             {/* Account section */}
             <View className="px-4 pt-6">
@@ -278,7 +259,7 @@ export default function ProfileScreen(): React.JSX.Element {
               </Text>
             </View>
           </View>
-        </ImageBackground>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

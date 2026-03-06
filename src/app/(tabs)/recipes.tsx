@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  ImageBackground,
   Platform,
   Pressable,
   ScrollView,
@@ -20,7 +19,7 @@ import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCa
 import { Button, CollapsibleSection, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
+
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
@@ -146,50 +145,42 @@ export default function RecipesScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipes-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — deep red/orange cooking theme */}
-        <View
+        <LinearGradient
+          colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
           style={{
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.15,
-            shadowRadius: 6,
-            elevation: 6,
+            shadowOffset: { width: 0, height: 5 },
+            shadowOpacity: 0.28,
+            shadowRadius: 10,
+            elevation: 10,
           }}
         >
-          <LinearGradient
-            colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View className="items-center w-full">
-              <View
-                className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+          <View className="items-center w-full">
+            <View
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+            >
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
+              <Text
+                testID="recipes-heading"
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
-                <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
-                <Text
-                  testID="recipes-heading"
-                  className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-                >
-                  Find My Meal
-                </Text>
-                <Text
-                  style={{ color: recipesSubtitleColor }}
-                  className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-                >
-                  {hasIngredients
-                    ? "Turn what's in your kitchen into something delicious"
-                    : 'Add ingredients below to get started'}
-                </Text>
-              </View>
+                Find My Meal
+              </Text>
+              <Text
+                style={{ color: recipesSubtitleColor }}
+                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+              >
+                {hasIngredients
+                  ? "Turn what's in your kitchen into something delicious"
+                  : 'Add ingredients below to get started'}
+              </Text>
             </View>
-          </LinearGradient>
-        </View>
+          </View>
+        </LinearGradient>
 
-        <ImageBackground
-          source={BACKGROUND_IMAGES.recipes}
-          resizeMode="cover"
-          style={{ flex: 1 }}
-          imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-        >
+        <View style={{ flex: 1 }}>
           <PageContainer className="px-4 mt-4">
             {!hasIngredients && !hasSearch ? (
               <View
@@ -490,7 +481,7 @@ export default function RecipesScreen(): React.JSX.Element {
               </View>
             ) : null}
           </PageContainer>
-        </ImageBackground>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

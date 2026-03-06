@@ -1,12 +1,4 @@
-import {
-  FlatList,
-  ImageBackground,
-  Platform,
-  Pressable,
-  Text,
-  View,
-  ActivityIndicator,
-} from 'react-native';
+import { FlatList, Platform, Pressable, Text, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,7 +7,7 @@ import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipe
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
-import { BACKGROUND_IMAGES } from '@/constants/backgroundImages';
+
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
 const RATING_FILTERS: { label: string; value: number | null }[] = [
@@ -61,49 +53,39 @@ export default function SavedScreen(): React.JSX.Element {
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="saved-screen">
       {/* Gradient header — full width gradient, content constrained inside */}
-      <View
+      <LinearGradient
+        colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={{
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.15,
-          shadowRadius: 6,
-          elevation: 6,
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
         }}
       >
-        <LinearGradient
-          colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View className="items-center w-full">
-            <View
-              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
+        <View className="items-center w-full">
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
+            <Text
+              testID="saved-heading"
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
-              <Text
-                testID="saved-heading"
-                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
-              >
-                Saved Recipes
-              </Text>
-              <Text
-                style={{ color: savedSubtitleColor }}
-                className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
-              >
-                Your bookmarked collection
-              </Text>
-            </View>
+              Saved Recipes
+            </Text>
+            <Text
+              style={{ color: savedSubtitleColor }}
+              className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
+            >
+              Your bookmarked collection
+            </Text>
           </View>
-        </LinearGradient>
-      </View>
+        </View>
+      </LinearGradient>
 
       {/* All post-header content constrained to max-w-2xl on web */}
-      <ImageBackground
-        source={BACKGROUND_IMAGES.saved}
-        resizeMode="cover"
-        className="flex-1 w-full max-w-2xl self-center"
-        imageStyle={{ opacity: isDark ? 0.04 : 0.07 }}
-      >
+      <View className="flex-1 w-full max-w-2xl self-center">
         {/* Rating filter pills — only shown when there are recipes */}
         {hasRecipes && (
           <View className="px-4 pt-3 pb-2">
@@ -184,7 +166,7 @@ export default function SavedScreen(): React.JSX.Element {
             )}
           />
         )}
-      </ImageBackground>
+      </View>
     </SafeAreaView>
   );
 }
