@@ -54,6 +54,19 @@ export default function TabLayout(): React.JSX.Element {
         }}
       />
       <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Get Recipes',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'restaurant' : 'restaurant-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="saved"
         options={{
           title: 'Saved',
@@ -81,7 +94,6 @@ export default function TabLayout(): React.JSX.Element {
       />
       {/* Hidden screens — push navigation only */}
       <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="community" options={{ href: null }} />
       <Tabs.Screen name="recipe-detail" options={{ href: null }} />
