@@ -33,7 +33,7 @@ their allergens and dietary preferences, with nutritional info and an AI cooking
 | Database        | Firestore                      | JS SDK                                                     |
 | Backend         | Firebase Cloud Functions Gen 2 | All AI calls routed through here                           |
 | AI Recipes/Chat | Groq — Llama 3.3 70B           | Model: `llama-3.3-70b-versatile`                           |
-| AI Vision       | Gemini 2.0 Flash               | Model: `gemini-2.0-flash-exp`                              |
+| AI Vision       | Gemini 2.0 Flash               | Model: `gemini-2.0-flash`                                  |
 | Token Storage   | expo-secure-store              | Never AsyncStorage for sensitive data                      |
 | Web Hosting     | Vercel                         | Auto-deploy from GitHub main branch                        |
 | Package Manager | npm                            | Do not switch to yarn/bun                                  |
@@ -192,13 +192,13 @@ Every function: **authenticate → rate limit → validate/sanitize → AI call 
 **Firebase:** JS SDK (not React Native Firebase) — enables Expo Go + web. Cloud Functions Gen 2.
 Firestore region: `us-central1`. Config object safe to commit. Secrets: `firebase functions:secrets:set KEY`
 
-| Setting         | Recipes                   | Chat                      | Vision                 |
-| --------------- | ------------------------- | ------------------------- | ---------------------- |
-| Provider        | Groq                      | Groq                      | Gemini                 |
-| Model           | `llama-3.3-70b-versatile` | `llama-3.3-70b-versatile` | `gemini-2.0-flash-exp` |
-| Temperature     | 0.7                       | 0.5                       | 0.2                    |
-| Max tokens      | 2048                      | 512                       | 1024                   |
-| Response format | JSON                      | text                      | JSON                   |
+| Setting         | Recipes                   | Chat                      | Vision             |
+| --------------- | ------------------------- | ------------------------- | ------------------ |
+| Provider        | Groq                      | Groq                      | Gemini             |
+| Model           | `llama-3.3-70b-versatile` | `llama-3.3-70b-versatile` | `gemini-2.0-flash` |
+| Temperature     | 0.7                       | 0.5                       | 0.2                |
+| Max tokens      | 2048                      | 512                       | 1024               |
+| Response format | JSON                      | text                      | JSON               |
 
 ---
 

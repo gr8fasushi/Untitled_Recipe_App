@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as SecureStore from 'expo-secure-store';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 import { useScan } from '@/features/scan/hooks/useScan';
@@ -112,11 +113,17 @@ export default function ScanScreen(): React.JSX.Element {
     if (!cameraRef.current) return;
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        base64: true,
         quality: 0.6,
         exif: false,
       });
-      const base64 = photo?.base64;
+      if (!photo?.uri) return;
+      // Resize to 768px wide before sending — reduces payload and speeds up Gemini
+      const resized = await ImageManipulator.manipulateAsync(
+        photo.uri,
+        [{ resize: { width: 768 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+      const base64 = resized.base64;
       if (!base64) return;
       if (isMountedRef.current) {
         setCaptureCount((c) => {
@@ -275,12 +282,14 @@ export default function ScanScreen(): React.JSX.Element {
           ) : (
             /* Camera viewfinder */
             <>
-              <CameraView
-                ref={cameraRef}
-                facing="back"
-                testID="camera-viewfinder"
-                className="h-64 rounded-2xl overflow-hidden mb-3"
-              />
+              <View className="h-64 rounded-2xl overflow-hidden mb-3">
+                <CameraView
+                  ref={cameraRef}
+                  facing="back"
+                  testID="camera-viewfinder"
+                  style={{ flex: 1 }}
+                />
+              </View>
 
               {/* Scan status text */}
               {isScanning || captureCount > 0 ? (
