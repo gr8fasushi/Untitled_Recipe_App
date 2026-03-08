@@ -23,6 +23,7 @@ let mockProfile: UserProfile = {
   dietaryPreferences: ['vegan'],
   onboardingComplete: true,
   createdAt: new Date(),
+  tier: 'free',
 };
 
 const mockUser = { uid: 'user-1' };
@@ -55,6 +56,7 @@ describe('useProfileSettings', () => {
       dietaryPreferences: ['vegan'],
       onboardingComplete: true,
       createdAt: new Date(),
+      tier: 'free',
     };
     mockFetchUserProfile.mockResolvedValue(mockProfile);
   });

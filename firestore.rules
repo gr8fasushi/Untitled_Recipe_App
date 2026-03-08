@@ -29,11 +29,13 @@ service cloud.firestore {
         && request.auth.uid == uid
         && validateUserProfile(request.resource.data);
 
-      // Update own profile — uid and createdAt are immutable
+      // Update own profile — uid, createdAt, tier, and subscriptionExpiresAt are immutable (admin SDK only)
       allow update: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('tier', 'free') == resource.data.get('tier', 'free')
+        && request.resource.data.get('subscriptionExpiresAt', null) == resource.data.get('subscriptionExpiresAt', null)
         && validateUserProfile(request.resource.data);
 
       // Delete own profile — required for App Store account deletion compliance
@@ -75,6 +77,12 @@ service cloud.firestore {
     // Rate limit counters — only writable by authenticated Cloud Functions
     // (Cloud Functions use admin SDK which bypasses security rules)
     match /rateLimits/{uid}/{operation}/{window} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // Daily usage counters — only writable by Cloud Functions via admin SDK
+    match /dailyLimits/{uid}/{operation}/{day} {
       allow read: if false;
       allow write: if false;
     }

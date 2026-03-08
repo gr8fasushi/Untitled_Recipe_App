@@ -3,6 +3,7 @@ import * as logger from 'firebase-functions/logger';
 import Groq from 'groq-sdk';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { checkRateLimit } from '../../shared/middleware/rateLimit';
+import { checkDailyLimit, getUserTier, FREE_CAPS, PRO_CAPS } from '../../shared/middleware/checkDailyLimit';
 import { validateChatInput } from '../../shared/middleware/validate';
 import { CHAT_SYSTEM_PROMPT, buildChatPrompt } from '../../shared/prompts/chatPrompts';
 
@@ -11,6 +12,9 @@ export const chatWithAssistant = onCall(
   async (request) => {
     const uid = authenticate(request);
     await checkRateLimit(uid, 'chat');
+    const tier = await getUserTier(uid);
+    const dailyCap = tier === 'pro' ? PRO_CAPS.chatMessages : FREE_CAPS.chatMessages;
+    await checkDailyLimit(uid, 'chatMessages', dailyCap);
     const input = validateChatInput(request.data);
     logger.info('chatWithAssistant', { uid, messageLength: input.message.length, historyLength: input.history.length, hasRecipeSnapshot: !!input.recipeSnapshot });
 

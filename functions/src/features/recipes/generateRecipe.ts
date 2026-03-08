@@ -4,6 +4,7 @@ import Groq from 'groq-sdk';
 import { z } from 'zod';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { checkRateLimit } from '../../shared/middleware/rateLimit';
+import { checkDailyLimit, getUserTier, FREE_CAPS, PRO_CAPS } from '../../shared/middleware/checkDailyLimit';
 import { validateGenerateRecipeInput } from '../../shared/middleware/validate';
 import { buildRecipePrompt, RECIPE_SYSTEM_PROMPT } from '../../shared/prompts/recipePrompts';
 
@@ -51,6 +52,9 @@ export const generateRecipe = onCall(
   async (request) => {
     const uid = authenticate(request);
     await checkRateLimit(uid, 'generateRecipe');
+    const tier = await getUserTier(uid);
+    const dailyCap = tier === 'pro' ? PRO_CAPS.generateRecipe : FREE_CAPS.generateRecipe;
+    await checkDailyLimit(uid, 'generateRecipe', dailyCap);
     const input = validateGenerateRecipeInput(request.data);
     const count = input.count ?? 5;
 

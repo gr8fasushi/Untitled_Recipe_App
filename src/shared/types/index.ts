@@ -6,6 +6,8 @@ export interface UserProfile {
   dietaryPreferences: string[];
   onboardingComplete: boolean;
   createdAt: Date;
+  tier: 'free' | 'pro';
+  subscriptionExpiresAt?: Date | null;
 }
 
 export interface Ingredient {

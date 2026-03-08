@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { authenticate } from '../../shared/middleware/authenticate';
 import { checkRateLimit } from '../../shared/middleware/rateLimit';
+import { checkDailyLimit, getUserTier, FREE_CAPS, PRO_CAPS } from '../../shared/middleware/checkDailyLimit';
 import { validateAnalyzePhotoInput } from '../../shared/middleware/validate';
 import { VISION_SYSTEM_PROMPT } from '../../shared/prompts/visionPrompts';
 
@@ -23,6 +24,9 @@ export const analyzeIngredientPhoto = onCall(
   async (request) => {
     const uid = authenticate(request);
     await checkRateLimit(uid, 'analyzePhoto');
+    const tier = await getUserTier(uid);
+    const dailyCap = tier === 'pro' ? PRO_CAPS.analyzePhoto : FREE_CAPS.analyzePhoto;
+    await checkDailyLimit(uid, 'analyzePhoto', dailyCap);
     const input = validateAnalyzePhotoInput(request.data);
     logger.info('analyzeIngredientPhoto', { uid, mimeType: input.mimeType });
 
@@ -32,15 +36,27 @@ export const analyzeIngredientPhoto = onCall(
       generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
     });
 
-    const response = await model.generateContent([
-      VISION_SYSTEM_PROMPT,
-      {
-        inlineData: {
-          data: input.imageBase64,
-          mimeType: input.mimeType,
+    let response: Awaited<ReturnType<typeof model.generateContent>>;
+    try {
+      response = await model.generateContent([
+        VISION_SYSTEM_PROMPT,
+        {
+          inlineData: {
+            data: input.imageBase64,
+            mimeType: input.mimeType,
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      logger.error('Gemini generateContent failed', { err });
+      const isQuota = (err as { status?: number })?.status === 429;
+      throw new HttpsError(
+        isQuota ? 'resource-exhausted' : 'internal',
+        isQuota
+          ? 'Scan limit reached. Please wait a moment and try again.'
+          : 'Vision model call failed'
+      );
+    }
 
     const content = response.response.text();
     if (!content) {

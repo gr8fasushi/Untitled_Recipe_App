@@ -27,6 +27,7 @@ const mockProfile = {
   dietaryPreferences: [],
   onboardingComplete: false,
   createdAt: new Date(),
+  tier: 'free' as const,
 };
 
 describe('useCompleteOnboarding', () => {

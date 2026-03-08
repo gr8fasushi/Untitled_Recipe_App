@@ -47,6 +47,7 @@ export function useCompleteOnboarding(): UseCompleteOnboardingReturn {
         email: user.email ?? '',
         displayName: user.displayName ?? null,
         createdAt: profile?.createdAt ?? new Date(),
+        tier: profile?.tier ?? 'free',
         ...(profile ?? {}),
         allergens: selectedAllergens,
         dietaryPreferences,
