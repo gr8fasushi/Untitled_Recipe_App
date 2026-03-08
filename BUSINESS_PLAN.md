@@ -1,7 +1,7 @@
 # RecipeApp — Business Plan
 
 > Confidential. App name is a placeholder — to be finalized before launch.
-> Last updated: 2026-02-19
+> Last updated: 2026-03-08
 
 ---
 
@@ -62,16 +62,19 @@ RecipeApp provides:
 ## Target Market
 
 ### Primary
+
 - Home cooks aged 22–45, English-speaking markets (US, UK, CA, AU)
 - People managing dietary restrictions or cooking for family members with allergies
 - Budget-conscious households aiming to reduce food waste
 
 ### Secondary
+
 - Fitness-conscious users needing macro awareness
 - Parents planning family meals with picky eaters or allergic children
 - College students cooking on limited budgets and pantries
 
 ### Market Opportunity
+
 - Global recipe app market: ~$1.3B (2024), ~11% CAGR
 - Food waste reduction is a growing category with strong app store discoverability
 - AI-powered cooking is an emerging, underserved niche
@@ -93,18 +96,21 @@ RecipeApp provides:
 ## Future Features (Post-MVP Roadmap)
 
 **Phase 2 (3–6 months post-launch)**
+
 - Meal planning (weekly planner + auto shopping list)
 - Pantry tracking with expiry date reminders
 - Recipe ratings and user notes
 - Scaled recipe portions (adjust serving size)
 
 **Phase 3 (6–12 months)**
+
 - Social features (share recipes, follow friends)
 - Grocery delivery integration (Instacart affiliate)
 - Cuisine preference profiles
 - Multilingual support
 
 **Phase 4 (12+ months)**
+
 - Smart fridge integration (Samsung, LG)
 - Nutritionist partnership tier
 - White-label licensing to meal kit companies
@@ -113,18 +119,19 @@ RecipeApp provides:
 
 ## Tech Stack
 
-| Component | Technology | Cost |
-|---|---|---|
-| Mobile App | Expo (React Native) | Free |
-| Web App | Expo for Web + Vercel | Free tier |
-| Language | TypeScript | Free |
-| Authentication | Firebase Auth | Free tier |
-| Database | Cloud Firestore | Free tier (Spark) |
-| Backend | Firebase Cloud Functions Gen 2 | Free tier (2M calls/month) |
-| AI Recipes + Chat | Groq API — Llama 3.3 70B | Free tier (generous) |
-| AI Vision | Google Gemini 2.0 Flash | Free tier (1,500 req/day) |
-| CI/CD | GitHub Actions | Free (public repo) |
-| Crash Reporting | Sentry | Free tier |
+| Component         | Technology                          | Cost                       |
+| ----------------- | ----------------------------------- | -------------------------- |
+| Mobile App        | Expo (React Native)                 | Free                       |
+| Web App           | Expo for Web + Vercel               | Free tier                  |
+| Language          | TypeScript                          | Free                       |
+| Authentication    | Firebase Auth                       | Free tier                  |
+| Database          | Cloud Firestore                     | Free tier (Spark)          |
+| Backend           | Firebase Cloud Functions Gen 2      | Free tier (2M calls/month) |
+| AI Recipes + Chat | Groq API — Llama 3.3 70B            | Free tier (generous)       |
+| AI Vision         | Google Gemini 2.0 Flash             | Free tier (1,500 req/day)  |
+| CI/CD             | GitHub Actions                      | Free (public repo)         |
+| Crash Reporting   | Sentry                              | Free tier                  |
+| Payments          | RevenueCat (react-native-purchases) | Free tier                  |
 
 **Estimated Monthly Cost at Launch:** $0 (all free tiers)
 **Estimated Monthly Cost at 10K DAU:** ~$350 (Groq paid + Firebase Blaze)
@@ -134,6 +141,7 @@ RecipeApp provides:
 ## Monetization Strategy
 
 ### Phase 1 — Free MVP (Launch → PMF)
+
 - Completely free, no ads, no paywall
 - Goal: acquire users, validate core loop, gather feedback
 - Operating cost: ~$0/month at low scale
@@ -141,20 +149,25 @@ RecipeApp provides:
 ### Phase 2 — Freemium (Post-PMF, ~6 months post-launch)
 
 **Free tier:**
-- 10 recipe generations per day
-- Basic allergen filtering
-- 20 saved recipes
-- AI chat (limited messages/day)
 
-**Premium subscription (~$4.99/month or $39.99/year):**
-- Unlimited recipe generations
+- 5 recipe generations per day
+- 3 photo scans per day
+- 5 AI chat messages per day
+- Up to 15 saved recipes
+- Basic allergen filtering
+
+**Pro subscription ($6.99/month or $49.99/year):**
+
+- Unlimited recipe generations (up to 50/day fair-use)
+- Unlimited photo scans (up to 30/day fair-use)
+- Unlimited AI chat (up to 200 messages/day fair-use)
 - Unlimited saved recipes
-- Full AI chat access
-- Meal planning feature
+- Meal planning feature (planned)
 - Priority AI response speed
-- PDF recipe export
+- PDF recipe export (planned)
 
 ### Phase 3 — Revenue Diversification
+
 - Grocery delivery affiliate (Instacart revenue share per order)
 - Premium recipe packs from partner chefs
 - B2B: white-label licensing to meal kit companies
@@ -163,12 +176,13 @@ RecipeApp provides:
 
 ## Competitive Landscape
 
-| App | Ingredient-first | Allergen Mgmt | AI Generation | Chat | Vision Scan |
-|---|---|---|---|---|---|
-| Yummly | No (search-first) | Basic filters | No | No | No |
-| SuperCook | Yes (manual) | Basic filters | No | No | No |
-| BigOven | No | Basic | No | No | No |
-| **RecipeApp** | **Yes (manual + photo)** | **Full Big 9** | **Yes** | **Yes** | **Yes** |
+| App           | Ingredient-first         | Allergen Mgmt  | AI Generation | Chat    | Vision Scan |
+| ------------- | ------------------------ | -------------- | ------------- | ------- | ----------- |
+| Yummly        | No (search-first)        | Basic filters  | No            | No      | No          |
+| SuperCook     | Yes (manual)             | Basic filters  | No            | No      | No          |
+| BigOven       | No                       | Basic          | No            | No      | No          |
+| ChefGPT       | No (search-first)        | Basic          | Yes (GPT-4)   | Yes     | No          |
+| **RecipeApp** | **Yes (manual + photo)** | **Full Big 9** | **Yes**       | **Yes** | **Yes**     |
 
 Key differentiators: AI generation from exact user ingredients + allergen safety + vision scanning.
 
@@ -177,12 +191,14 @@ Key differentiators: AI generation from exact user ingredients + allergen safety
 ## Go-to-Market Strategy
 
 ### Pre-Launch (Month 1–2)
+
 - Complete MVP development with TestFlight + Play Store beta
 - Recruit 50 beta testers via Reddit (r/MealPrepSunday, r/EatCheapAndHealthy, r/foodallergy)
 - Iterate rapidly based on beta feedback
 - Prepare App Store and Play Store listings with screenshots and copy
 
 ### Launch (Month 3)
+
 - Submit to Apple App Store and Google Play
 - Deploy web app to Vercel
 - Post on Product Hunt
@@ -190,6 +206,7 @@ Key differentiators: AI generation from exact user ingredients + allergen safety
 - Outreach to food allergy communities and mommy bloggers
 
 ### Post-Launch (Month 4–6)
+
 - Monitor retention, DAU, and recipe generation metrics via Firebase Analytics
 - A/B test onboarding flow
 - Respond to all app store reviews within 24 hours
@@ -199,16 +216,16 @@ Key differentiators: AI generation from exact user ingredients + allergen safety
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Groq API costs spike at scale | Low | Medium | Rate limits per user, Firestore caching, budget alerts |
-| Gemini Vision misidentifies allergen ingredient | Medium | High | User must confirm all scanned items before generating |
-| Apple App Store rejection | Low | Medium | Strict guideline adherence, Apple Sign-In, delete account flow |
-| AI allergen hallucination | Low | High | Defensive system prompt, allergen disclaimer on all recipe screens |
-| Firebase billing surprise | Low | Medium | Budget alerts at $10, hard limits via Cloud Function rate limiting |
-| Groq (startup) service disruption | Low | High | Architecture allows switching to Gemini in one config change |
-| Data breach | Very Low | High | No sensitive data stored in plaintext, Firestore rules, App Check |
-| GDPR/CCPA non-compliance | Low | High | Privacy policy, data minimization, delete account + data on request |
+| Risk                                            | Likelihood | Impact | Mitigation                                                          |
+| ----------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------- |
+| Groq API costs spike at scale                   | Low        | Medium | Rate limits per user, Firestore caching, budget alerts              |
+| Gemini Vision misidentifies allergen ingredient | Medium     | High   | User must confirm all scanned items before generating               |
+| Apple App Store rejection                       | Low        | Medium | Strict guideline adherence, Apple Sign-In, delete account flow      |
+| AI allergen hallucination                       | Low        | High   | Defensive system prompt, allergen disclaimer on all recipe screens  |
+| Firebase billing surprise                       | Low        | Medium | Budget alerts at $10, hard limits via Cloud Function rate limiting  |
+| Groq (startup) service disruption               | Low        | High   | Architecture allows switching to Gemini in one config change        |
+| Data breach                                     | Very Low   | High   | No sensitive data stored in plaintext, Firestore rules, App Check   |
+| GDPR/CCPA non-compliance                        | Low        | High   | Privacy policy, data minimization, delete account + data on request |
 
 ---
 
