@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,8 @@ import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
+import { UpgradeModal } from '@/shared/components/ui';
 
 import type { ChatMessage } from '@/shared/types';
 
@@ -25,6 +27,10 @@ export default function ChatScreen(): React.JSX.Element {
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
+  const { isPro } = useSubscription();
+  const { chatUsed, chatMax, chatCapReached } = useDailyUsage();
+  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
+
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
   const prevMessageCountRef = useRef(0);
 
@@ -36,6 +42,14 @@ export default function ChatScreen(): React.JSX.Element {
       reset();
     };
   }, [loadVoiceMuted, setRecipeSnapshot, currentRecipe, reset]);
+
+  function handleSend(text: string): void {
+    if (!isPro && chatCapReached) {
+      setUpgradeModalVisible(true);
+      return;
+    }
+    sendMessage(text);
+  }
 
   // Auto-scroll + TTS on new assistant message
   useEffect(() => {
@@ -106,6 +120,14 @@ export default function ChatScreen(): React.JSX.Element {
                 Your personal virtual chef
               </Text>
             )}
+            {!isPro ? (
+              <Text
+                testID="chat-usage-badge"
+                className="text-xs font-nunito-semibold mt-1 text-indigo-300"
+              >
+                {chatUsed} of {chatMax} messages today
+              </Text>
+            ) : null}
           </View>
         </View>
       </LinearGradient>
@@ -168,8 +190,10 @@ export default function ChatScreen(): React.JSX.Element {
         ) : null}
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
+        <ChatInput onSend={handleSend} isLoading={isLoading} testID="chat-input-bar" />
       </View>
+
+      <UpgradeModal visible={upgradeModalVisible} onDismiss={() => setUpgradeModalVisible(false)} />
     </SafeAreaView>
   );
 }

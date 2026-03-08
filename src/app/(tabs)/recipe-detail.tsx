@@ -10,6 +10,7 @@ import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatu
 import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
 import { useGroceryList } from '@/features/grocery';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700',
@@ -25,6 +26,9 @@ export default function RecipeDetailScreen(): React.JSX.Element {
   const { addItemsFromRecipe } = useGroceryList();
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
+
+  const { isPro } = useSubscription();
+  const { saveCapReached } = useDailyUsage();
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipe-detail-screen">
@@ -311,33 +315,50 @@ export default function RecipeDetailScreen(): React.JSX.Element {
                   </Pressable>
                   <Pressable
                     testID="btn-save-recipe"
-                    disabled={isSaving}
+                    disabled={isSaving || (!isPro && saveCapReached && !isSaved)}
                     onPress={() => {
                       void toggleSave();
                     }}
                     className={`py-4 rounded-2xl items-center ${
-                      isSaved ? 'bg-accent-600' : 'bg-white border-2 border-accent-600'
+                      !isPro && saveCapReached && !isSaved
+                        ? 'bg-gray-100 border-2 border-gray-300'
+                        : isSaved
+                          ? 'bg-accent-600'
+                          : 'bg-white border-2 border-accent-600'
                     } ${isSaving ? 'opacity-50' : ''}`}
-                    accessibilityState={{ disabled: !!isSaving }}
+                    accessibilityState={{
+                      disabled: isSaving || (!isPro && saveCapReached && !isSaved),
+                    }}
                   >
                     <Text
                       className={`text-base font-nunito-bold ${
-                        isSaved ? 'text-white' : 'text-accent-700'
+                        !isPro && saveCapReached && !isSaved
+                          ? 'text-gray-400'
+                          : isSaved
+                            ? 'text-white'
+                            : 'text-accent-700'
                       }`}
                     >
-                      {isSaved ? '🔖 Saved' : '🔖 Save Recipe'}
+                      {!isPro && saveCapReached && !isSaved
+                        ? '🔖 Upgrade to Pro to Save Recipes'
+                        : isSaved
+                          ? '🔖 Saved'
+                          : '🔖 Save Recipe'}
                     </Text>
                   </Pressable>
                   <Pressable
                     testID="btn-chat-with-ai"
+                    disabled={!isPro}
                     onPress={() =>
                       router.push({ pathname: '/chat', params: { recipeId: recipe.id } })
                     }
-                    accessibilityState={{ disabled: false }}
-                    className="py-4 rounded-2xl items-center bg-primary-600"
+                    accessibilityState={{ disabled: !isPro }}
+                    className={`py-4 rounded-2xl items-center ${!isPro ? 'bg-gray-100' : 'bg-primary-600'}`}
                   >
-                    <Text className="text-base font-nunito-bold text-white">
-                      👨‍🍳 Chat with Chef Jules
+                    <Text
+                      className={`text-base font-nunito-bold ${!isPro ? 'text-gray-400' : 'text-white'}`}
+                    >
+                      {!isPro ? '👨‍🍳 Upgrade to Pro — Chat with Jules' : '👨‍🍳 Chat with Chef Jules'}
                     </Text>
                   </Pressable>
                 </View>

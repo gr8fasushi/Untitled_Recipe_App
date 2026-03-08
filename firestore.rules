@@ -81,9 +81,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Daily usage counters — only writable by Cloud Functions via admin SDK
+    // Daily usage counters — owner can read (to show progress UI), only CF admin SDK can write
     match /dailyLimits/{uid}/{operation}/{day} {
-      allow read: if false;
+      allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
   }

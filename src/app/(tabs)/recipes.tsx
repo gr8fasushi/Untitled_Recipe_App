@@ -19,6 +19,7 @@ import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCa
 import { Button, CollapsibleSection, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
 
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
@@ -83,6 +84,9 @@ export default function RecipesScreen(): React.JSX.Element {
   const hasIngredients = selectedIngredients.length > 0;
   const hasSearch = searchQuery.trim().length > 0;
   const isWeb = Platform.OS === 'web';
+
+  const { isPro } = useSubscription();
+  const { recipesUsed, recipesMax } = useDailyUsage();
   const activeFilterCount =
     (selectedMealType ? 1 : 0) +
     selectedCuisines.length +
@@ -176,6 +180,15 @@ export default function RecipesScreen(): React.JSX.Element {
                   ? "Turn what's in your kitchen into something delicious"
                   : 'Add ingredients below to get started'}
               </Text>
+              {!isPro ? (
+                <Text
+                  testID="recipes-usage-badge"
+                  style={{ color: recipesSubtitleColor }}
+                  className="text-xs font-nunito-semibold mt-1 opacity-80"
+                >
+                  {recipesUsed} of {recipesMax} generations used today
+                </Text>
+              ) : null}
             </View>
           </View>
         </LinearGradient>
@@ -468,12 +481,12 @@ export default function RecipesScreen(): React.JSX.Element {
                     </View>
                   ) : (
                     <Button
-                      label="Find More Recipes"
+                      label={!isPro ? 'Upgrade to Pro — Find More Recipes' : 'Find More Recipes'}
                       onPress={() => {
                         void loadMore(buildFilters());
                       }}
                       variant="ghost"
-                      disabled={!hasIngredients}
+                      disabled={!hasIngredients || !isPro}
                       testID="btn-load-more"
                     />
                   )}

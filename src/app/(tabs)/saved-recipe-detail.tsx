@@ -14,6 +14,7 @@ import { Button } from '@/shared/components/ui';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { useGroceryList } from '@/features/grocery';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useSubscription } from '@/features/subscriptions';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
   easy: 'bg-emerald-100 text-emerald-700',
@@ -29,6 +30,7 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
   const { addItemsFromRecipe } = useGroceryList();
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
+  const { isPro } = useSubscription();
 
   const recipe = savedRecipe?.recipe ?? null;
 
@@ -368,12 +370,15 @@ export default function SavedRecipeDetailScreen(): React.JSX.Element {
                 <View className="mb-3">
                   <Pressable
                     testID="btn-chat-with-ai"
+                    disabled={!isPro}
                     onPress={handleChatWithAI}
-                    accessibilityState={{ disabled: false }}
-                    className="py-4 rounded-2xl items-center bg-primary-600"
+                    accessibilityState={{ disabled: !isPro }}
+                    className={`py-4 rounded-2xl items-center ${!isPro ? 'bg-gray-100' : 'bg-primary-600'}`}
                   >
-                    <Text className="text-base font-nunito-bold text-white">
-                      👨‍🍳 Chat with Chef Jules
+                    <Text
+                      className={`text-base font-nunito-bold ${!isPro ? 'text-gray-400' : 'text-white'}`}
+                    >
+                      {!isPro ? '👨‍🍳 Upgrade to Pro — Chat with Jules' : '👨‍🍳 Chat with Chef Jules'}
                     </Text>
                   </Pressable>
                 </View>

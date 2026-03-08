@@ -59,6 +59,29 @@ jest.mock('@/features/grocery', () => ({
   }),
 }));
 
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
+
 // eslint-disable-next-line import/first
 import RecipeDetailScreen from '../recipe-detail';
 
@@ -238,12 +261,13 @@ describe('RecipeDetailScreen — with recipe', () => {
     expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
   });
 
-  it('Chat with AI button is enabled', () => {
+  it('Chat with AI button is disabled for free users', () => {
     const { getByTestId } = render(<RecipeDetailScreen />);
-    expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+    expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(true);
   });
 
-  it('pressing Chat with AI navigates to /chat', () => {
+  it('pressing Chat with AI navigates to /chat for pro users', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
     const { getByTestId } = render(<RecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-chat-with-ai'));
     expect(mockRouterPush).toHaveBeenCalledWith({

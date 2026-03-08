@@ -7,6 +7,7 @@ import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipe
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
 
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
@@ -37,6 +38,8 @@ export default function SavedScreen(): React.JSX.Element {
 
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
+  const { isPro } = useSubscription();
+  const { savedCount, savedMax } = useDailyUsage();
   const savedGradient =
     holiday?.gradient ??
     (isDark
@@ -80,6 +83,15 @@ export default function SavedScreen(): React.JSX.Element {
             >
               Your bookmarked collection
             </Text>
+            {!isPro ? (
+              <Text
+                testID="saved-usage-badge"
+                style={{ color: savedSubtitleColor }}
+                className="text-xs font-nunito-semibold mt-1 opacity-80"
+              >
+                {savedCount} of {savedMax} recipes saved
+              </Text>
+            ) : null}
           </View>
         </View>
       </LinearGradient>

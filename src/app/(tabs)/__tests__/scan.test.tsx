@@ -87,6 +87,25 @@ jest.mock('@/shared/components/ui', () => ({
   },
 }));
 
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
 jest.mock('expo-camera', () => ({
   CameraView: ({ testID }: { testID?: string }) => {
     const { View } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -253,9 +272,25 @@ describe('ScanScreen', () => {
       expect(getByTestId('camera-viewfinder')).toBeTruthy();
     });
 
-    it('shows Start Scanning button initially', () => {
+    it('shows Capture button when permission granted', () => {
       const { getByTestId } = render(<ScanScreen />);
-      expect(getByTestId('btn-start-scan')).toBeTruthy();
+      expect(getByTestId('btn-capture')).toBeTruthy();
+    });
+
+    it('Capture button is enabled when not analyzing', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-capture').props.accessibilityState?.disabled).toBe(false);
+    });
+
+    it('Capture button is disabled while isAnalyzing', () => {
+      useScan.mockReturnValue(makeUseScan({ isAnalyzing: true, status: 'analyzing' }));
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-capture').props.accessibilityState?.disabled).toBe(true);
+    });
+
+    it('pressing Capture button does not crash', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(() => fireEvent.press(getByTestId('btn-capture'))).not.toThrow();
     });
 
     it('does not show camera viewfinder when permission is not granted', () => {
@@ -265,61 +300,6 @@ describe('ScanScreen', () => {
       ]);
       const { queryByTestId } = render(<ScanScreen />);
       expect(queryByTestId('camera-viewfinder')).toBeNull();
-    });
-  });
-
-  describe('scanning state button transitions', () => {
-    it('shows Stop Scanning button after Start is pressed', () => {
-      const { getByTestId, queryByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-start-scan'));
-      expect(getByTestId('btn-stop-scan')).toBeTruthy();
-      expect(queryByTestId('btn-start-scan')).toBeNull();
-    });
-
-    it('returns to Start Scanning button after Stop is pressed', () => {
-      const { getByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-start-scan'));
-      fireEvent.press(getByTestId('btn-stop-scan'));
-      expect(getByTestId('btn-start-scan')).toBeTruthy();
-    });
-  });
-
-  describe('timer tests', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      // clearAllTimers (not runAllTimers) — the setInterval never self-terminates
-      // when cameraRef is null, so runAllTimers would loop infinitely.
-      act(() => {
-        jest.clearAllTimers();
-      });
-      jest.useRealTimers();
-    });
-
-    it('does not call runScan before the 1500ms initial delay', () => {
-      const runScan = jest.fn().mockResolvedValue(undefined);
-      useScan.mockReturnValue(makeUseScan({ runScan }));
-      const { getByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-start-scan'));
-      act(() => {
-        jest.advanceTimersByTime(1000); // < 1500ms initial delay
-      });
-      expect(runScan).not.toHaveBeenCalled();
-    });
-
-    it('cleans up timers without crash when Stop is pressed before delay fires', () => {
-      const runScan = jest.fn().mockResolvedValue(undefined);
-      useScan.mockReturnValue(makeUseScan({ runScan }));
-      const { getByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-start-scan'));
-      act(() => {
-        jest.advanceTimersByTime(500); // well before first capture
-      });
-      fireEvent.press(getByTestId('btn-stop-scan'));
-      // No crash = pass. Interval was cancelled before it fired.
-      expect(runScan).not.toHaveBeenCalled();
     });
   });
 

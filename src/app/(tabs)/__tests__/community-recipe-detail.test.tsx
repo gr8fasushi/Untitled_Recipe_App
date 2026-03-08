@@ -97,6 +97,29 @@ jest.mock('@/shared/components/ui', () => ({
   },
 }));
 
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
+
 // eslint-disable-next-line import/first
 import CommunityRecipeDetailScreen from '../community-recipe-detail';
 
@@ -233,7 +256,8 @@ describe('CommunityRecipeDetailScreen', () => {
       expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
     });
 
-    it('pressing chat with AI sets current recipe and navigates to chat', () => {
+    it('pressing chat with AI sets current recipe and navigates to chat (pro user)', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
       const { getByTestId } = render(<CommunityRecipeDetailScreen />);
       fireEvent.press(getByTestId('btn-chat-with-ai'));
       expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);

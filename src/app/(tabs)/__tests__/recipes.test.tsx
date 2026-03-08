@@ -86,6 +86,25 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
@@ -144,6 +163,10 @@ jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
     );
   },
 }));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
 
 // eslint-disable-next-line import/first
 import RecipesScreen from '../recipes';
@@ -363,7 +386,8 @@ describe('RecipesScreen', () => {
     expect(getByTestId('btn-load-more')).toBeTruthy();
   });
 
-  it('calls loadMore when Find More Recipes button is pressed', () => {
+  it('calls loadMore when Find More Recipes button is pressed (pro user)', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
     mockRecipes = [recipe1];
     mockSelectedIngredients = [tomato];
     const { getByTestId } = render(<RecipesScreen />);
