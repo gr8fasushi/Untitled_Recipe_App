@@ -80,6 +80,7 @@ jest.mock('@/features/subscriptions', () => ({
 
 const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
   useSubscription: jest.Mock;
+  useDailyUsage: jest.Mock;
 };
 
 // eslint-disable-next-line import/first
@@ -266,6 +267,23 @@ describe('RecipeDetailScreen — with recipe', () => {
     expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(true);
   });
 
+  it('Chat with AI button shows upgrade label for free users', () => {
+    const { getByText } = render(<RecipeDetailScreen />);
+    expect(getByText('👨‍🍳 Upgrade to Pro — Chat with Jules')).toBeTruthy();
+  });
+
+  it('Chat with AI button is enabled for pro users', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+  });
+
+  it('Chat with AI button shows normal label for pro users', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    const { getByText } = render(<RecipeDetailScreen />);
+    expect(getByText('👨‍🍳 Chat with Chef Jules')).toBeTruthy();
+  });
+
   it('pressing Chat with AI navigates to /chat for pro users', () => {
     subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
     const { getByTestId } = render(<RecipeDetailScreen />);
@@ -274,6 +292,52 @@ describe('RecipeDetailScreen — with recipe', () => {
       pathname: '/chat',
       params: { recipeId: sampleRecipe.id },
     });
+  });
+
+  it('Save button is disabled with upgrade label when free user hits save cap', () => {
+    // Reset isPro after previous pro-user tests left it as true
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+    subscriptionsMock.useDailyUsage.mockReturnValue({
+      saveCapReached: true,
+      savedCount: 15,
+      savedMax: 15,
+      recipesUsed: 0,
+      recipesMax: 5,
+      recipeCapReached: false,
+      scansUsed: 0,
+      scansMax: 3,
+      scanCapReached: false,
+      chatUsed: 0,
+      chatMax: 5,
+      chatCapReached: false,
+      isLoading: false,
+    });
+    mockIsSaved = false;
+    const { getByTestId, getByText } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-save-recipe').props.accessibilityState?.disabled).toBe(true);
+    expect(getByText('🔖 Upgrade to Pro to Save Recipes')).toBeTruthy();
+  });
+
+  it('Save button is NOT gated for pro users even when savedCount is high', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    subscriptionsMock.useDailyUsage.mockReturnValue({
+      saveCapReached: false,
+      savedCount: 100,
+      savedMax: Infinity,
+      recipesUsed: 0,
+      recipesMax: 50,
+      recipeCapReached: false,
+      scansUsed: 0,
+      scansMax: 30,
+      scanCapReached: false,
+      chatUsed: 0,
+      chatMax: 200,
+      chatCapReached: false,
+      isLoading: false,
+    });
+    mockIsSaved = false;
+    const { getByTestId } = render(<RecipeDetailScreen />);
+    expect(getByTestId('btn-save-recipe').props.accessibilityState?.disabled).toBe(false);
   });
 
   it('shows the AI disclaimer for AI-sourced recipes', () => {

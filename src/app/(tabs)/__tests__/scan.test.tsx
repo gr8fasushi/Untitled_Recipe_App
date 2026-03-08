@@ -125,6 +125,11 @@ const { useScan } = jest.requireMock('@/features/scan/hooks/useScan') as {
   useScan: jest.Mock;
 };
 
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+  useDailyUsage: jest.Mock;
+};
+
 const { useCameraPermissions } = jest.requireMock('expo-camera') as {
   useCameraPermissions: jest.Mock;
 };
@@ -396,6 +401,42 @@ describe('ScanScreen', () => {
       const { getByTestId } = render(<ScanScreen />);
       fireEvent.press(getByTestId('manual-search-input'));
       expect(addManually).toHaveBeenCalledWith({ id: 'broccoli', name: 'Broccoli' });
+    });
+  });
+
+  describe('scan cap reached — free user', () => {
+    beforeEach(() => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      subscriptionsMock.useDailyUsage.mockReturnValue({
+        scansUsed: 3,
+        scansMax: 3,
+        scanCapReached: true,
+        recipesUsed: 0,
+        recipesMax: 5,
+        recipeCapReached: false,
+        chatUsed: 0,
+        chatMax: 5,
+        chatCapReached: false,
+        savedCount: 0,
+        savedMax: 15,
+        saveCapReached: false,
+        isLoading: false,
+      });
+    });
+
+    it('shows scan-cap-reached-banner when cap is reached', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('scan-cap-reached-banner')).toBeTruthy();
+    });
+
+    it('shows upgrade text in cap banner', () => {
+      const { getByText } = render(<ScanScreen />);
+      expect(getByText(/Upgrade to Pro/i)).toBeTruthy();
+    });
+
+    it('hides btn-capture when cap is reached', () => {
+      const { queryByTestId } = render(<ScanScreen />);
+      expect(queryByTestId('btn-capture')).toBeNull();
     });
   });
 });

@@ -308,6 +308,24 @@ describe('SavedRecipeDetailScreen', () => {
       expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
     });
 
+    it('chat with AI button is disabled for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(true);
+    });
+
+    it('chat with AI button shows upgrade label for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByText } = render(<SavedRecipeDetailScreen />);
+      expect(getByText('👨‍🍳 Upgrade to Pro — Chat with Jules')).toBeTruthy();
+    });
+
+    it('chat with AI button is enabled for pro users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+    });
+
     it('pressing chat with AI sets current recipe and navigates to chat (pro user)', () => {
       subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
       const { getByTestId } = render(<SavedRecipeDetailScreen />);

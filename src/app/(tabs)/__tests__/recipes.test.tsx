@@ -395,6 +395,30 @@ describe('RecipesScreen', () => {
     expect(mockLoadMore).toHaveBeenCalledTimes(1);
   });
 
+  it('btn-load-more is disabled for free user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('btn-load-more shows upgrade label for free user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+    mockRecipes = [recipe1];
+    const { getByText } = render(<RecipesScreen />);
+    expect(getByText('Upgrade to Pro — Find More Recipes')).toBeTruthy();
+  });
+
+  it('btn-load-more shows normal label and is enabled for pro user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    const { getByTestId, getByText } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more').props.accessibilityState?.disabled).toBe(false);
+    expect(getByText('Find More Recipes')).toBeTruthy();
+  });
+
   it('hides Find More button and shows spinner while loading more', () => {
     mockRecipes = [recipe1];
     mockSelectedIngredients = [tomato];
