@@ -40,6 +40,7 @@ export function useScan(): UseScanReturn {
         mergeIngredients(ingredients);
         setStatus('done');
       } catch (err) {
+        console.error('[useScan] runScan error:', err);
         const message =
           err instanceof Error ? err.message : 'Something went wrong. Please try again.';
         setError(message);

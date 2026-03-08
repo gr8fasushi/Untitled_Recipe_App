@@ -6,7 +6,8 @@ RECIPE QUALITY RULES:
 - You may add common pantry staples (salt, pepper, olive oil, water, stock, herbs, spices) even if not listed
 - The recipe must be something a real person would actually cook and enjoy
 - Aim for 4–8 key ingredients; quality over quantity
-- ASSUME the user always has these pantry staples available — use them freely without listing them as "additional ingredients": salt, pepper, paprika, cumin, garlic powder, onion powder, oregano, basil, thyme, rosemary, olive oil, butter, flour, sugar, vinegar, water, broth/stock, fresh garlic, fresh onion, canned tomatoes, tomato paste, soy sauce, lemon juice, lime juice, heavy cream, milk.
+- ASSUME the user always has these BASIC COOKING STAPLES available — you MAY use them freely without listing them: olive oil, butter, flour, sugar, vinegar, water, broth/stock, fresh garlic, fresh onion, canned tomatoes, tomato paste, soy sauce, lemon juice, lime juice, heavy cream, milk.
+- SPICES & SEASONINGS — ALWAYS LIST THEM: salt, pepper, and ALL spices/herbs/seasonings MUST be listed in the ingredients array with exact quantities regardless of how common they are. Do NOT hide them as unlisted pantry staples. Examples of spices that must ALWAYS be listed with amounts: paprika, smoked paprika, cumin, chili powder, garlic powder, onion powder, oregano, basil, thyme, rosemary, cayenne, coriander, turmeric, garam masala, Italian seasoning, red pepper flakes, black pepper, kosher salt, bay leaves.
 - CLASSIC DISH RULE: When the recipe title is a well-known classic, you MUST include ALL traditional essential ingredients for authenticity, even if they were not in the pantry list. The dish's cultural identity takes priority. Canonical ingredient sets for common classics:
   * Spaghetti Bolognese: ground beef, soffritto (onion, carrot, celery), dry red or white wine, whole milk or cream, tomato paste, crushed tomatoes, pasta
   * Carbonara: guanciale OR pancetta OR bacon, eggs (whole + yolks), Pecorino Romano OR Parmesan, black pepper, pasta — NO cream, NO peas, NO mushrooms
@@ -17,7 +18,13 @@ RECIPE QUALITY RULES:
   * Tacos: corn or flour tortillas, protein (beef/chicken/pork/fish), cumin, chili powder, garlic, lime, cilantro, onion
   * French Onion Soup: onions, beef broth, dry white wine or sherry, thyme, bay leaf, Gruyère, baguette slices
 - COMPLETENESS CHECK: Before producing your final JSON, mentally verify each recipe passes: (1) Does it include all culturally essential ingredients for that dish? (2) Are all steps complete enough to produce the dish? (3) Do the ingredient amounts make sense for the stated number of servings? Only output the recipe if all three checks pass.
-- SEASONINGS & SPICES RULE — NON-NEGOTIABLE: Every recipe MUST include a full, authentic spice and seasoning profile appropriate for its culinary tradition. Never reduce to "salt and pepper only." Include ALL dish-appropriate spices with exact amounts (e.g. Carne Asada requires cumin, chili powder, smoked paprika, garlic powder, dried oregano — not just salt). In the instruction steps, explain WHY each key spice is used: "Cumin adds the earthy warmth that defines Mexican beef dishes." Every spice must appear in the ingredients list with a specific quantity.
+- SEASONINGS & SPICES RULE — NON-NEGOTIABLE: Every recipe MUST include a full, authentic spice and seasoning profile appropriate for its culinary tradition. NEVER produce a recipe with only "salt and pepper" as seasoning — that is a failure. Every dish must have at least 4–6 spices/seasonings tailored to its cuisine. Examples of minimum spice sets:
+  * Quesadilla/Mexican beef: cumin 1 tsp, chili powder 1 tsp, smoked paprika ½ tsp, garlic powder ½ tsp, dried oregano ½ tsp, salt 1 tsp, black pepper ½ tsp
+  * Italian pasta sauce: dried oregano 1 tsp, dried basil 1 tsp, red pepper flakes ¼ tsp, garlic powder ½ tsp, salt, black pepper
+  * Indian curry: cumin 1 tsp, coriander 1 tsp, turmeric ½ tsp, garam masala 1 tsp, cayenne ¼ tsp, salt
+  * Asian stir-fry: garlic powder ½ tsp, ginger powder ½ tsp, white pepper ¼ tsp, sesame oil 1 tsp, salt
+  * American BBQ/grilled: smoked paprika 1 tsp, garlic powder 1 tsp, onion powder 1 tsp, cumin ½ tsp, cayenne ¼ tsp, salt, black pepper
+  All spices must appear in the ingredients list with a specific quantity AND in a dedicated seasoning instruction step. In that step, explain WHY each key spice is used: "Cumin adds the earthy warmth that defines Mexican beef dishes." REMINDER: spices are never hidden — always list them explicitly in ingredients.
 - DONENESS & TEMPERATURE RULE: For proteins where doneness matters (steak, lamb, pork, poultry, fish, burgers, eggs), you MUST include in the instructions: (a) safe minimum internal temperatures per USDA guidelines (e.g. chicken 165°F/74°C, pork 145°F/63°C, ground beef 160°F/71°C, fish 145°F/63°C), AND (b) doneness preference options with target temps where applicable (e.g. steak: rare 120-125°F, medium-rare 130-135°F, medium 140-145°F, medium-well 150-155°F, well-done 160°F+). Include a note about resting time after cooking. This information belongs in the final instruction step — label it "Doneness Guide".
 
 INSTRUCTION DETAIL RULES:
@@ -103,10 +110,13 @@ export function buildRecipePrompt(input: {
   const allergenList = input.allergens.length > 0 ? input.allergens.join(', ') : 'none';
   const dietList = input.dietaryPreferences.length > 0 ? input.dietaryPreferences.join(', ') : 'none';
 
+  const hasSearchQuery = Boolean(input.searchQuery?.trim());
   const cuisineText =
     input.cuisines && input.cuisines.length > 0
       ? `Cuisine filter — ALL ${count} recipes MUST come from these cuisine styles ONLY: ${input.cuisines.join(', ')}.`
-      : `No cuisine filter. You MUST spread the ${count} recipes across ${count} DIFFERENT cuisine styles (e.g. American, Italian, Asian, Mexican, Mediterranean). Do not cluster them in similar styles.`;
+      : hasSearchQuery
+        ? `No cuisine filter. The search query defines the dish — stay true to its culinary tradition. Vary the ${count} recipes by preparation method, regional style, or cut/protein variation within that dish, NOT by switching to unrelated cuisines.`
+        : `No cuisine filter. You MUST spread the ${count} recipes across ${count} DIFFERENT cuisine styles (e.g. American, Italian, Asian, Mexican, Mediterranean). Do not cluster them in similar styles.`;
 
   const ingredientText = hasIngredients
     ? `Available pantry ingredients: ${ingredientList}
@@ -140,7 +150,11 @@ ${
     : '';
 
   const searchQueryText = input.searchQuery?.trim()
-    ? `CRITICAL SEARCH REQUIREMENT — READ THIS FIRST AND DO NOT IGNORE IT: The user searched for "${input.searchQuery.trim()}". This is NON-NEGOTIABLE — ALL ${count} recipes MUST be "${input.searchQuery.trim()}" or a direct named variant of it (e.g. different regional styles, different preparations of the same dish). DO NOT include recipes that merely share an ingredient with the search term. DO NOT silently return unrelated recipes. Every recipe title must clearly reflect the search term.`
+    ? `CRITICAL SEARCH REQUIREMENT — READ THIS FIRST AND DO NOT IGNORE IT: The user searched for "${input.searchQuery.trim()}". This is NON-NEGOTIABLE — ALL ${count} recipes MUST be "${input.searchQuery.trim()}" or a direct named variant of it (e.g. different regional styles, different preparations of the same dish). DO NOT include recipes that merely share an ingredient with the search term. DO NOT silently return unrelated recipes. Every recipe title must clearly reflect the search term. OVERRIDE: The VARIETY RULE is subordinate to this search requirement — "variety" here means different regional versions or preparations of "${input.searchQuery.trim()}", NOT different dishes.`
+    : '';
+
+  const searchReminderText = hasSearchQuery
+    ? `\nFINAL CHECK — SEARCH OVERRIDE: Every single recipe in your response MUST be a version of "${input.searchQuery!.trim()}". If any recipe title does not clearly reflect this search term, discard it and replace it before outputting.`
     : '';
 
   return `${searchQueryText ? `${searchQueryText}\n\n` : ''}${ingredientText}
@@ -149,6 +163,6 @@ ${cuisineText}
 
 User allergens to STRICTLY AVOID: ${allergenList}
 Dietary preferences: ${dietList}
-${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}
+${excludeText}${mealTypeText}${difficultyText}${maxCookTimeText}${servingSizeText}${searchReminderText}
 Return valid JSON only. CRITICAL REMINDER: The "recipes" array MUST contain EXACTLY ${count} recipe${count === 1 ? '' : 's'} — not ${count - 1}, not ${count + 1}, always ${count}.`;
 }
