@@ -1,9 +1,13 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Purchases from 'react-native-purchases';
+import { useAuthStore } from '@/features/auth/store/authStore';
 
 interface UpgradeModalProps {
   visible: boolean;
   onDismiss: () => void;
+  onPurchaseSuccess?: () => void;
 }
 
 const FEATURES: { emoji: string; free: string; pro: string }[] = [
@@ -14,7 +18,44 @@ const FEATURES: { emoji: string; free: string; pro: string }[] = [
   { emoji: '🔍', free: 'No Find More', pro: 'Find More Recipes' },
 ];
 
-export function UpgradeModal({ visible, onDismiss }: UpgradeModalProps): React.JSX.Element {
+export function UpgradeModal({
+  visible,
+  onDismiss,
+  onPurchaseSuccess,
+}: UpgradeModalProps): React.JSX.Element {
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const [loading, setLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+
+  async function handleGoPro(): Promise<void> {
+    setLoading(true);
+    setPurchaseError(null);
+    try {
+      const offerings = await Purchases.getOfferings();
+      const pkg =
+        selectedPlan === 'annual' ? offerings.current?.annual : offerings.current?.monthly;
+      if (!pkg) throw new Error('Package not available. Try again later.');
+      await Purchases.purchasePackage(pkg);
+      // Optimistic tier upgrade — webhook will sync Firestore shortly
+      const existing = useAuthStore.getState().profile;
+      if (existing) useAuthStore.getState().setProfile({ ...existing, tier: 'pro' });
+      onPurchaseSuccess?.();
+      onDismiss();
+    } catch (err: unknown) {
+      // User tapped "Cancel" on the native sheet — dismiss silently
+      if (
+        err instanceof Error &&
+        (err.message.includes('userCancelled') || err.message.includes('1'))
+      ) {
+        onDismiss();
+        return;
+      }
+      setPurchaseError(err instanceof Error ? err.message : 'Purchase failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <Modal
       visible={visible}
@@ -68,27 +109,66 @@ export function UpgradeModal({ visible, onDismiss }: UpgradeModalProps): React.J
               ))}
             </View>
 
-            {/* Pricing */}
+            {/* Pricing — tap to select plan */}
             <View className="flex-row gap-3 mb-5">
-              <View className="flex-1 border border-gray-200 rounded-xl p-4 items-center">
+              <Pressable
+                testID="btn-plan-monthly"
+                onPress={() => setSelectedPlan('monthly')}
+                className={`flex-1 rounded-xl p-4 items-center border-2 ${
+                  selectedPlan === 'monthly'
+                    ? 'border-violet-500 bg-violet-50'
+                    : 'border-gray-200 bg-white'
+                }`}
+              >
                 <Text className="text-xs text-gray-500 mb-1">Monthly</Text>
-                <Text className="text-2xl font-bold text-gray-900">$6.99</Text>
+                <Text
+                  className={`text-2xl font-bold ${selectedPlan === 'monthly' ? 'text-violet-700' : 'text-gray-900'}`}
+                >
+                  $6.99
+                </Text>
                 <Text className="text-xs text-gray-400">per month</Text>
-              </View>
-              <View className="flex-1 border-2 border-violet-500 rounded-xl p-4 items-center bg-violet-50">
-                <Text className="text-xs text-violet-600 font-semibold mb-1">Best Value</Text>
-                <Text className="text-2xl font-bold text-violet-700">$49.99</Text>
+              </Pressable>
+
+              <Pressable
+                testID="btn-plan-annual"
+                onPress={() => setSelectedPlan('annual')}
+                className={`flex-1 rounded-xl p-4 items-center border-2 ${
+                  selectedPlan === 'annual'
+                    ? 'border-violet-500 bg-violet-50'
+                    : 'border-gray-200 bg-white'
+                }`}
+              >
+                <Text
+                  className={`text-xs font-semibold mb-1 ${selectedPlan === 'annual' ? 'text-violet-600' : 'text-gray-500'}`}
+                >
+                  Best Value
+                </Text>
+                <Text
+                  className={`text-2xl font-bold ${selectedPlan === 'annual' ? 'text-violet-700' : 'text-gray-900'}`}
+                >
+                  $49.99
+                </Text>
                 <Text className="text-xs text-violet-500">per year (~$4.17/mo)</Text>
-              </View>
+              </Pressable>
             </View>
+
+            {/* Error message */}
+            {purchaseError ? (
+              <Text className="text-red-500 text-sm text-center mb-3">{purchaseError}</Text>
+            ) : null}
 
             {/* CTA */}
             <Pressable
               testID="btn-go-pro"
-              onPress={onDismiss}
-              className="bg-violet-600 rounded-xl py-4 mb-3 active:opacity-80"
+              onPress={() => void handleGoPro()}
+              disabled={loading}
+              className="bg-violet-600 rounded-xl py-4 mb-3 active:opacity-80 disabled:opacity-50"
             >
-              <Text className="text-white text-center font-bold text-base">Go Pro ✨</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text className="text-white text-center font-bold text-base">Go Pro ✨</Text>
+              )}
             </Pressable>
 
             <Pressable testID="btn-upgrade-dismiss" onPress={onDismiss} className="py-3 mb-6">

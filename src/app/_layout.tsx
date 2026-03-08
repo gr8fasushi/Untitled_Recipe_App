@@ -8,7 +8,9 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
+import Purchases from 'react-native-purchases';
+import { RC_API_KEY_ANDROID, RC_API_KEY_IOS } from '@/constants/revenueCat';
 import '../../global.css';
 import { subscribeToAuthState, fetchUserProfile } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -50,6 +52,12 @@ export default function RootLayout(): React.JSX.Element | null {
 
   const isDark = colorScheme === 'dark';
 
+  // Configure RevenueCat on mount (no-op if keys not yet set)
+  useEffect(() => {
+    const apiKey = Platform.OS === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID;
+    if (apiKey) Purchases.configure({ apiKey });
+  }, []);
+
   // Load persisted UI preferences on mount
   useEffect(() => {
     void loadPersistedPrefs();
@@ -81,8 +89,19 @@ export default function RootLayout(): React.JSX.Element | null {
             setProfile(null);
           }
         }
+        // Identify user in RevenueCat so purchases are tied to their Firebase UID
+        try {
+          await Purchases.logIn(firebaseUser.uid);
+        } catch {
+          // Non-fatal — RC not yet configured (Expo Go / web)
+        }
       } else {
         setProfile(null);
+        try {
+          await Purchases.logOut();
+        } catch {
+          // Non-fatal
+        }
       }
       setInitialized(true);
     });
