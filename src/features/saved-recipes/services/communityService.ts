@@ -11,8 +11,6 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/shared/services/firebase/firebase.config';
-import { fetchPopularMeals } from '@/shared/services/mealDbService';
-import { mapMealDbToRecipe } from '@/shared/utils/mealDbMapper';
 import { SharedRecipeSchema, type SharedRecipe, type SavedRecipe } from '../types';
 
 function sharedRecipesCol() {
@@ -83,26 +81,15 @@ export async function incrementSaveCount(sharedRecipeId: string): Promise<void> 
   });
 }
 
-/**
- * Fetch a set of popular meals from TheMealDB and present them as SharedRecipe objects.
- * Returns [] on any error so callers degrade gracefully.
- */
-export async function fetchMealDbCommunityRecipes(): Promise<SharedRecipe[]> {
-  try {
-    const meals = await fetchPopularMeals(20);
-    return meals.map((meal) => {
-      const recipe = mapMealDbToRecipe(meal);
-      return {
-        id: recipe.id,
-        recipe,
-        sharedBy: { uid: 'themealdb', displayName: 'TheMealDB' },
-        sharedAt: recipe.generatedAt,
-        rating: null,
-        review: '',
-        saveCount: 0,
-      };
-    });
-  } catch {
-    return [];
+export async function loadPopularRecipes(): Promise<SharedRecipe[]> {
+  const q = query(sharedRecipesCol(), orderBy('saveCount', 'desc'), limit(10));
+  const snapshot = await getDocs(q);
+  const results: SharedRecipe[] = [];
+  for (const docSnap of snapshot.docs) {
+    const parsed = SharedRecipeSchema.safeParse(docSnap.data());
+    if (parsed.success) {
+      results.push(parsed.data);
+    }
   }
+  return results;
 }

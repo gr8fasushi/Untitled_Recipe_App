@@ -8,7 +8,7 @@ interface PageContainerProps {
 
 export function PageContainer({ children, className = '' }: PageContainerProps): React.JSX.Element {
   return (
-    <View className={`flex-1 w-full max-w-2xl self-center dark:bg-gray-950 ${className}`}>
+    <View className={`flex-1 w-full max-w-2xl self-center relative dark:bg-gray-950 ${className}`}>
       {children}
     </View>
   );

@@ -138,9 +138,37 @@ describe('savedRecipesService', () => {
       expect(results[0]!.rating).toBe(8);
     });
 
+    it('parses recipes where Firebase serialized undefined fields as null', async () => {
+      // Firebase SDK serializes undefined optional fields (imageUrl, step duration) as null.
+      // The schema must accept null for these fields or recipes disappear silently.
+      const dataWithNulls = {
+        id: 'r2',
+        recipe: {
+          ...sampleRecipe,
+          imageUrl: null, // Firebase null for missing imageUrl
+          instructions: [{ stepNumber: 1, instruction: 'Boil water.', duration: null }],
+        },
+        savedAt: '2026-01-01T00:00:00Z',
+        rating: null,
+        review: '',
+        notes: '',
+        lastModifiedAt: '2026-01-02T00:00:00Z',
+        isShared: false,
+        sharedAt: null,
+        sharedFrom: null,
+      };
+      mockGetDocs.mockResolvedValue({
+        docs: [{ id: 'r2', data: () => dataWithNulls }],
+      });
+      const results = await loadSavedRecipes('uid1');
+      expect(results).toHaveLength(1);
+      expect(results[0]!.id).toBe('r2');
+      expect(results[0]!.recipe.imageUrl).toBeNull();
+    });
+
     it('skips docs that fail Zod validation', async () => {
       mockGetDocs.mockResolvedValue({
-        docs: [{ data: () => ({ invalid: 'data' }) }],
+        docs: [{ id: 'bad', data: () => ({ invalid: 'data' }) }],
       });
       const results = await loadSavedRecipes('uid1');
       expect(results).toHaveLength(0);

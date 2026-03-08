@@ -11,7 +11,7 @@ const RecipeIngredientSchema = z.object({
 const RecipeStepSchema = z.object({
   stepNumber: z.number(),
   instruction: z.string(),
-  duration: z.number().optional(),
+  duration: z.number().nullable().optional(),
 });
 
 const NutritionInfoSchema = z.object({
@@ -39,7 +39,7 @@ export const RecipeSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']),
   generatedAt: z.string(),
   source: z.enum(['ai', 'themealdb']).default('ai'),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().nullable().optional(),
 });
 
 export const MAX_NOTES_LENGTH = 500;

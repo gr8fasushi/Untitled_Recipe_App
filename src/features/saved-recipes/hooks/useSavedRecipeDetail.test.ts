@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import type { SavedRecipe } from '../types';
 import type { Recipe } from '@/shared/types';
 
@@ -7,7 +7,6 @@ import type { Recipe } from '@/shared/types';
 // ---------------------------------------------------------------------------
 const mockUpdateSavedRecipe = jest.fn().mockResolvedValue(undefined);
 const mockDeleteSavedRecipe = jest.fn().mockResolvedValue(undefined);
-const mockShareRecipe = jest.fn().mockResolvedValue(undefined);
 const mockUnshareRecipe = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('../services/savedRecipesService', () => ({
@@ -16,7 +15,6 @@ jest.mock('../services/savedRecipesService', () => ({
 }));
 
 jest.mock('../services/communityService', () => ({
-  shareRecipe: (...args: unknown[]) => mockShareRecipe(...args),
   unshareRecipe: (...args: unknown[]) => mockUnshareRecipe(...args),
 }));
 
@@ -159,52 +157,9 @@ describe('useSavedRecipeDetail', () => {
     });
   });
 
-  describe('shareRecipeHandler', () => {
-    it('calls shareRecipe service and updates store', async () => {
-      const { result } = renderHook(() => useSavedRecipeDetail());
-      await act(async () => {
-        await result.current.shareRecipeHandler();
-      });
-      expect(mockShareRecipe).toHaveBeenCalledWith(savedRecipe, {
-        uid: 'uid1',
-        displayName: 'Chef Alice',
-      });
-      expect(mockUpdateStoreRecipe).toHaveBeenCalledWith(
-        'r1',
-        expect.objectContaining({ isShared: true })
-      );
-    });
-  });
-
-  describe('unshareRecipeHandler', () => {
-    it('calls unshareRecipe service and updates store', async () => {
-      const { result } = renderHook(() => useSavedRecipeDetail());
-      await act(async () => {
-        await result.current.unshareRecipeHandler();
-      });
-      expect(mockUnshareRecipe).toHaveBeenCalledWith('r1');
-      expect(mockUpdateStoreRecipe).toHaveBeenCalledWith('r1', { isShared: false, sharedAt: null });
-    });
-  });
-
   describe('deleteRecipeHandler', () => {
-    it('shows an Alert with Delete and Cancel options', () => {
-      const alertSpy = jest.spyOn(Alert, 'alert');
-      const { result } = renderHook(() => useSavedRecipeDetail());
-      act(() => {
-        result.current.deleteRecipeHandler();
-      });
-      expect(alertSpy).toHaveBeenCalledWith(
-        'Delete Recipe',
-        expect.any(String),
-        expect.arrayContaining([
-          expect.objectContaining({ text: 'Cancel' }),
-          expect.objectContaining({ text: 'Delete' }),
-        ])
-      );
-    });
-
-    it('calls deleteSavedRecipe and router.back on confirm', async () => {
+    it('shows Alert on native and deletes on confirm', async () => {
+      jest.replaceProperty(Platform, 'OS', 'ios');
       jest.spyOn(Alert, 'alert').mockImplementation((_title, _msg, buttons) => {
         const deleteBtn = buttons?.find((b) => b.text === 'Delete');
         void deleteBtn?.onPress?.();
@@ -216,6 +171,33 @@ describe('useSavedRecipeDetail', () => {
       expect(mockRemoveSavedRecipe).toHaveBeenCalledWith('r1');
       expect(mockDeleteSavedRecipe).toHaveBeenCalledWith('uid1', 'r1');
       expect(mockRouterBack).toHaveBeenCalled();
+    });
+
+    it('uses window.confirm on web and deletes when confirmed', async () => {
+      jest.replaceProperty(Platform, 'OS', 'web');
+      const confirmMock = jest.fn().mockReturnValue(true);
+      (globalThis as Record<string, unknown>).confirm = confirmMock;
+      const { result } = renderHook(() => useSavedRecipeDetail());
+      await act(async () => {
+        result.current.deleteRecipeHandler();
+      });
+      expect(confirmMock).toHaveBeenCalled();
+      expect(mockRemoveSavedRecipe).toHaveBeenCalledWith('r1');
+      expect(mockDeleteSavedRecipe).toHaveBeenCalledWith('uid1', 'r1');
+      expect(mockRouterBack).toHaveBeenCalled();
+      delete (globalThis as Record<string, unknown>).confirm;
+    });
+
+    it('does not delete when web confirm is cancelled', () => {
+      jest.replaceProperty(Platform, 'OS', 'web');
+      (globalThis as Record<string, unknown>).confirm = jest.fn().mockReturnValue(false);
+      const { result } = renderHook(() => useSavedRecipeDetail());
+      act(() => {
+        result.current.deleteRecipeHandler();
+      });
+      expect(mockRemoveSavedRecipe).not.toHaveBeenCalled();
+      expect(mockDeleteSavedRecipe).not.toHaveBeenCalled();
+      delete (globalThis as Record<string, unknown>).confirm;
     });
   });
 });

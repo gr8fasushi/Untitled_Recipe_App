@@ -108,11 +108,26 @@ describe('useGenerateRecipe', () => {
     await act(async () => {
       await result.current.generate();
     });
-    expect(generateRecipeFn).toHaveBeenCalledWith({
-      ingredients: [{ id: 'tomato', name: 'Tomato', emoji: '🍅' }],
-      allergens: ['peanuts'],
-      dietaryPreferences: ['vegetarian'],
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: [{ id: 'tomato', name: 'Tomato', emoji: '🍅' }],
+        allergens: ['peanuts'],
+        dietaryPreferences: ['vegetarian'],
+      })
+    );
+  });
+
+  it('includes a sessionToken string in every generate call', async () => {
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate();
     });
+    const calledWith = (generateRecipeFn as unknown as jest.Mock).mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(typeof calledWith['sessionToken']).toBe('string');
+    expect((calledWith['sessionToken'] as string).length).toBeGreaterThan(0);
   });
 
   it('sets loading true then false on success', async () => {
@@ -142,7 +157,7 @@ describe('useGenerateRecipe', () => {
     expect(mockSetLoading).toHaveBeenCalledWith(false);
   });
 
-  it('sets error when no ingredients are selected without calling generateRecipeFn', async () => {
+  it('sets error when no ingredients and no search query without calling generateRecipeFn', async () => {
     (usePantryStore as unknown as jest.Mock).mockImplementation(
       (selector: (s: unknown) => unknown) => selector({ selectedIngredients: [] })
     );
@@ -150,9 +165,38 @@ describe('useGenerateRecipe', () => {
     await act(async () => {
       await result.current.generate();
     });
-    expect(mockSetError).toHaveBeenCalledWith('Select at least one ingredient');
+    expect(mockSetError).toHaveBeenCalledWith(
+      'Add at least one ingredient or enter a search query'
+    );
     expect(generateRecipeFn).not.toHaveBeenCalled();
     expect(mockSetLoading).not.toHaveBeenCalled();
+  });
+
+  it('calls CF with searchQuery when provided with no ingredients', async () => {
+    (usePantryStore as unknown as jest.Mock).mockImplementation(
+      (selector: (s: unknown) => unknown) => selector({ selectedIngredients: [] })
+    );
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate({ searchQuery: 'pasta' });
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({ searchQuery: 'pasta' })
+    );
+    expect(mockSetLoading).toHaveBeenCalledWith(true);
+  });
+
+  it('includes searchQuery in CF payload when provided alongside ingredients', async () => {
+    const { result } = renderHook(() => useGenerateRecipe());
+    await act(async () => {
+      await result.current.generate({ searchQuery: 'chicken stir fry' });
+    });
+    expect(generateRecipeFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        searchQuery: 'chicken stir fry',
+        ingredients: [{ id: 'tomato', name: 'Tomato', emoji: '🍅' }],
+      })
+    );
   });
 
   it('uses empty allergens and dietaryPreferences when profile is null', async () => {
@@ -271,21 +315,14 @@ describe('useGenerateRecipe', () => {
   });
 
   describe('loadMore', () => {
-    it('calls CF with excludeTitles from current recipes', async () => {
-      (useRecipesStore as unknown as jest.Mock).mockReturnValue({
-        recipes: [mockRecipe],
-        isLoading: false,
-        isLoadingMore: false,
-        error: null,
-        selectedCuisines: [],
-        strictIngredients: false,
-        setRecipes: mockSetRecipes,
-        appendRecipes: mockAppendRecipes,
-        setLoading: mockSetLoading,
-        setLoadingMore: mockSetLoadingMore,
-        setError: mockSetError,
-      });
+    it('calls CF with excludeTitles accumulated from prior generate calls', async () => {
       const { result } = renderHook(() => useGenerateRecipe());
+      // generate() first — adds 'Tomato Pasta' to seenTitlesRef
+      await act(async () => {
+        await result.current.generate();
+      });
+      (generateRecipeFn as unknown as jest.Mock).mockClear();
+      // loadMore() should now pass excludeTitles containing the seen title
       await act(async () => {
         await result.current.loadMore();
       });
@@ -295,19 +332,6 @@ describe('useGenerateRecipe', () => {
     });
 
     it('calls appendRecipes (not setRecipes) on success', async () => {
-      (useRecipesStore as unknown as jest.Mock).mockReturnValue({
-        recipes: [mockRecipe],
-        isLoading: false,
-        isLoadingMore: false,
-        error: null,
-        selectedCuisines: [],
-        strictIngredients: false,
-        setRecipes: mockSetRecipes,
-        appendRecipes: mockAppendRecipes,
-        setLoading: mockSetLoading,
-        setLoadingMore: mockSetLoadingMore,
-        setError: mockSetError,
-      });
       const { result } = renderHook(() => useGenerateRecipe());
       await act(async () => {
         await result.current.loadMore();
@@ -377,6 +401,19 @@ describe('useGenerateRecipe', () => {
       expect(generateRecipeFn).toHaveBeenCalledWith(
         expect.objectContaining({ cuisines: ['korean'], strictIngredients: true })
       );
+    });
+
+    it('includes a sessionToken string in every loadMore call', async () => {
+      const { result } = renderHook(() => useGenerateRecipe());
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      const calledWith = (generateRecipeFn as unknown as jest.Mock).mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(typeof calledWith['sessionToken']).toBe('string');
+      expect((calledWith['sessionToken'] as string).length).toBeGreaterThan(0);
     });
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,8 +9,10 @@ import { useChat } from '@/features/chat/hooks/useChat';
 import { useTextToSpeech } from '@/features/chat/hooks/useTextToSpeech';
 import { ChatBubble } from '@/features/chat/components/ChatBubble';
 import { ChatInput } from '@/features/chat/components/ChatInput';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
+import { UpgradeModal } from '@/shared/components/ui';
+
 import type { ChatMessage } from '@/shared/types';
 
 export default function ChatScreen(): React.JSX.Element {
@@ -25,6 +27,10 @@ export default function ChatScreen(): React.JSX.Element {
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
+  const { isPro } = useSubscription();
+  const { chatUsed, chatMax, chatCapReached } = useDailyUsage();
+  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
+
   const flatListRef = useRef<FlatList<ChatMessage>>(null);
   const prevMessageCountRef = useRef(0);
 
@@ -36,6 +42,14 @@ export default function ChatScreen(): React.JSX.Element {
       reset();
     };
   }, [loadVoiceMuted, setRecipeSnapshot, currentRecipe, reset]);
+
+  function handleSend(text: string): void {
+    if (!isPro && chatCapReached) {
+      setUpgradeModalVisible(true);
+      return;
+    }
+    sendMessage(text);
+  }
 
   // Auto-scroll + TTS on new assistant message
   useEffect(() => {
@@ -53,40 +67,22 @@ export default function ChatScreen(): React.JSX.Element {
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="chat-screen">
       {/* Suppress Expo Router's native header — the gradient banner has its own back button */}
       <Stack.Screen options={{ headerShown: false }} />
-      <BackgroundDecor items={DECOR_SETS.chat} />
 
       {/* Gradient header — deep indigo AI theme */}
       <LinearGradient
-        colors={isDark ? ['#0f0e24', '#1e1b4b', '#312e81'] : ['#1e1b4b', '#4338ca', '#6366f1']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={isDark ? ['#0f0e2e', '#1e1b4b', '#3730a3'] : ['#1e1b4b', '#4338ca', '#6366f1']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
       >
         <View className="items-center w-full">
-          <View
-            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
-          >
-            {/* Emoji silhouettes */}
-            <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
-            >
-              <Text
-                style={{ position: 'absolute', fontSize: 100, opacity: 0.18, top: -10, right: 10 }}
-              >
-                👨‍🍳
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 75, opacity: 0.15, top: 20, right: 110 }}
-              >
-                🍳
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 190 }}
-              >
-                💬
-              </Text>
-            </View>
-
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
             {/* Back + Mute row */}
             <View className="flex-row justify-between mb-4">
               <Pressable testID="btn-back" onPress={() => router.back()}>
@@ -103,12 +99,12 @@ export default function ChatScreen(): React.JSX.Element {
               </Pressable>
             </View>
 
-            <Text className="text-5xl mb-1">👨‍🍳</Text>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>👨‍🍳</Text>
             <Text
               testID="chat-heading"
-              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
-              AI Chef
+              Chef Jules
             </Text>
             {currentRecipe ? (
               <Text
@@ -121,9 +117,17 @@ export default function ChatScreen(): React.JSX.Element {
               <Text
                 className={`text-indigo-200 ${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
-                Ask me anything about cooking
+                Your personal virtual chef
               </Text>
             )}
+            {!isPro ? (
+              <Text
+                testID="chat-usage-badge"
+                className="text-xs font-nunito-semibold mt-1 text-indigo-300"
+              >
+                {chatUsed} of {chatMax} messages today
+              </Text>
+            ) : null}
           </View>
         </View>
       </LinearGradient>
@@ -134,12 +138,25 @@ export default function ChatScreen(): React.JSX.Element {
         {messages.length === 0 && !isLoading ? (
           <View testID="chat-empty" className="flex-1 items-center justify-center px-6">
             <Text className="text-6xl mb-3">👨‍🍳</Text>
-            <Text className="text-lg font-semibold text-gray-700 mb-2 text-center">
-              Ask me anything about this recipe
-            </Text>
-            <Text className="text-sm text-gray-400 text-center">
-              Substitutions, cooking tips, nutrition — I&apos;m here to help.
-            </Text>
+            {currentRecipe ? (
+              <>
+                <Text className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 text-center">
+                  Ask me anything about {currentRecipe.title}
+                </Text>
+                <Text className="text-sm text-gray-400 text-center">
+                  Substitutions, cooking tips, nutrition — Chef Jules is here to help.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 text-center">
+                  What would you like to cook today?
+                </Text>
+                <Text className="text-sm text-gray-400 text-center">
+                  Ask Chef Jules about any recipe, technique, or ingredient.
+                </Text>
+              </>
+            )}
           </View>
         ) : (
           <FlatList
@@ -173,8 +190,10 @@ export default function ChatScreen(): React.JSX.Element {
         ) : null}
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} isLoading={isLoading} testID="chat-input-bar" />
+        <ChatInput onSend={handleSend} isLoading={isLoading} testID="chat-input-bar" />
       </View>
+
+      <UpgradeModal visible={upgradeModalVisible} onDismiss={() => setUpgradeModalVisible(false)} />
     </SafeAreaView>
   );
 }

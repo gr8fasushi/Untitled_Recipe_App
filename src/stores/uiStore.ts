@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Appearance, Platform } from 'react-native';
 
-export type ColorSchemePreference = 'light' | 'dark' | 'system';
+export type ColorSchemePreference = 'light' | 'dark';
 
 const COLOR_SCHEME_KEY = 'ui_color_scheme';
 const VOICE_ID_KEY = 'tts_voice_id';
@@ -57,7 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
   isLoading: false,
   toastMessage: null,
   toastType: 'info',
-  colorScheme: 'system',
+  colorScheme: 'light',
   selectedVoiceId: null,
   isPrefsLoaded: false,
   setLoading: (loading) => set({ isLoading: loading }),
@@ -67,7 +67,7 @@ export const useUIStore = create<UIState>((set) => ({
     set({ colorScheme: scheme });
     // Override native Appearance so NativeWind dark: variants respond to user preference
     if (Platform.OS !== 'web') {
-      Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+      Appearance.setColorScheme(scheme);
     }
     void writeSecure(COLOR_SCHEME_KEY, scheme);
   },
@@ -80,10 +80,12 @@ export const useUIStore = create<UIState>((set) => ({
       readSecure(COLOR_SCHEME_KEY),
       readSecure(VOICE_ID_KEY),
     ]);
-    const scheme = (storedScheme as ColorSchemePreference | null) ?? 'system';
+    // Migrate legacy 'system' value to 'light'
+    const raw = storedScheme === 'system' ? 'light' : storedScheme;
+    const scheme = (raw as ColorSchemePreference | null) ?? 'light';
     // Apply persisted preference to native Appearance so NativeWind dark: variants are correct
     if (Platform.OS !== 'web') {
-      Appearance.setColorScheme(scheme === 'system' ? null : scheme);
+      Appearance.setColorScheme(scheme);
     }
     set({
       colorScheme: scheme,

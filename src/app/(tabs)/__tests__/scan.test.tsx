@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import ScanScreen from '../scan';
 
 // --- Mocks ---
@@ -67,18 +67,83 @@ jest.mock('@/shared/components/ui', () => ({
       </Pressable>
     );
   },
+  CollapsibleSection: ({
+    children,
+    testID,
+    title,
+  }: {
+    children: React.ReactNode;
+    testID?: string;
+    title: string;
+    defaultExpanded?: boolean;
+  }) => {
+    const { View, Text } = jest.requireActual('react-native') as typeof import('react-native');
+    return (
+      <View testID={testID}>
+        <Text>{title}</Text>
+        {children}
+      </View>
+    );
+  },
 }));
 
-// --- Retrieve mock ---
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
+jest.mock('expo-camera', () => ({
+  CameraView: ({ testID }: { testID?: string }) => {
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+    return <View testID={testID ?? 'camera-viewfinder'} />;
+  },
+  useCameraPermissions: jest.fn(),
+}));
+
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+}));
+
+// --- Retrieve mocks ---
 
 const { useScan } = jest.requireMock('@/features/scan/hooks/useScan') as {
   useScan: jest.Mock;
+};
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+  useDailyUsage: jest.Mock;
+};
+
+const { useCameraPermissions } = jest.requireMock('expo-camera') as {
+  useCameraPermissions: jest.Mock;
+};
+
+const SecureStore = jest.requireMock('expo-secure-store') as {
+  getItemAsync: jest.Mock;
+  setItemAsync: jest.Mock;
 };
 
 // --- Helpers ---
 
 const carrot = { id: 'carrot', name: 'Carrot', emoji: '🥕', category: 'vegetable' };
 const tomato = { id: 'tomato', name: 'Tomato', emoji: '🍅', category: 'vegetable' };
+const mockRequestPermission = jest.fn();
 
 function makeUseScan(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -86,8 +151,7 @@ function makeUseScan(overrides: Record<string, unknown> = {}): Record<string, un
     error: null,
     accumulatedIngredients: [],
     isAnalyzing: false,
-    takePhoto: jest.fn(),
-    pickFromGallery: jest.fn(),
+    runScan: jest.fn(),
     addManually: jest.fn(),
     removeIngredient: jest.fn(),
     addAllToPantry: jest.fn(),
@@ -97,7 +161,15 @@ function makeUseScan(overrides: Record<string, unknown> = {}): Record<string, un
 }
 
 beforeEach(() => {
+  jest.clearAllMocks();
   useScan.mockReturnValue(makeUseScan());
+  useCameraPermissions.mockReturnValue([
+    { granted: true, status: 'granted' },
+    mockRequestPermission,
+  ]);
+  // Default: already seen intro modal — suppress it in most tests
+  SecureStore.getItemAsync.mockResolvedValue('true');
+  SecureStore.setItemAsync.mockResolvedValue(undefined);
 });
 
 // --- Tests ---
@@ -106,12 +178,6 @@ describe('ScanScreen', () => {
   it('renders the screen', () => {
     const { getByTestId } = render(<ScanScreen />);
     expect(getByTestId('scan-screen')).toBeTruthy();
-  });
-
-  it('shows Take Photo and From Library buttons in idle state', () => {
-    const { getByTestId } = render(<ScanScreen />);
-    expect(getByTestId('btn-take-photo')).toBeTruthy();
-    expect(getByTestId('btn-pick-gallery')).toBeTruthy();
   });
 
   it('shows manual search input', () => {
@@ -125,18 +191,128 @@ describe('ScanScreen', () => {
     expect(queryByTestId('btn-add-all')).toBeNull();
   });
 
+  describe('intro modal', () => {
+    it('shows intro modal on first visit (getItemAsync returns null)', async () => {
+      SecureStore.getItemAsync.mockResolvedValueOnce(null);
+      const { getByTestId } = render(<ScanScreen />);
+      await waitFor(() => {
+        expect(getByTestId('scan-intro-modal')).toBeTruthy();
+      });
+    });
+
+    it('does not show intro modal when already seen', async () => {
+      SecureStore.getItemAsync.mockResolvedValueOnce('true');
+      const { queryByTestId } = render(<ScanScreen />);
+      await act(async () => {});
+      expect(queryByTestId('scan-intro-modal')).toBeNull();
+    });
+
+    it('dismisses modal and saves key when Got it is pressed', async () => {
+      SecureStore.getItemAsync.mockResolvedValueOnce(null);
+      const { getByTestId, queryByTestId } = render(<ScanScreen />);
+      await waitFor(() => getByTestId('scan-intro-modal'));
+      await act(async () => {
+        fireEvent.press(getByTestId('btn-intro-dismiss'));
+      });
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('scan_intro_seen', 'true');
+      expect(queryByTestId('scan-intro-modal')).toBeNull();
+    });
+  });
+
+  describe('how it works info card', () => {
+    it('renders the info card', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('scan-info-card')).toBeTruthy();
+    });
+  });
+
+  describe('permission states', () => {
+    it('shows loading placeholder when permission is null', () => {
+      useCameraPermissions.mockReturnValue([null, mockRequestPermission]);
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('scan-permission-loading')).toBeTruthy();
+    });
+
+    it('shows permission request button when not granted', () => {
+      useCameraPermissions.mockReturnValue([
+        { granted: false, status: 'undetermined' },
+        mockRequestPermission,
+      ]);
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-request-permission')).toBeTruthy();
+    });
+
+    it('calls requestPermission when Allow Camera Access is pressed', () => {
+      useCameraPermissions.mockReturnValue([
+        { granted: false, status: 'undetermined' },
+        mockRequestPermission,
+      ]);
+      const { getByTestId } = render(<ScanScreen />);
+      fireEvent.press(getByTestId('btn-request-permission'));
+      expect(mockRequestPermission).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows Open Settings button when permission is denied', () => {
+      useCameraPermissions.mockReturnValue([
+        { granted: false, status: 'denied' },
+        mockRequestPermission,
+      ]);
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-open-settings')).toBeTruthy();
+    });
+
+    it('does not show Open Settings button when permission is undetermined', () => {
+      useCameraPermissions.mockReturnValue([
+        { granted: false, status: 'undetermined' },
+        mockRequestPermission,
+      ]);
+      const { queryByTestId } = render(<ScanScreen />);
+      expect(queryByTestId('btn-open-settings')).toBeNull();
+    });
+  });
+
+  describe('camera viewfinder', () => {
+    it('renders the camera viewfinder when permission granted', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('camera-viewfinder')).toBeTruthy();
+    });
+
+    it('shows Capture button when permission granted', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-capture')).toBeTruthy();
+    });
+
+    it('Capture button is enabled when not analyzing', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-capture').props.accessibilityState?.disabled).toBe(false);
+    });
+
+    it('Capture button is disabled while isAnalyzing', () => {
+      useScan.mockReturnValue(makeUseScan({ isAnalyzing: true, status: 'analyzing' }));
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('btn-capture').props.accessibilityState?.disabled).toBe(true);
+    });
+
+    it('pressing Capture button does not crash', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(() => fireEvent.press(getByTestId('btn-capture'))).not.toThrow();
+    });
+
+    it('does not show camera viewfinder when permission is not granted', () => {
+      useCameraPermissions.mockReturnValue([
+        { granted: false, status: 'undetermined' },
+        mockRequestPermission,
+      ]);
+      const { queryByTestId } = render(<ScanScreen />);
+      expect(queryByTestId('camera-viewfinder')).toBeNull();
+    });
+  });
+
   describe('analyzing state', () => {
-    it('shows analyzing indicator while scanning', () => {
+    it('shows analyzing indicator while analyzing', () => {
       useScan.mockReturnValue(makeUseScan({ isAnalyzing: true, status: 'analyzing' }));
       const { getByTestId } = render(<ScanScreen />);
       expect(getByTestId('scan-analyzing-indicator')).toBeTruthy();
-    });
-
-    it('disables both camera buttons while analyzing', () => {
-      useScan.mockReturnValue(makeUseScan({ isAnalyzing: true, status: 'analyzing' }));
-      const { getByTestId } = render(<ScanScreen />);
-      expect(getByTestId('btn-take-photo').props.accessibilityState.disabled).toBe(true);
-      expect(getByTestId('btn-pick-gallery').props.accessibilityState.disabled).toBe(true);
     });
 
     it('does not show analyzing indicator when idle', () => {
@@ -185,7 +361,7 @@ describe('ScanScreen', () => {
     it('shows Add to Pantry button with count', () => {
       const { getByTestId, getByText } = render(<ScanScreen />);
       expect(getByTestId('btn-add-all')).toBeTruthy();
-      expect(getByText('Add 2 to Pantry')).toBeTruthy();
+      expect(getByText('Add 2 to My Kitchen')).toBeTruthy();
     });
 
     it('shows Clear button', () => {
@@ -219,28 +395,48 @@ describe('ScanScreen', () => {
   });
 
   describe('button callbacks', () => {
-    it('calls takePhoto when Take Photo button is pressed', () => {
-      const takePhoto = jest.fn();
-      useScan.mockReturnValue(makeUseScan({ takePhoto }));
-      const { getByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-take-photo'));
-      expect(takePhoto).toHaveBeenCalledTimes(1);
-    });
-
-    it('calls pickFromGallery when From Library button is pressed', () => {
-      const pickFromGallery = jest.fn();
-      useScan.mockReturnValue(makeUseScan({ pickFromGallery }));
-      const { getByTestId } = render(<ScanScreen />);
-      fireEvent.press(getByTestId('btn-pick-gallery'));
-      expect(pickFromGallery).toHaveBeenCalledTimes(1);
-    });
-
     it('calls addManually when manual search item is selected', () => {
       const addManually = jest.fn();
       useScan.mockReturnValue(makeUseScan({ addManually }));
       const { getByTestId } = render(<ScanScreen />);
       fireEvent.press(getByTestId('manual-search-input'));
       expect(addManually).toHaveBeenCalledWith({ id: 'broccoli', name: 'Broccoli' });
+    });
+  });
+
+  describe('scan cap reached — free user', () => {
+    beforeEach(() => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      subscriptionsMock.useDailyUsage.mockReturnValue({
+        scansUsed: 3,
+        scansMax: 3,
+        scanCapReached: true,
+        recipesUsed: 0,
+        recipesMax: 5,
+        recipeCapReached: false,
+        chatUsed: 0,
+        chatMax: 5,
+        chatCapReached: false,
+        savedCount: 0,
+        savedMax: 15,
+        saveCapReached: false,
+        isLoading: false,
+      });
+    });
+
+    it('shows scan-cap-reached-banner when cap is reached', () => {
+      const { getByTestId } = render(<ScanScreen />);
+      expect(getByTestId('scan-cap-reached-banner')).toBeTruthy();
+    });
+
+    it('shows upgrade text in cap banner', () => {
+      const { getByText } = render(<ScanScreen />);
+      expect(getByText(/Upgrade to Pro/i)).toBeTruthy();
+    });
+
+    it('hides btn-capture when cap is reached', () => {
+      const { queryByTestId } = render(<ScanScreen />);
+      expect(queryByTestId('btn-capture')).toBeNull();
     });
   });
 });

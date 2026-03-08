@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import type { Recipe } from '@/shared/types';
 import type { PantryItem } from '@/features/pantry/types';
 
@@ -24,10 +24,12 @@ jest.mock('@/features/recipes/hooks/useGenerateRecipe', () => ({
 const mockSetCurrentRecipe = jest.fn();
 const mockToggleCuisine = jest.fn();
 const mockSetStrictIngredients = jest.fn();
+const mockSetRecipes = jest.fn();
 jest.mock('@/features/recipes/store/recipesStore', () => ({
   useRecipesStore: (selector: (s: unknown) => unknown) =>
     selector({
       setCurrentRecipe: mockSetCurrentRecipe,
+      setRecipes: mockSetRecipes,
       selectedCuisines: [],
       toggleCuisine: mockToggleCuisine,
       strictIngredients: false,
@@ -35,13 +37,19 @@ jest.mock('@/features/recipes/store/recipesStore', () => ({
     }),
 }));
 
-const mockRemoveIngredient = jest.fn();
+let mockProfile: { allergens: string[]; dietaryPreferences: string[] } | null = {
+  allergens: [],
+  dietaryPreferences: [],
+};
+jest.mock('@/features/auth/store/authStore', () => ({
+  useAuthStore: (sel: (s: unknown) => unknown) => sel({ profile: mockProfile }),
+}));
+
 let mockSelectedIngredients: PantryItem[] = [];
 jest.mock('@/features/pantry/store/pantryStore', () => ({
   usePantryStore: (selector: (s: unknown) => unknown) =>
     selector({
       selectedIngredients: mockSelectedIngredients,
-      removeIngredient: mockRemoveIngredient,
     }),
 }));
 
@@ -78,16 +86,29 @@ jest.mock('@/features/recipes/components/AIDisclaimer', () => ({
   },
 }));
 
-jest.mock('@/features/pantry/components/IngredientSearch', () => ({
-  IngredientSearch: () => {
-    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
-    return <View testID="ingredient-search" />;
-  },
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
 }));
 
 const mockRouterPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockRouterPush }),
+  useLocalSearchParams: () => ({}),
 }));
 
 jest.mock('expo-linear-gradient', () => ({
@@ -97,7 +118,28 @@ jest.mock('expo-linear-gradient', () => ({
   },
 }));
 
-jest.mock('@/shared/components/ui', () => jest.requireActual('@/shared/components/ui'));
+jest.mock('@/shared/components/ui', () => {
+  // Use the real module but override CollapsibleSection to always render children
+  // (always expanded) so filter pill tests work without having to click to expand.
+  const actual =
+    jest.requireActual<typeof import('@/shared/components/ui')>('@/shared/components/ui');
+  return {
+    ...actual,
+    CollapsibleSection: ({
+      children,
+      testID,
+      title,
+    }: {
+      children: React.ReactNode;
+      testID?: string;
+      title: string;
+      badge?: number;
+    }) => {
+      const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+      return <View testID={testID ?? `collapsible-${title}`}>{children}</View>;
+    },
+  };
+});
 
 jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
   RecipeSummaryCard: ({
@@ -121,6 +163,10 @@ jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
     );
   },
 }));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
 
 // eslint-disable-next-line import/first
 import RecipesScreen from '../recipes';
@@ -170,6 +216,7 @@ describe('RecipesScreen', () => {
     mockIsLoadingMore = false;
     mockError = null;
     mockRecipes = [];
+    mockProfile = { allergens: [], dietaryPreferences: [] };
     mockGenerate.mockResolvedValue(undefined);
     mockLoadMore.mockResolvedValue(undefined);
     mockRouterPush.mockReset();
@@ -208,13 +255,6 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('banner-ingredient-tomato')).toBeNull();
   });
 
-  it('pressing an ingredient chip calls removeIngredient', () => {
-    mockSelectedIngredients = [tomato];
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('banner-ingredient-tomato'));
-    expect(mockRemoveIngredient).toHaveBeenCalledWith('tomato');
-  });
-
   it('generate button is disabled when no ingredients are selected', () => {
     const { getByTestId } = render(<RecipesScreen />);
     expect(getByTestId('btn-generate-recipe').props.accessibilityState?.disabled).toBe(true);
@@ -238,7 +278,17 @@ describe('RecipesScreen', () => {
     const { getByTestId } = render(<RecipesScreen />);
     fireEvent.press(getByTestId('btn-generate-recipe'));
     expect(mockGenerate).toHaveBeenCalledTimes(1);
-    expect(mockGenerate).toHaveBeenCalledWith(true); // AI enabled by default
+  });
+
+  it('passes filter params to generate', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('meal-type-pill-breakfast'));
+    fireEvent.press(getByTestId('difficulty-pill-easy'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ mealType: 'breakfast', difficulty: 'easy' })
+    );
   });
 
   it('shows loading indicator while generating', () => {
@@ -303,23 +353,136 @@ describe('RecipesScreen', () => {
     expect(queryByTestId('ai-disclaimer')).toBeNull();
   });
 
-  it('shows the AI toggle checkbox', () => {
-    const { getByTestId } = render(<RecipesScreen />);
-    expect(getByTestId('checkbox-use-ai')).toBeTruthy();
+  it('calls setRecipes([]) on mount to clear stale results', () => {
+    render(<RecipesScreen />);
+    expect(mockSetRecipes).toHaveBeenCalledWith([]);
   });
 
-  it('calls generate with useAI=true by default when button is pressed', () => {
-    mockSelectedIngredients = [tomato];
-    const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('btn-generate-recipe'));
-    expect(mockGenerate).toHaveBeenCalledWith(true);
+  it('calls setRecipes([]) again when allergens change', async () => {
+    const { rerender } = render(<RecipesScreen />);
+    mockSetRecipes.mockClear();
+    mockProfile = { allergens: ['peanuts'], dietaryPreferences: [] };
+    await act(async () => {
+      rerender(<RecipesScreen />);
+    });
+    expect(mockSetRecipes).toHaveBeenCalledWith([]);
   });
 
-  it('calls generate with useAI=false after toggling AI off', () => {
+  it('pressing a cuisine pill calls toggleCuisine with the cuisine id', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cuisine-pill-italian'));
+    expect(mockToggleCuisine).toHaveBeenCalledWith('italian');
+  });
+
+  it('pressing the strict ingredients checkbox calls setStrictIngredients with toggled value', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('checkbox-strict-ingredients'));
+    expect(mockSetStrictIngredients).toHaveBeenCalledWith(true);
+  });
+
+  it('shows Find More Recipes button when recipes are loaded', () => {
+    mockRecipes = [recipe1];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more')).toBeTruthy();
+  });
+
+  it('calls loadMore when Find More Recipes button is pressed (pro user)', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    mockRecipes = [recipe1];
     mockSelectedIngredients = [tomato];
     const { getByTestId } = render(<RecipesScreen />);
-    fireEvent.press(getByTestId('checkbox-use-ai')); // Toggle off
+    fireEvent.press(getByTestId('btn-load-more'));
+    expect(mockLoadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('btn-load-more is disabled for free user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('btn-load-more shows upgrade label for free user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+    mockRecipes = [recipe1];
+    const { getByText } = render(<RecipesScreen />);
+    expect(getByText('Upgrade to Pro — Find More Recipes')).toBeTruthy();
+  });
+
+  it('btn-load-more shows normal label and is enabled for pro user', () => {
+    subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    const { getByTestId, getByText } = render(<RecipesScreen />);
+    expect(getByTestId('btn-load-more').props.accessibilityState?.disabled).toBe(false);
+    expect(getByText('Find More Recipes')).toBeTruthy();
+  });
+
+  it('hides Find More button and shows spinner while loading more', () => {
+    mockRecipes = [recipe1];
+    mockSelectedIngredients = [tomato];
+    mockIsLoadingMore = true;
+    const { queryByTestId } = render(<RecipesScreen />);
+    expect(queryByTestId('btn-load-more')).toBeNull();
+  });
+
+  it('shows Add or Remove Ingredients button always', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('btn-back-to-pantry')).toBeTruthy();
+  });
+
+  it('pressing Add or Remove Ingredients navigates to the pantry tab', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('btn-back-to-pantry'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/pantry');
+  });
+
+  it('renders meal type filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('meal-type-pill-breakfast')).toBeTruthy();
+    expect(getByTestId('meal-type-pill-dinner')).toBeTruthy();
+  });
+
+  it('renders difficulty filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('difficulty-pill-easy')).toBeTruthy();
+    expect(getByTestId('difficulty-pill-hard')).toBeTruthy();
+  });
+
+  it('renders cook time filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('cook-time-pill-< 15')).toBeTruthy();
+    expect(getByTestId('cook-time-pill-60+')).toBeTruthy();
+  });
+
+  it('renders serving size filter pills', () => {
+    const { getByTestId } = render(<RecipesScreen />);
+    expect(getByTestId('serving-size-pill-1-2')).toBeTruthy();
+    expect(getByTestId('serving-size-pill-6+')).toBeTruthy();
+  });
+
+  it('passes maxCookTime to generate when a cook time is selected', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cook-time-pill-15-30'));
     fireEvent.press(getByTestId('btn-generate-recipe'));
-    expect(mockGenerate).toHaveBeenCalledWith(false);
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ maxCookTime: 30 }));
+  });
+
+  it('passes null maxCookTime for 60+ min selection', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('cook-time-pill-60+'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ maxCookTime: null }));
+  });
+
+  it('passes servingSize to generate when a serving size is selected', () => {
+    mockSelectedIngredients = [tomato];
+    const { getByTestId } = render(<RecipesScreen />);
+    fireEvent.press(getByTestId('serving-size-pill-3-4'));
+    fireEvent.press(getByTestId('btn-generate-recipe'));
+    expect(mockGenerate).toHaveBeenCalledWith(expect.objectContaining({ servingSize: '3-4' }));
   });
 });

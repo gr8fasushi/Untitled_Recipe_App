@@ -140,7 +140,7 @@ export function IngredientSearch({
       </View>
 
       {!hasQuery ? (
-        <View testID="ingredient-search-prompt" className="items-center py-16 px-6">
+        <View testID="ingredient-search-prompt" className="items-center py-4 px-6">
           <Text className="text-4xl mb-3">🔍</Text>
           <Text className="text-gray-600 text-base font-semibold">Search any ingredient</Text>
           <Text className="text-gray-400 text-sm mt-1 text-center">
@@ -148,7 +148,7 @@ export function IngredientSearch({
           </Text>
         </View>
       ) : isSearching ? (
-        <View testID="ingredient-search-loading" className="items-center py-16">
+        <View testID="ingredient-search-loading" className="items-center py-4">
           <ActivityIndicator size="large" color="#ea580c" />
           <Text className="text-gray-400 text-sm mt-3">Searching…</Text>
         </View>
@@ -156,6 +156,8 @@ export function IngredientSearch({
         <FlatList
           data={results}
           keyExtractor={(item) => item.id}
+          style={{ maxHeight: 180 }}
+          nestedScrollEnabled={true}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
           renderItem={({ item }) => (
             <IngredientRow

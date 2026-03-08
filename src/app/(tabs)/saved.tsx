@@ -5,9 +5,10 @@ import { useRouter } from 'expo-router';
 import { useSavedRecipes } from '@/features/saved-recipes/hooks/useSavedRecipes';
 import { useSavedRecipesStore } from '@/features/saved-recipes/store/savedRecipesStore';
 import { SavedRecipeCard } from '@/features/saved-recipes/components/SavedRecipeCard';
-import { BackgroundDecor, DECOR_SETS } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
+
 import type { SavedRecipe } from '@/features/saved-recipes/types';
 
 const RATING_FILTERS: { label: string; value: number | null }[] = [
@@ -37,13 +38,14 @@ export default function SavedScreen(): React.JSX.Element {
 
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
+  const { isPro } = useSubscription();
+  const { savedCount, savedMax } = useDailyUsage();
   const savedGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#1e0a44', '#3b0764', '#5b21b6'] as const)
+      ? (['#4c1d95', '#5b21b6', '#7c3aed'] as const)
       : (['#3b0764', '#6d28d9', '#a78bfa'] as const));
   const savedEmoji = holiday?.bannerEmoji ?? '🔖';
-  const [sSil0, sSil1, sSil2] = holiday?.silhouetteEmojis ?? ['🔖', '⭐', '❤️'];
   const savedSubtitleColor = holiday?.subtitleHexColor ?? '#ddd6fe'; // violet-200
 
   function handleCardPress(item: SavedRecipe): void {
@@ -53,42 +55,25 @@ export default function SavedScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="saved-screen">
-      <BackgroundDecor items={DECOR_SETS.saved} />
       {/* Gradient header — full width gradient, content constrained inside */}
       <LinearGradient
         colors={[savedGradient[0], savedGradient[1], savedGradient[2]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.28,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
       >
         <View className="items-center w-full">
-          <View
-            className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
-          >
-            {/* Emoji silhouettes */}
-            <View
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-              pointerEvents="none"
-            >
-              <Text
-                style={{ position: 'absolute', fontSize: 90, opacity: 0.18, top: -8, right: 16 }}
-              >
-                {sSil0}
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 20, right: 100 }}
-              >
-                {sSil1}
-              </Text>
-              <Text
-                style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 180 }}
-              >
-                {sSil2}
-              </Text>
-            </View>
-            <Text className="text-5xl mb-1">{savedEmoji}</Text>
+          <View className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}>
+            <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{savedEmoji}</Text>
             <Text
               testID="saved-heading"
-              className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+              className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
             >
               Saved Recipes
             </Text>
@@ -98,6 +83,15 @@ export default function SavedScreen(): React.JSX.Element {
             >
               Your bookmarked collection
             </Text>
+            {!isPro ? (
+              <Text
+                testID="saved-usage-badge"
+                style={{ color: savedSubtitleColor }}
+                className="text-xs font-nunito-semibold mt-1 opacity-80"
+              >
+                {savedCount} of {savedMax} recipes saved
+              </Text>
+            ) : null}
           </View>
         </View>
       </LinearGradient>
@@ -160,7 +154,7 @@ export default function SavedScreen(): React.JSX.Element {
               No saved recipes yet
             </Text>
             <Text className="text-sm text-gray-500 text-center">
-              Generate a recipe and tap &quot;Save Recipe&quot; to add it here.
+              Find a recipe and tap &apos;Save Recipe&apos; to add it here.
             </Text>
           </View>
         )}

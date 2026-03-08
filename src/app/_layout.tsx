@@ -8,7 +8,9 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import Purchases from 'react-native-purchases';
+import { RC_API_KEY_ANDROID, RC_API_KEY_IOS } from '@/constants/revenueCat';
 import '../../global.css';
 import { subscribeToAuthState, fetchUserProfile } from '@/features/auth/services/authService';
 import { useAuthStore } from '@/features/auth/store/authStore';
@@ -48,12 +50,13 @@ export default function RootLayout(): React.JSX.Element | null {
   const markEffectShown = useHolidayStore((s) => s.markEffectShown);
   const holidayTheme = useHolidayTheme();
 
-  // System color scheme from device
-  const systemScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-  // Resolve the effective scheme
-  const effectiveScheme = colorScheme === 'system' ? (systemScheme ?? 'light') : colorScheme;
-  const isDark = effectiveScheme === 'dark';
+  // Configure RevenueCat on mount (no-op if keys not yet set)
+  useEffect(() => {
+    const apiKey = Platform.OS === 'ios' ? RC_API_KEY_IOS : RC_API_KEY_ANDROID;
+    if (apiKey) Purchases.configure({ apiKey });
+  }, []);
 
   // Load persisted UI preferences on mount
   useEffect(() => {
@@ -74,10 +77,31 @@ export default function RootLayout(): React.JSX.Element | null {
     const unsubscribe = subscribeToAuthState(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser.uid);
-        setProfile(profile);
+        // Skip Firestore fetch if the store already has a valid profile for this uid.
+        // Social auth hooks (useGoogleSignIn, useAppleSignIn) set the profile themselves
+        // after creating it; a concurrent fetch here would race and may overwrite with null.
+        const existing = useAuthStore.getState().profile;
+        if (existing?.uid !== firebaseUser.uid) {
+          try {
+            const profile = await fetchUserProfile(firebaseUser.uid);
+            setProfile(profile);
+          } catch {
+            setProfile(null);
+          }
+        }
+        // Identify user in RevenueCat so purchases are tied to their Firebase UID
+        try {
+          await Purchases.logIn(firebaseUser.uid);
+        } catch {
+          // Non-fatal — RC not yet configured (Expo Go / web)
+        }
       } else {
         setProfile(null);
+        try {
+          await Purchases.logOut();
+        } catch {
+          // Non-fatal
+        }
       }
       setInitialized(true);
     });

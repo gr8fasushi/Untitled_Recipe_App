@@ -1,90 +1,174 @@
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { useGenerateRecipe } from '@/features/recipes/hooks/useGenerateRecipe';
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
 import { RecipeSummaryCard } from '@/features/recipes/components/RecipeSummaryCard';
-import { BackgroundDecor, Button, DECOR_SETS, PageContainer } from '@/shared/components/ui';
-import { IngredientSearch } from '@/features/pantry/components/IngredientSearch';
+import { Button, CollapsibleSection, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useDailyUsage, useSubscription } from '@/features/subscriptions';
+
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
 
+const MEAL_TYPES = [
+  { id: 'breakfast', label: 'Breakfast', emoji: '🌅' },
+  { id: 'lunch', label: 'Lunch', emoji: '☀️' },
+  { id: 'dinner', label: 'Dinner', emoji: '🌙' },
+  { id: 'dessert', label: 'Dessert', emoji: '🍰' },
+  { id: 'snack', label: 'Snack', emoji: '🍿' },
+] as const;
+
+const DIFFICULTIES = [
+  { id: 'easy', label: 'Easy' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'hard', label: 'Hard' },
+] as const;
+
+const COOK_TIMES = [
+  { id: '< 15', label: '< 15 min', maxMinutes: 15 },
+  { id: '15-30', label: '15-30 min', maxMinutes: 30 },
+  { id: '30-60', label: '30-60 min', maxMinutes: 60 },
+  { id: '60+', label: '60+ min', maxMinutes: null },
+] as const;
+
+const SERVING_SIZES = [
+  { id: '1-2', label: '1-2' },
+  { id: '3-4', label: '3-4' },
+  { id: '5-6', label: '5-6' },
+  { id: '6+', label: '6+' },
+] as const;
+
 export default function RecipesScreen(): React.JSX.Element {
+  const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
-  const removeIngredient = usePantryStore((s) => s.removeIngredient);
   const { generate, loadMore, isLoading, isLoadingMore, error, recipes } = useGenerateRecipe();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const setRecipes = useRecipesStore((s) => s.setRecipes);
   const selectedCuisines = useRecipesStore((s) => s.selectedCuisines);
   const toggleCuisine = useRecipesStore((s) => s.toggleCuisine);
   const strictIngredients = useRecipesStore((s) => s.strictIngredients);
   const setStrictIngredients = useRecipesStore((s) => s.setStrictIngredients);
   const router = useRouter();
 
-  const [useAI, setUseAI] = useState(true);
+  const [selectedMealType, setSelectedMealType] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [selectedCookTimeId, setSelectedCookTimeId] = useState<string | null>(null);
+  const [selectedServingSize, setSelectedServingSize] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { autoSearch } = useLocalSearchParams<{ autoSearch?: string }>();
+  const autoSearchTriggered = useRef(false);
+
+  const allergenKey = (profile?.allergens ?? []).join(',');
+  const dietKey = (profile?.dietaryPreferences ?? []).join(',');
+
+  // Clear recipes when the user's allergen/dietary profile changes
+  useEffect(() => {
+    setRecipes([]);
+  }, [allergenKey, dietKey, setRecipes]);
 
   const hasIngredients = selectedIngredients.length > 0;
+  const hasSearch = searchQuery.trim().length > 0;
   const isWeb = Platform.OS === 'web';
+
+  const { isPro } = useSubscription();
+  const { recipesUsed, recipesMax } = useDailyUsage();
+  const activeFilterCount =
+    (selectedMealType ? 1 : 0) +
+    selectedCuisines.length +
+    (selectedDifficulty ? 1 : 0) +
+    (selectedCookTimeId ? 1 : 0) +
+    (selectedServingSize ? 1 : 0);
 
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
   const recipesGradient =
     holiday?.gradient ??
     (isDark
-      ? (['#431407', '#7c2d12', '#9a3412'] as const)
+      ? (['#7c2d12', '#9a3412', '#c2410c'] as const)
       : (['#7c2d12', '#c2410c', '#fb923c'] as const));
   const recipesEmoji = holiday?.bannerEmoji ?? '🍳';
-  const [rSil0, rSil1, rSil2] = holiday?.silhouetteEmojis ?? ['🍳', '🔥', '🥄'];
   const recipesSubtitleColor = holiday?.subtitleHexColor ?? '#fed7aa'; // orange-200
+
+  function buildFilters() {
+    const cookTimeEntry = COOK_TIMES.find((t) => t.id === selectedCookTimeId);
+    return {
+      mealType: selectedMealType,
+      difficulty: selectedDifficulty,
+      maxCookTime: cookTimeEntry?.maxMinutes ?? null,
+      servingSize: selectedServingSize,
+      searchQuery: searchQuery.trim() || null,
+    };
+  }
+
+  // Auto-trigger search when arriving from pantry "Find Recipes" button
+  useEffect(() => {
+    if (autoSearch === 'true' && !autoSearchTriggered.current && hasIngredients) {
+      autoSearchTriggered.current = true;
+      void generate(buildFilters());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSearch, hasIngredients]);
 
   function handleViewFull(recipe: Recipe): void {
     setCurrentRecipe(recipe);
     router.push('/(tabs)/recipe-detail');
   }
 
+  function toggleMealType(id: string): void {
+    setSelectedMealType((prev) => (prev === id ? null : id));
+  }
+
+  function toggleDifficulty(id: string): void {
+    setSelectedDifficulty((prev) => (prev === id ? null : id));
+  }
+
+  function toggleCookTime(id: string): void {
+    setSelectedCookTimeId((prev) => (prev === id ? null : id));
+  }
+
+  function toggleServingSize(id: string): void {
+    setSelectedServingSize((prev) => (prev === id ? null : id));
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-950" testID="recipes-screen">
-      <BackgroundDecor items={DECOR_SETS.recipes} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Gradient header — deep red/orange cooking theme */}
         <LinearGradient
           colors={[recipesGradient[0], recipesGradient[1], recipesGradient[2]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 5 },
+            shadowOpacity: 0.28,
+            shadowRadius: 10,
+            elevation: 10,
+          }}
         >
           <View className="items-center w-full">
             <View
-              className={`w-full max-w-2xl px-6 pt-6 ${isWeb ? 'pb-10' : 'pb-8'} overflow-hidden`}
+              className={`w-full max-w-2xl px-6 pt-3 ${isWeb ? 'pb-6' : 'pb-5'} overflow-hidden`}
             >
-              {/* Emoji silhouettes */}
-              <View
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                pointerEvents="none"
-              >
-                <Text
-                  style={{ position: 'absolute', fontSize: 95, opacity: 0.18, top: -8, right: 12 }}
-                >
-                  {rSil0}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 70, opacity: 0.15, top: 22, right: 105 }}
-                >
-                  {rSil1}
-                </Text>
-                <Text
-                  style={{ position: 'absolute', fontSize: 80, opacity: 0.15, top: -5, right: 185 }}
-                >
-                  {rSil2}
-                </Text>
-              </View>
-              <Text className="text-5xl mb-1">{recipesEmoji}</Text>
+              <Text className={`${isWeb ? 'text-5xl' : 'text-4xl'} mb-1`}>{recipesEmoji}</Text>
               <Text
                 testID="recipes-heading"
-                className={`${isWeb ? 'text-5xl' : 'text-3xl'} font-nunito-extrabold text-white tracking-tight`}
+                className={`${isWeb ? 'text-4xl' : 'text-2xl'} font-nunito-extrabold text-white tracking-tight`}
               >
                 Find My Meal
               </Text>
@@ -93,197 +177,324 @@ export default function RecipesScreen(): React.JSX.Element {
                 className={`${isWeb ? 'text-base' : 'text-sm'} mt-1 font-nunito-semibold`}
               >
                 {hasIngredients
-                  ? 'Select cuisines and find your perfect meal'
+                  ? "Turn what's in your kitchen into something delicious"
                   : 'Add ingredients below to get started'}
               </Text>
+              {!isPro ? (
+                <Text
+                  testID="recipes-usage-badge"
+                  style={{ color: recipesSubtitleColor }}
+                  className="text-xs font-nunito-semibold mt-1 opacity-80"
+                >
+                  {recipesUsed} of {recipesMax} generations used today
+                </Text>
+              ) : null}
             </View>
           </View>
         </LinearGradient>
 
-        <PageContainer className="px-4 mt-4">
-          {!hasIngredients ? (
-            <View
-              testID="recipes-no-ingredients"
-              className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 mb-4"
-            >
-              <Text className="text-sm font-nunito text-blue-700">
-                Head to the Pantry tab, select your ingredients, save them, then come back here to
-                generate recipes tailored to what you have.
-              </Text>
-            </View>
-          ) : null}
-
-          {/* Ingredient search — add/manage pantry without leaving this tab */}
-          <View className="mb-2">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">Your Ingredients</Text>
-            <IngredientSearch />
-          </View>
-
-          {/* Removable ingredient chips */}
-          {hasIngredients ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-1">
-              {selectedIngredients.map((ingredient) => (
-                <Pressable
-                  key={ingredient.id}
-                  testID={`banner-ingredient-${ingredient.id}`}
-                  onPress={() => removeIngredient(ingredient.id)}
-                  className="flex-row items-center gap-1 bg-primary-50 border border-primary-200 rounded-full px-3 py-1 mr-2"
-                >
-                  <Text className="text-xs font-nunito-bold text-primary-700">
-                    {ingredient.name}
-                  </Text>
-                  <Text className="text-xs text-primary-400">×</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : null}
-
-          {/* Cuisine selector */}
-          <View className="mb-4">
-            <Text className="text-sm font-nunito-bold text-gray-700 mb-2">
-              Cuisine (optional — pick one or more)
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {CUISINES.map((cuisine) => {
-                const isActive = selectedCuisines.includes(cuisine.id);
-                return (
-                  <Pressable
-                    key={cuisine.id}
-                    testID={`cuisine-pill-${cuisine.id}`}
-                    onPress={() => toggleCuisine(cuisine.id)}
-                    className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
-                      isActive ? 'bg-primary-600 border-primary-600' : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    <Text className="text-sm">{cuisine.emoji}</Text>
-                    <Text
-                      className={`text-xs font-nunito-bold ${
-                        isActive ? 'text-white' : 'text-gray-700'
-                      }`}
-                    >
-                      {cuisine.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Strict ingredients checkbox */}
-          <Pressable
-            testID="checkbox-strict-ingredients"
-            onPress={() => setStrictIngredients(!strictIngredients)}
-            className="flex-row items-center gap-2 py-2 mb-1"
-          >
-            <View
-              className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                strictIngredients ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
-              }`}
-            >
-              {strictIngredients ? <Text className="text-white text-xs font-bold">✓</Text> : null}
-            </View>
-            <Text className="text-sm text-gray-700 font-nunito flex-1">
-              Only use my exact pantry ingredients
-            </Text>
-          </Pressable>
-          {strictIngredients ? (
-            <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
-              Basic spices (salt, pepper, oil, etc.) always assumed available
-            </Text>
-          ) : null}
-
-          {/* AI toggle */}
-          <Pressable
-            testID="checkbox-use-ai"
-            onPress={() => setUseAI(!useAI)}
-            className="flex-row items-center gap-2 py-2 mb-1"
-          >
-            <View
-              className={`w-5 h-5 rounded border-2 items-center justify-center ${
-                useAI ? 'bg-primary-600 border-primary-600' : 'border-gray-300 bg-white'
-              }`}
-            >
-              {useAI ? <Text className="text-white text-xs font-bold">✓</Text> : null}
-            </View>
-            <Text className="text-sm text-gray-700 font-nunito flex-1">
-              Let AI generate recipes
-            </Text>
-          </Pressable>
-          {!useAI ? (
-            <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
-              Only recipes from TheMealDB will be shown
-            </Text>
-          ) : null}
-
-          <View className="mt-3">
-            <Button
-              label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
-              onPress={() => {
-                void generate(useAI);
-              }}
-              disabled={isLoading || !hasIngredients}
-              testID="btn-generate-recipe"
-            />
-          </View>
-
-          {error ? (
-            <View testID="recipes-error" className="mt-3 rounded-xl bg-red-50 px-4 py-3">
-              <Text className="text-sm font-nunito text-red-700">{error}</Text>
-            </View>
-          ) : null}
-
-          {isLoading ? (
-            <View testID="recipes-loading" className="mt-8 items-center justify-center">
-              <ActivityIndicator size="large" color="#ea580c" />
-              <Text className="mt-3 font-nunito text-gray-400">Finding your meal…</Text>
-            </View>
-          ) : null}
-
-          {recipes.length > 0 && !isLoading ? (
-            <View testID="recipes-list" className="mt-6">
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-base font-nunito-semibold text-gray-700">
-                  {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your pantry`}
+        <View style={{ flex: 1 }}>
+          <PageContainer className="px-4 mt-4">
+            {!hasIngredients && !hasSearch ? (
+              <View
+                testID="recipes-no-ingredients"
+                className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 mb-4"
+              >
+                <Text className="text-sm font-nunito text-blue-700">
+                  Head to the My Kitchen tab, select your ingredients, save them, then come back
+                  here to generate recipes tailored to what you have.
                 </Text>
-                <Pressable
-                  testID="btn-back-to-pantry"
-                  onPress={() => router.push('/(tabs)/pantry')}
-                  className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-accent-50 border border-accent-200"
-                >
-                  <Text className="text-xs font-nunito-bold text-accent-700">← Pantry</Text>
-                </Pressable>
               </View>
-              {recipes.map((recipe, index) => (
-                <RecipeSummaryCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onViewFull={() => handleViewFull(recipe)}
-                  testID={`recipe-card-${index}`}
-                />
-              ))}
-              <View className="mt-4">
-                {isLoadingMore ? (
-                  <View className="items-center py-4">
-                    <ActivityIndicator size="small" color="#ea580c" />
-                    <Text className="mt-2 font-nunito text-gray-400 text-sm">
-                      Finding more recipes…
+            ) : null}
+
+            {/* Read-only ingredient chips */}
+            {hasIngredients ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-1">
+                {selectedIngredients.map((ingredient) => (
+                  <View
+                    key={ingredient.id}
+                    testID={`banner-ingredient-${ingredient.id}`}
+                    className="flex-row items-center bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 rounded-full px-3 py-1 mr-2"
+                  >
+                    <Text className="text-xs font-nunito-bold text-primary-700 dark:text-primary-300">
+                      {ingredient.name}
                     </Text>
                   </View>
-                ) : (
-                  <Button
-                    label="Find More Recipes"
-                    onPress={() => {
-                      void loadMore(useAI);
-                    }}
-                    variant="ghost"
-                    disabled={!hasIngredients}
-                    testID="btn-load-more"
-                  />
-                )}
-              </View>
+                ))}
+              </ScrollView>
+            ) : null}
+
+            {/* Add or Remove Ingredients — navigate to My Kitchen */}
+            <Pressable
+              testID="btn-back-to-pantry"
+              onPress={() => router.push('/(tabs)/pantry')}
+              className="flex-row items-center justify-center gap-2 py-3 mb-4 rounded-xl border-2 border-emerald-400 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-600"
+            >
+              <Text className="text-sm font-nunito-bold text-emerald-700 dark:text-emerald-300">
+                Add or Remove Ingredients
+              </Text>
+            </Pressable>
+
+            {/* Keyword search */}
+            <View className="mb-4">
+              <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-200 mb-2">
+                Search (optional)
+              </Text>
+              <TextInput
+                testID="input-search-query-recipes"
+                placeholder="e.g. pasta, chicken stir fry, healthy salad…"
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-4 py-3 text-sm font-nunito text-gray-900 dark:text-gray-100"
+              />
             </View>
-          ) : null}
-        </PageContainer>
+
+            {/* Collapsible filter panel */}
+            <CollapsibleSection
+              title="Filters"
+              badge={activeFilterCount}
+              testID="collapsible-filters"
+            >
+              {/* Meal type */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Meal Type
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {MEAL_TYPES.map((mt) => {
+                  const isActive = selectedMealType === mt.id;
+                  return (
+                    <Pressable
+                      key={mt.id}
+                      testID={`meal-type-pill-${mt.id}`}
+                      onPress={() => toggleMealType(mt.id)}
+                      className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-primary-600 border-primary-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text className="text-sm">{mt.emoji}</Text>
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {mt.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Cuisine */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Cuisine
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {CUISINES.map((cuisine) => {
+                  const isActive = selectedCuisines.includes(cuisine.id);
+                  return (
+                    <Pressable
+                      key={cuisine.id}
+                      testID={`cuisine-pill-${cuisine.id}`}
+                      onPress={() => toggleCuisine(cuisine.id)}
+                      className={`flex-row items-center gap-1 px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-primary-600 border-primary-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text className="text-sm">{cuisine.emoji}</Text>
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {cuisine.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Difficulty */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Difficulty
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {DIFFICULTIES.map((d) => {
+                  const isActive = selectedDifficulty === d.id;
+                  return (
+                    <Pressable
+                      key={d.id}
+                      testID={`difficulty-pill-${d.id}`}
+                      onPress={() => toggleDifficulty(d.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-primary-600 border-primary-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {d.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Time to Cook */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Time to Cook
+              </Text>
+              <View className="flex-row flex-wrap gap-2 mb-4">
+                {COOK_TIMES.map((ct) => {
+                  const isActive = selectedCookTimeId === ct.id;
+                  return (
+                    <Pressable
+                      key={ct.id}
+                      testID={`cook-time-pill-${ct.id}`}
+                      onPress={() => toggleCookTime(ct.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-primary-600 border-primary-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {ct.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Serving Size */}
+              <Text className="text-xs font-nunito-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Serving Size
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
+                {SERVING_SIZES.map((ss) => {
+                  const isActive = selectedServingSize === ss.id;
+                  return (
+                    <Pressable
+                      key={ss.id}
+                      testID={`serving-size-pill-${ss.id}`}
+                      onPress={() => toggleServingSize(ss.id)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        isActive
+                          ? 'bg-primary-600 border-primary-600'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-nunito-bold ${
+                          isActive ? 'text-white' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {ss.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </CollapsibleSection>
+
+            {/* Strict ingredients checkbox */}
+            <Pressable
+              testID="checkbox-strict-ingredients"
+              onPress={() => setStrictIngredients(!strictIngredients)}
+              className="flex-row items-center gap-2 py-2 mb-1"
+            >
+              <View
+                className={`w-5 h-5 rounded border-2 items-center justify-center ${
+                  strictIngredients
+                    ? 'bg-primary-600 border-primary-600'
+                    : 'border-gray-300 bg-white'
+                }`}
+              >
+                {strictIngredients ? <Text className="text-white text-xs font-bold">✓</Text> : null}
+              </View>
+              <Text className="text-sm text-gray-700 font-nunito flex-1">
+                Only use my exact kitchen ingredients
+              </Text>
+            </Pressable>
+            {strictIngredients ? (
+              <Text className="text-xs text-gray-400 ml-7 mb-3 font-nunito">
+                Basic spices (salt, pepper, oil, etc.) always assumed available
+              </Text>
+            ) : null}
+
+            <View className="mt-3">
+              <Button
+                label={isLoading ? 'Finding your meal…' : '🍳 Find My Meal'}
+                onPress={() => {
+                  void generate(buildFilters());
+                }}
+                disabled={isLoading || (!hasIngredients && !hasSearch)}
+                testID="btn-generate-recipe"
+              />
+            </View>
+
+            {error ? (
+              <View testID="recipes-error" className="mt-3 rounded-xl bg-red-50 px-4 py-3">
+                <Text className="text-sm font-nunito text-red-700">{error}</Text>
+              </View>
+            ) : null}
+
+            {isLoading ? (
+              <View testID="recipes-loading" className="mt-8 items-center justify-center">
+                <ActivityIndicator size="large" color="#ea580c" />
+                <Text className="mt-3 font-nunito text-gray-400">Finding your meal…</Text>
+              </View>
+            ) : null}
+
+            {recipes.length > 0 && !isLoading ? (
+              <View testID="recipes-list" className="mt-6">
+                <Text className="text-base font-nunito-semibold text-gray-700 mb-3">
+                  {`${recipes.length} recipe${recipes.length !== 1 ? 's' : ''} for your kitchen`}
+                </Text>
+                {recipes.map((recipe, index) => (
+                  <RecipeSummaryCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    onViewFull={() => handleViewFull(recipe)}
+                    testID={`recipe-card-${index}`}
+                  />
+                ))}
+                <View className="mt-4">
+                  {isLoadingMore ? (
+                    <View className="items-center py-4">
+                      <ActivityIndicator size="small" color="#ea580c" />
+                      <Text className="mt-2 font-nunito text-gray-400 text-sm">
+                        Finding more recipes…
+                      </Text>
+                    </View>
+                  ) : (
+                    <Button
+                      label={!isPro ? 'Upgrade to Pro — Find More Recipes' : 'Find More Recipes'}
+                      onPress={() => {
+                        void loadMore(buildFilters());
+                      }}
+                      variant="ghost"
+                      disabled={!hasIngredients || !isPro}
+                      testID="btn-load-more"
+                    />
+                  )}
+                </View>
+              </View>
+            ) : null}
+          </PageContainer>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

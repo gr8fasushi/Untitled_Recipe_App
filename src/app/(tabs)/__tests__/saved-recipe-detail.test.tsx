@@ -21,8 +21,6 @@ jest.mock('@/features/recipes/store/recipesStore', () => ({
 const mockUpdateRating = jest.fn();
 const mockUpdateReview = jest.fn();
 const mockUpdateNotes = jest.fn();
-const mockShareRecipeHandler = jest.fn().mockResolvedValue(undefined);
-const mockUnshareRecipeHandler = jest.fn().mockResolvedValue(undefined);
 const mockDeleteRecipeHandler = jest.fn();
 
 let mockSavedRecipe: SavedRecipe | null = null;
@@ -35,8 +33,6 @@ jest.mock('@/features/saved-recipes/hooks/useSavedRecipeDetail', () => ({
     updateRating: mockUpdateRating,
     updateReview: mockUpdateReview,
     updateNotes: mockUpdateNotes,
-    shareRecipeHandler: mockShareRecipeHandler,
-    unshareRecipeHandler: mockUnshareRecipeHandler,
     deleteRecipeHandler: mockDeleteRecipeHandler,
   }),
 }));
@@ -110,9 +106,20 @@ jest.mock('@/features/recipes/components/MeatTemperatureCard', () => ({
   MeatTemperatureCard: () => null,
 }));
 
+jest.mock('@/features/grocery', () => ({
+  useGroceryList: () => ({
+    items: [],
+    isLoading: false,
+    error: null,
+    addItemsFromRecipe: jest.fn(),
+    removeItem: jest.fn(),
+    toggleChecked: jest.fn(),
+    clearChecked: jest.fn(),
+    clearAll: jest.fn(),
+  }),
+}));
+
 jest.mock('@/shared/components/ui', () => ({
-  BackgroundDecor: () => null,
-  DECOR_SETS: { saved: [] },
   Button: ({
     label,
     onPress,
@@ -137,6 +144,29 @@ jest.mock('@/shared/components/ui', () => ({
     );
   },
 }));
+
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
 
 // eslint-disable-next-line import/first
 import SavedRecipeDetailScreen from '../saved-recipe-detail';
@@ -201,10 +231,10 @@ describe('SavedRecipeDetailScreen', () => {
     expect(getByTestId('saved-detail-empty')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to saved tab', () => {
     const { getByTestId } = render(<SavedRecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/saved');
   });
 
   describe('with recipe', () => {
@@ -251,30 +281,6 @@ describe('SavedRecipeDetailScreen', () => {
       expect(mockUpdateNotes).toHaveBeenCalledWith('Note!');
     });
 
-    it('shows Share button when not shared', () => {
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      expect(getByTestId('btn-share')).toBeTruthy();
-    });
-
-    it('shows Unshare button when recipe is shared', () => {
-      mockSavedRecipe = { ...savedRecipe, isShared: true };
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      expect(getByTestId('btn-unshare')).toBeTruthy();
-    });
-
-    it('pressing Share calls shareRecipeHandler', () => {
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      fireEvent.press(getByTestId('btn-share'));
-      expect(mockShareRecipeHandler).toHaveBeenCalledTimes(1);
-    });
-
-    it('pressing Unshare calls unshareRecipeHandler', () => {
-      mockSavedRecipe = { ...savedRecipe, isShared: true };
-      const { getByTestId } = render(<SavedRecipeDetailScreen />);
-      fireEvent.press(getByTestId('btn-unshare'));
-      expect(mockUnshareRecipeHandler).toHaveBeenCalledTimes(1);
-    });
-
     it('pressing Delete calls deleteRecipeHandler', () => {
       const { getByTestId } = render(<SavedRecipeDetailScreen />);
       fireEvent.press(getByTestId('btn-delete-saved'));
@@ -302,7 +308,26 @@ describe('SavedRecipeDetailScreen', () => {
       expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
     });
 
-    it('pressing chat with AI sets current recipe and navigates to chat', () => {
+    it('chat with AI button is disabled for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(true);
+    });
+
+    it('chat with AI button shows upgrade label for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByText } = render(<SavedRecipeDetailScreen />);
+      expect(getByText('👨‍🍳 Upgrade to Pro — Chat with Jules')).toBeTruthy();
+    });
+
+    it('chat with AI button is enabled for pro users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+      const { getByTestId } = render(<SavedRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+    });
+
+    it('pressing chat with AI sets current recipe and navigates to chat (pro user)', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
       const { getByTestId } = render(<SavedRecipeDetailScreen />);
       fireEvent.press(getByTestId('btn-chat-with-ai'));
       expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);

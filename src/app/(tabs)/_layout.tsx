@@ -1,5 +1,9 @@
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
+const isWeb = Platform.OS === 'web';
+const TAB_ICON_SIZE = isWeb ? 28 : 22;
 
 export default function TabLayout(): React.JSX.Element {
   return (
@@ -12,14 +16,18 @@ export default function TabLayout(): React.JSX.Element {
           backgroundColor: '#1c1917',
           borderTopColor: '#292524',
           borderTopWidth: 1,
-          height: 68,
-          paddingBottom: 10,
-          paddingTop: 6,
+          ...Platform.select({
+            web: { height: 88, paddingBottom: 16, paddingTop: 10 },
+            default: { height: 68, paddingBottom: 10, paddingTop: 6 },
+          }),
         },
         tabBarLabelStyle: {
           fontFamily: 'Nunito_600SemiBold',
-          fontSize: 11,
           letterSpacing: 0.2,
+          ...Platform.select({
+            web: { fontSize: 14 },
+            default: { fontSize: 11 },
+          }),
         },
       }}
     >
@@ -28,16 +36,33 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={TAB_ICON_SIZE} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="pantry"
         options={{
-          title: 'Pantry',
+          title: 'Ingredient List',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'basket' : 'basket-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'basket' : 'basket-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Get Recipes',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'restaurant' : 'restaurant-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
           ),
         }}
       />
@@ -46,7 +71,20 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Saved',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'bookmark' : 'bookmark-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="grocery"
+        options={{
+          title: 'Grocery',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'cart' : 'cart-outline'} size={TAB_ICON_SIZE} color={color} />
           ),
         }}
       />
@@ -55,16 +93,18 @@ export default function TabLayout(): React.JSX.Element {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={TAB_ICON_SIZE}
+              color={color}
+            />
           ),
         }}
       />
       {/* Hidden screens — push navigation only */}
       <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="recipes" options={{ href: null }} />
       <Tabs.Screen name="scan" options={{ href: null }} />
       <Tabs.Screen name="community" options={{ href: null }} />
-      <Tabs.Screen name="recipe-search" options={{ href: null }} />
       <Tabs.Screen name="recipe-detail" options={{ href: null }} />
       <Tabs.Screen name="saved-recipe-detail" options={{ href: null }} />
       <Tabs.Screen name="community-recipe-detail" options={{ href: null }} />

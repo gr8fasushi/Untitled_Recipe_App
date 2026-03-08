@@ -29,11 +29,13 @@ service cloud.firestore {
         && request.auth.uid == uid
         && validateUserProfile(request.resource.data);
 
-      // Update own profile — uid and createdAt are immutable
+      // Update own profile — uid, createdAt, tier, and subscriptionExpiresAt are immutable (admin SDK only)
       allow update: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('tier', 'free') == resource.data.get('tier', 'free')
+        && request.resource.data.get('subscriptionExpiresAt', null) == resource.data.get('subscriptionExpiresAt', null)
         && validateUserProfile(request.resource.data);
 
       // Delete own profile — required for App Store account deletion compliance
@@ -41,6 +43,11 @@ service cloud.firestore {
 
       // Pantry subcollection — single doc per user: users/{uid}/pantry/items
       match /pantry/{doc} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Grocery list subcollection — single doc per user: users/{uid}/groceryList/items
+      match /groceryList/{doc} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
@@ -60,10 +67,23 @@ service cloud.firestore {
         && request.auth.uid == resource.data.sharedBy.uid;
     }
 
+    // Shared ingredient cache — any authenticated user can read or write
+    // Stores safe metadata only: id, name, category, emoji, cachedAt
+    match /ingredients/{ingredientId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
     // Rate limit counters — only writable by authenticated Cloud Functions
     // (Cloud Functions use admin SDK which bypasses security rules)
     match /rateLimits/{uid}/{operation}/{window} {
       allow read: if false;
+      allow write: if false;
+    }
+
+    // Daily usage counters — owner can read (to show progress UI), only CF admin SDK can write
+    match /dailyLimits/{uid}/{operation}/{day} {
+      allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
   }

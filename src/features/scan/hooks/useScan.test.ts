@@ -3,13 +3,6 @@ import { useScan } from './useScan';
 
 // --- Mocks ---
 
-jest.mock('expo-image-picker', () => ({
-  launchCameraAsync: jest.fn(),
-  launchImageLibraryAsync: jest.fn(),
-  requestCameraPermissionsAsync: jest.fn(),
-  requestMediaLibraryPermissionsAsync: jest.fn(),
-}));
-
 jest.mock('@/features/scan/services/scanService', () => ({
   analyzePhoto: jest.fn(),
 }));
@@ -27,13 +20,6 @@ jest.mock('expo-router', () => ({
 }));
 
 // --- Retrieve mocks ---
-
-const ImagePicker = jest.requireMock('expo-image-picker') as {
-  launchCameraAsync: jest.Mock;
-  launchImageLibraryAsync: jest.Mock;
-  requestCameraPermissionsAsync: jest.Mock;
-  requestMediaLibraryPermissionsAsync: jest.Mock;
-};
 
 const { analyzePhoto } = jest.requireMock('@/features/scan/services/scanService') as {
   analyzePhoto: jest.Mock;
@@ -79,9 +65,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   useScanStore.mockReturnValue(makeScanStore());
   usePantryStore.mockReturnValue({ addIngredient: mockAddIngredient });
-  // Default: permissions granted
-  ImagePicker.requestCameraPermissionsAsync.mockResolvedValue({ status: 'granted' });
-  ImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ status: 'granted' });
 });
 
 // --- Tests ---
@@ -104,8 +87,8 @@ describe('useScan', () => {
       expect(result.current.isAnalyzing).toBe(true);
     });
 
-    it('is false for done/error/idle', () => {
-      for (const status of ['idle', 'done', 'error'] as const) {
+    it('is false for scanning/done/error/idle', () => {
+      for (const status of ['idle', 'scanning', 'done', 'error'] as const) {
         useScanStore.mockReturnValue(makeScanStore({ status }));
         const { result } = renderHook(() => useScan());
         expect(result.current.isAnalyzing).toBe(false);
@@ -113,161 +96,61 @@ describe('useScan', () => {
     });
   });
 
-  describe('takePhoto', () => {
-    it('calls launchCameraAsync with correct options', async () => {
-      ImagePicker.launchCameraAsync.mockResolvedValueOnce({ canceled: true });
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.takePhoto();
-      });
-      expect(ImagePicker.launchCameraAsync).toHaveBeenCalledWith({
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.7,
-        exif: false,
-      });
-    });
-
-    it('is a no-op when user cancels', async () => {
-      ImagePicker.launchCameraAsync.mockResolvedValueOnce({ canceled: true });
-      const storeState = makeScanStore();
-      useScanStore.mockReturnValue(storeState);
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.takePhoto();
-      });
-      expect(storeState.setStatus).not.toHaveBeenCalled();
-      expect(analyzePhoto).not.toHaveBeenCalled();
-    });
-
-    it('analyzes photo and merges ingredients on success', async () => {
-      ImagePicker.launchCameraAsync.mockResolvedValueOnce({
-        canceled: false,
-        assets: [{ base64: 'abc123', mimeType: 'image/jpeg' }],
-      });
+  describe('runScan', () => {
+    it('calls setStatus analyzing, merges ingredients, sets done on success', async () => {
       analyzePhoto.mockResolvedValueOnce([carrot, tomato]);
       const storeState = makeScanStore();
       useScanStore.mockReturnValue(storeState);
-
       const { result } = renderHook(() => useScan());
+
       await act(async () => {
-        await result.current.takePhoto();
+        await result.current.runScan('base64data', 'image/jpeg');
       });
 
-      expect(analyzePhoto).toHaveBeenCalledWith('abc123', 'image/jpeg');
       expect(storeState.setStatus).toHaveBeenCalledWith('analyzing');
+      expect(analyzePhoto).toHaveBeenCalledWith('base64data', 'image/jpeg');
       expect(storeState.mergeIngredients).toHaveBeenCalledWith([carrot, tomato]);
       expect(storeState.setStatus).toHaveBeenCalledWith('done');
     });
 
-    it('defaults mimeType to image/jpeg for unknown types', async () => {
-      ImagePicker.launchCameraAsync.mockResolvedValueOnce({
-        canceled: false,
-        assets: [{ base64: 'abc123', mimeType: 'image/heif' }],
-      });
+    it('clears error before analyzing', async () => {
       analyzePhoto.mockResolvedValueOnce([carrot]);
-      useScanStore.mockReturnValue(makeScanStore());
-
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.takePhoto();
-      });
-
-      expect(analyzePhoto).toHaveBeenCalledWith('abc123', 'image/jpeg');
-    });
-
-    it('sets error when camera permission is denied', async () => {
-      ImagePicker.requestCameraPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
-      const storeState = makeScanStore();
+      const storeState = makeScanStore({ error: 'previous error' });
       useScanStore.mockReturnValue(storeState);
       const { result } = renderHook(() => useScan());
+
       await act(async () => {
-        await result.current.takePhoto();
+        await result.current.runScan('base64data', 'image/jpeg');
       });
-      expect(ImagePicker.launchCameraAsync).not.toHaveBeenCalled();
-      expect(storeState.setError).toHaveBeenCalledWith(
-        'Camera permission is required to take photos.'
-      );
-      expect(storeState.setStatus).toHaveBeenCalledWith('error');
+
+      expect(storeState.setError).toHaveBeenCalledWith(null);
     });
 
-    it('sets error state when analyzePhoto throws', async () => {
-      ImagePicker.launchCameraAsync.mockResolvedValueOnce({
-        canceled: false,
-        assets: [{ base64: 'abc123', mimeType: 'image/jpeg' }],
-      });
+    it('sets error status when analyzePhoto throws', async () => {
       analyzePhoto.mockRejectedValueOnce(new Error('No food ingredients detected'));
       const storeState = makeScanStore();
       useScanStore.mockReturnValue(storeState);
-
       const { result } = renderHook(() => useScan());
+
       await act(async () => {
-        await result.current.takePhoto();
+        await result.current.runScan('base64data', 'image/jpeg');
       });
 
       expect(storeState.setError).toHaveBeenCalledWith('No food ingredients detected');
       expect(storeState.setStatus).toHaveBeenCalledWith('error');
     });
-  });
 
-  describe('pickFromGallery', () => {
-    it('calls launchImageLibraryAsync with correct options', async () => {
-      ImagePicker.launchImageLibraryAsync.mockResolvedValueOnce({ canceled: true });
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.pickFromGallery();
-      });
-      expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith({
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.7,
-        exif: false,
-      });
-    });
-
-    it('sets error when media library permission is denied', async () => {
-      ImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
+    it('uses fallback message when error is not an Error instance', async () => {
+      analyzePhoto.mockRejectedValueOnce('unknown failure');
       const storeState = makeScanStore();
       useScanStore.mockReturnValue(storeState);
       const { result } = renderHook(() => useScan());
+
       await act(async () => {
-        await result.current.pickFromGallery();
-      });
-      expect(ImagePicker.launchImageLibraryAsync).not.toHaveBeenCalled();
-      expect(storeState.setError).toHaveBeenCalledWith(
-        'Photo library permission is required to pick images.'
-      );
-      expect(storeState.setStatus).toHaveBeenCalledWith('error');
-    });
-
-    it('is a no-op when user cancels', async () => {
-      ImagePicker.launchImageLibraryAsync.mockResolvedValueOnce({ canceled: true });
-      const storeState = makeScanStore();
-      useScanStore.mockReturnValue(storeState);
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.pickFromGallery();
-      });
-      expect(storeState.setStatus).not.toHaveBeenCalled();
-    });
-
-    it('analyzes selected image and merges on success', async () => {
-      ImagePicker.launchImageLibraryAsync.mockResolvedValueOnce({
-        canceled: false,
-        assets: [{ base64: 'gallerydata', mimeType: 'image/png' }],
-      });
-      analyzePhoto.mockResolvedValueOnce([carrot]);
-      const storeState = makeScanStore();
-      useScanStore.mockReturnValue(storeState);
-
-      const { result } = renderHook(() => useScan());
-      await act(async () => {
-        await result.current.pickFromGallery();
+        await result.current.runScan('base64data', 'image/jpeg');
       });
 
-      expect(analyzePhoto).toHaveBeenCalledWith('gallerydata', 'image/png');
-      expect(storeState.mergeIngredients).toHaveBeenCalledWith([carrot]);
-      expect(storeState.setStatus).toHaveBeenCalledWith('done');
+      expect(storeState.setError).toHaveBeenCalledWith('Something went wrong. Please try again.');
     });
   });
 

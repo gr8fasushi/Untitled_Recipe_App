@@ -18,15 +18,22 @@ const mockSetProfile = jest.fn();
 const mockSetInitialized = jest.fn();
 let mockIsInitialized = false;
 let mockLoaded = true;
+// Controls what useAuthStore.getState().profile returns (simulates existing in-memory profile)
+let mockGetStateProfile: { uid: string } | null = null;
 
 jest.mock('@/features/auth/store/authStore', () => ({
-  useAuthStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      isInitialized: mockIsInitialized,
-      setUser: mockSetUser,
-      setProfile: mockSetProfile,
-      setInitialized: mockSetInitialized,
-    }),
+  useAuthStore: Object.assign(
+    (selector: (s: Record<string, unknown>) => unknown) =>
+      selector({
+        isInitialized: mockIsInitialized,
+        setUser: mockSetUser,
+        setProfile: mockSetProfile,
+        setInitialized: mockSetInitialized,
+      }),
+    {
+      getState: () => ({ profile: mockGetStateProfile }),
+    }
+  ),
 }));
 
 const mockHideAsync = jest.fn();
@@ -54,6 +61,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockIsInitialized = false;
   mockLoaded = true;
+  mockGetStateProfile = null;
 });
 
 it('subscribes to auth state on mount', () => {
@@ -144,4 +152,44 @@ it('does NOT call SplashScreen.hideAsync when not initialized', () => {
   mockSubscribeToAuthState.mockReturnValue(jest.fn());
   render(<RootLayout />);
   expect(mockHideAsync).not.toHaveBeenCalled();
+});
+
+it('calls setInitialized(true) even when fetchUserProfile throws', async () => {
+  const mockUser = { uid: 'u2' };
+  let capturedCallback: ((user: typeof mockUser) => Promise<void>) | undefined;
+  mockSubscribeToAuthState.mockImplementation((cb: (user: typeof mockUser) => Promise<void>) => {
+    capturedCallback = cb;
+    return jest.fn();
+  });
+  mockFetchUserProfile.mockRejectedValue(new Error('Firestore permission denied'));
+
+  render(<RootLayout />);
+
+  await act(async () => {
+    await capturedCallback?.(mockUser);
+  });
+
+  expect(mockSetInitialized).toHaveBeenCalledWith(true);
+  expect(mockSetProfile).toHaveBeenCalledWith(null);
+});
+
+it('skips fetchUserProfile and still calls setInitialized when profile uid already matches', async () => {
+  const mockUser = { uid: 'u3' };
+  // Simulate profile already loaded in store for this uid
+  mockGetStateProfile = { uid: 'u3' };
+
+  let capturedCallback: ((user: typeof mockUser) => Promise<void>) | undefined;
+  mockSubscribeToAuthState.mockImplementation((cb: (user: typeof mockUser) => Promise<void>) => {
+    capturedCallback = cb;
+    return jest.fn();
+  });
+
+  render(<RootLayout />);
+
+  await act(async () => {
+    await capturedCallback?.(mockUser);
+  });
+
+  expect(mockFetchUserProfile).not.toHaveBeenCalled();
+  expect(mockSetInitialized).toHaveBeenCalledWith(true);
 });

@@ -58,9 +58,20 @@ jest.mock('@/features/recipes/components/MeatTemperatureCard', () => ({
   MeatTemperatureCard: () => null,
 }));
 
+jest.mock('@/features/grocery', () => ({
+  useGroceryList: () => ({
+    items: [],
+    isLoading: false,
+    error: null,
+    addItemsFromRecipe: jest.fn(),
+    removeItem: jest.fn(),
+    toggleChecked: jest.fn(),
+    clearChecked: jest.fn(),
+    clearAll: jest.fn(),
+  }),
+}));
+
 jest.mock('@/shared/components/ui', () => ({
-  BackgroundDecor: () => null,
-  DECOR_SETS: { community: [] },
   Button: ({
     label,
     onPress,
@@ -85,6 +96,29 @@ jest.mock('@/shared/components/ui', () => ({
     );
   },
 }));
+
+jest.mock('@/features/subscriptions', () => ({
+  useSubscription: jest.fn().mockReturnValue({ isPro: false, tier: 'free' }),
+  useDailyUsage: jest.fn().mockReturnValue({
+    recipesUsed: 0,
+    recipesMax: 5,
+    recipeCapReached: false,
+    scansUsed: 0,
+    scansMax: 3,
+    scanCapReached: false,
+    chatUsed: 0,
+    chatMax: 5,
+    chatCapReached: false,
+    savedCount: 0,
+    savedMax: 15,
+    saveCapReached: false,
+    isLoading: false,
+  }),
+}));
+
+const subscriptionsMock = jest.requireMock('@/features/subscriptions') as {
+  useSubscription: jest.Mock;
+};
 
 // eslint-disable-next-line import/first
 import CommunityRecipeDetailScreen from '../community-recipe-detail';
@@ -147,10 +181,10 @@ describe('CommunityRecipeDetailScreen', () => {
     expect(getByTestId('community-detail-empty')).toBeTruthy();
   });
 
-  it('pressing back calls router.back()', () => {
+  it('pressing back navigates to explore tab', () => {
     const { getByTestId } = render(<CommunityRecipeDetailScreen />);
     fireEvent.press(getByTestId('btn-back'));
-    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith('/(tabs)/community');
   });
 
   describe('with shared recipe', () => {
@@ -162,22 +196,6 @@ describe('CommunityRecipeDetailScreen', () => {
       const { getByTestId, getByText } = render(<CommunityRecipeDetailScreen />);
       expect(getByTestId('detail-title')).toBeTruthy();
       expect(getByText('Community Tacos')).toBeTruthy();
-    });
-
-    it('shows the sharer name', () => {
-      const { getByText } = render(<CommunityRecipeDetailScreen />);
-      expect(getByText('Chef Elena')).toBeTruthy();
-    });
-
-    it('shows the rating', () => {
-      const { getByTestId, getByText } = render(<CommunityRecipeDetailScreen />);
-      expect(getByTestId('community-rating')).toBeTruthy();
-      expect(getByText(/★ 9\/10/)).toBeTruthy();
-    });
-
-    it('shows the review', () => {
-      const { getByTestId } = render(<CommunityRecipeDetailScreen />);
-      expect(getByTestId('community-review')).toBeTruthy();
     });
 
     it('shows allergen warning when recipe has allergens', () => {
@@ -238,7 +256,26 @@ describe('CommunityRecipeDetailScreen', () => {
       expect(getByTestId('btn-chat-with-ai')).toBeTruthy();
     });
 
-    it('pressing chat with AI sets current recipe and navigates to chat', () => {
+    it('chat with AI button is disabled for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByTestId } = render(<CommunityRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(true);
+    });
+
+    it('chat with AI button shows upgrade label for free users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: false, tier: 'free' });
+      const { getByText } = render(<CommunityRecipeDetailScreen />);
+      expect(getByText('👨‍🍳 Upgrade to Pro — Chat with Jules')).toBeTruthy();
+    });
+
+    it('chat with AI button is enabled for pro users', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
+      const { getByTestId } = render(<CommunityRecipeDetailScreen />);
+      expect(getByTestId('btn-chat-with-ai').props.accessibilityState?.disabled).toBe(false);
+    });
+
+    it('pressing chat with AI sets current recipe and navigates to chat (pro user)', () => {
+      subscriptionsMock.useSubscription.mockReturnValue({ isPro: true, tier: 'pro' });
       const { getByTestId } = render(<CommunityRecipeDetailScreen />);
       fireEvent.press(getByTestId('btn-chat-with-ai'));
       expect(mockSetCurrentRecipe).toHaveBeenCalledWith(sampleRecipe);

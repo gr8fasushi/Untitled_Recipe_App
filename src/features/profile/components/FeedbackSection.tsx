@@ -46,8 +46,6 @@ export function FeedbackSection(): React.JSX.Element {
 
   return (
     <View testID="feedback-section">
-      <Text className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Send Feedback</Text>
-
       {/* Star rating */}
       <Text className="mb-2 text-sm font-medium text-gray-600 dark:text-gray-400">Rating</Text>
       <View className="mb-4 flex-row gap-2">
@@ -119,6 +117,11 @@ export function FeedbackSection(): React.JSX.Element {
           {error}
         </Text>
       )}
+
+      {/* Submit hint */}
+      <Text className="mb-3 text-xs text-gray-400 dark:text-gray-500 text-center">
+        Select a rating and enter at least 10 characters to submit
+      </Text>
 
       {/* Submit */}
       <Pressable

@@ -33,9 +33,9 @@ describe('ChatBubble', () => {
     expect(screen.getByText('You')).toBeTruthy();
   });
 
-  it('shows "AI Chef" label for assistant messages', () => {
+  it('shows "Chef Jules" label for assistant messages', () => {
     render(<ChatBubble message={assistantMessage} />);
-    expect(screen.getByText('AI Chef')).toBeTruthy();
+    expect(screen.getByText('Chef Jules')).toBeTruthy();
   });
 
   it('uses message id as default testID', () => {

@@ -29,7 +29,7 @@ export function ChatBubble({ message, testID }: ChatBubbleProps): React.JSX.Elem
         </Text>
       </View>
       <Text className={`mt-1 text-xs text-gray-400 ${isUser ? 'text-right' : 'text-left'}`}>
-        {isUser ? 'You' : 'AI Chef'}
+        {isUser ? 'You' : 'Chef Jules'}
       </Text>
     </View>
   );

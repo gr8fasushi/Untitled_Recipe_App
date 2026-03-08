@@ -68,7 +68,8 @@
           "microphonePermission": "RecipeApp uses your microphone so you can ask the AI cooking assistant questions hands-free.",
           "speechRecognitionPermission": "RecipeApp uses speech recognition to transcribe your voice questions for the AI cooking assistant."
         }
-      ]
+      ],
+      "react-native-purchases"
     ],
     "experiments": {
       "typedRoutes": true

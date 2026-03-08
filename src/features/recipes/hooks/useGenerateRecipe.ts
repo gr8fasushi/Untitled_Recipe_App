@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { usePantryStore } from '@/features/pantry/store/pantryStore';
 import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
@@ -6,9 +6,17 @@ import { GenerateRecipeInputSchema } from '../types';
 import { useRecipesStore } from '../store/recipesStore';
 import type { Recipe } from '@/shared/types';
 
+export interface RecipeFilterParams {
+  mealType?: string | null;
+  difficulty?: string | null;
+  maxCookTime?: number | null;
+  servingSize?: string | null;
+  searchQuery?: string | null;
+}
+
 interface UseGenerateRecipeReturn {
-  generate: (useAI?: boolean) => Promise<void>;
-  loadMore: (useAI?: boolean) => Promise<void>;
+  generate: (filters?: RecipeFilterParams) => Promise<void>;
+  loadMore: (filters?: RecipeFilterParams) => Promise<void>;
   isLoading: boolean;
   isLoadingMore: boolean;
   error: string | null;
@@ -18,6 +26,10 @@ interface UseGenerateRecipeReturn {
 export function useGenerateRecipe(): UseGenerateRecipeReturn {
   const profile = useAuthStore((s) => s.profile);
   const selectedIngredients = usePantryStore((s) => s.selectedIngredients);
+  const seenTitlesRef = useRef<Set<string>>(new Set());
+  const isFirstRenderRef = useRef(true);
+  const allergenKey = (profile?.allergens ?? []).join(',');
+  const dietKey = (profile?.dietaryPreferences ?? []).join(',');
   const {
     recipes,
     isLoading,
@@ -32,17 +44,33 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
     setError,
   } = useRecipesStore();
 
+  // Clear seen-titles cache and displayed results when allergens/diet prefs change (skip mount)
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    seenTitlesRef.current = new Set();
+    setRecipes([]);
+  }, [allergenKey, dietKey, setRecipes]);
+
   const generate = useCallback(
-    async (useAI: boolean = true) => {
-      // Build input without undefined optional fields — Firebase Callable converts undefined → null,
-      // which causes CF schema validation to fail for non-nullable optional fields.
+    async (filters?: RecipeFilterParams) => {
+      const sessionToken = Math.random().toString(36).slice(2, 8);
+      const excludeTitles = Array.from(seenTitlesRef.current);
       const inputData = {
         ingredients: selectedIngredients,
         allergens: profile?.allergens ?? [],
         dietaryPreferences: profile?.dietaryPreferences ?? [],
         ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
         ...(strictIngredients && { strictIngredients: true as const }),
-        ...(!useAI && { useAI: false as const }),
+        ...(excludeTitles.length > 0 && { excludeTitles }),
+        sessionToken,
+        ...(filters?.mealType && { mealType: filters.mealType }),
+        ...(filters?.difficulty && { difficulty: filters.difficulty }),
+        ...(filters?.maxCookTime != null && { maxCookTime: filters.maxCookTime }),
+        ...(filters?.servingSize && { servingSize: filters.servingSize }),
+        ...(filters?.searchQuery?.trim() && { searchQuery: filters.searchQuery.trim() }),
       };
       const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
@@ -56,6 +84,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
 
       try {
         const result = await generateRecipeFn(parsed.data);
+        result.data.recipes.forEach((r: Recipe) => seenTitlesRef.current.add(r.title));
         setRecipes(result.data.recipes);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to generate recipe';
@@ -73,11 +102,13 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
       setLoading,
       setError,
     ]
+    // Note: filters.searchQuery is a call-time argument, not a hook dep — no change needed
   );
 
   const loadMore = useCallback(
-    async (useAI: boolean = true) => {
-      const excludeTitles = recipes.map((r) => r.title);
+    async (filters?: RecipeFilterParams) => {
+      const sessionToken = Math.random().toString(36).slice(2, 8);
+      const excludeTitles = Array.from(seenTitlesRef.current);
       const inputData = {
         ingredients: selectedIngredients,
         allergens: profile?.allergens ?? [],
@@ -85,7 +116,12 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
         ...(selectedCuisines.length > 0 && { cuisines: selectedCuisines }),
         ...(strictIngredients && { strictIngredients: true as const }),
         ...(excludeTitles.length > 0 && { excludeTitles }),
-        ...(!useAI && { useAI: false as const }),
+        sessionToken,
+        ...(filters?.mealType && { mealType: filters.mealType }),
+        ...(filters?.difficulty && { difficulty: filters.difficulty }),
+        ...(filters?.maxCookTime != null && { maxCookTime: filters.maxCookTime }),
+        ...(filters?.servingSize && { servingSize: filters.servingSize }),
+        ...(filters?.searchQuery?.trim() && { searchQuery: filters.searchQuery.trim() }),
       };
       const parsed = GenerateRecipeInputSchema.safeParse(inputData);
 
@@ -99,6 +135,7 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
 
       try {
         const result = await generateRecipeFn(parsed.data);
+        result.data.recipes.forEach((r: Recipe) => seenTitlesRef.current.add(r.title));
         appendRecipes(result.data.recipes);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load more recipes';
@@ -112,7 +149,6 @@ export function useGenerateRecipe(): UseGenerateRecipeReturn {
       profile,
       selectedCuisines,
       strictIngredients,
-      recipes,
       appendRecipes,
       setLoadingMore,
       setError,

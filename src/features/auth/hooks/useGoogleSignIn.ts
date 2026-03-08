@@ -63,6 +63,7 @@ export function useGoogleSignIn(): UseGoogleSignInReturn {
             dietaryPreferences: [],
             onboardingComplete: false,
             createdAt: new Date(),
+            tier: 'free',
           });
           profile = await fetchUserProfile(firebaseUser.uid);
         }

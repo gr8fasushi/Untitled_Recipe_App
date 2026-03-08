@@ -6,6 +6,8 @@ export interface UserProfile {
   dietaryPreferences: string[];
   onboardingComplete: boolean;
   createdAt: Date;
+  tier: 'free' | 'pro';
+  subscriptionExpiresAt?: Date | null;
 }
 
 export interface Ingredient {
@@ -30,7 +32,7 @@ export interface Recipe {
   difficulty: 'easy' | 'medium' | 'hard';
   generatedAt: string;
   source: 'ai' | 'themealdb';
-  imageUrl?: string;
+  imageUrl?: string | null;
 }
 
 export interface RecipeIngredient {
@@ -43,7 +45,7 @@ export interface RecipeIngredient {
 export interface RecipeStep {
   stepNumber: number;
   instruction: string;
-  duration?: number;
+  duration?: number | null;
 }
 
 export interface NutritionInfo {

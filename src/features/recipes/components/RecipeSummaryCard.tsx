@@ -12,14 +12,12 @@ export function RecipeSummaryCard({
   onViewFull,
   testID,
 }: RecipeSummaryCardProps): React.JSX.Element {
-  const isTheMealDb = recipe.source === 'themealdb';
-
   return (
     <View
       testID={testID}
       className="mb-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden"
     >
-      {/* Optional image from TheMealDB */}
+      {/* Optional hero image */}
       {recipe.imageUrl ? (
         <Image
           testID="recipe-card-image"
@@ -30,23 +28,6 @@ export function RecipeSummaryCard({
       ) : null}
 
       <View className="p-4">
-        {/* Source badge */}
-        <View className="flex-row items-center gap-2 mb-2">
-          {isTheMealDb ? (
-            <View className="rounded-full bg-blue-100 dark:bg-blue-900 px-2.5 py-0.5">
-              <Text className="text-xs font-nunito-bold text-blue-700 dark:text-blue-300">
-                🍽️ TheMealDB
-              </Text>
-            </View>
-          ) : (
-            <View className="rounded-full bg-amber-100 dark:bg-amber-900 px-2.5 py-0.5">
-              <Text className="text-xs font-nunito-bold text-amber-700 dark:text-amber-300">
-                🤖 AI Generated
-              </Text>
-            </View>
-          )}
-        </View>
-
         {recipe.allergens.length > 0 ? (
           <View className="mb-2 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5">
             <Text className="text-xs text-red-700 font-nunito">

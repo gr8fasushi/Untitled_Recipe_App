@@ -62,6 +62,9 @@ export async function loadSavedRecipes(uid: string): Promise<SavedRecipe[]> {
     const parsed = SavedRecipeSchema.safeParse(docSnap.data());
     if (parsed.success) {
       results.push(parsed.data);
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('[savedRecipes] Parse failed for doc', docSnap.id, parsed.error.issues);
     }
   }
   return results;

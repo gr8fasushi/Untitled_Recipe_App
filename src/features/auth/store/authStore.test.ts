@@ -15,6 +15,7 @@ const mockProfile: UserProfile = {
   dietaryPreferences: [],
   onboardingComplete: false,
   createdAt: new Date('2026-01-01'),
+  tier: 'free',
 };
 
 beforeEach(() => {

@@ -58,6 +58,7 @@ export async function signUpWithEmail(
     dietaryPreferences: [],
     onboardingComplete: false,
     createdAt: new Date(),
+    tier: 'free',
   });
   return credential;
 }
