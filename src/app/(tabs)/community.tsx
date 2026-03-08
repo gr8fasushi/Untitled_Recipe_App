@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
   Pressable,
   ScrollView,
@@ -18,10 +19,13 @@ import { generateRecipeFn } from '@/shared/services/firebase/functions.service';
 import { Button, CollapsibleSection, PageContainer } from '@/shared/components/ui';
 import { useHolidayStore } from '@/stores/holidayStore';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
+import { useCommunityStore } from '@/features/saved-recipes/store/communityStore';
+import { loadPopularRecipes } from '@/features/saved-recipes/services/communityService';
 
 import { useExploreStore } from '@/stores/exploreStore';
 import { CUISINES } from '@/constants/cuisines';
 import type { Recipe } from '@/shared/types';
+import type { SharedRecipe } from '@/features/saved-recipes/types';
 
 const MEAL_TYPES = [
   { id: 'Breakfast', label: 'Breakfast', emoji: '🌅' },
@@ -90,6 +94,10 @@ export default function CommunityScreen(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  const popularRecipes = useCommunityStore((s) => s.popularRecipes);
+  const setPopularRecipes = useCommunityStore((s) => s.setPopularRecipes);
+  const setCurrentSharedRecipe = useCommunityStore((s) => s.setCurrentSharedRecipe);
+
   const isWeb = Platform.OS === 'web';
 
   // Clear cached explore results when allergens or dietary preferences change
@@ -98,6 +106,13 @@ export default function CommunityScreen(): React.JSX.Element {
   useEffect(() => {
     clearResults();
   }, [allergenKey, dietKey, clearResults]);
+
+  // Load popular community recipes on mount (fire-and-forget)
+  useEffect(() => {
+    loadPopularRecipes()
+      .then(setPopularRecipes)
+      .catch(() => {});
+  }, [setPopularRecipes]);
 
   const holiday = useHolidayStore((s) => s.theme);
   const isDark = useIsDarkMode();
@@ -199,6 +214,11 @@ export default function CommunityScreen(): React.JSX.Element {
     router.push('/(tabs)/recipe-detail?from=community');
   }
 
+  function handlePopularPress(sharedRecipe: SharedRecipe): void {
+    setCurrentSharedRecipe(sharedRecipe);
+    router.push('/(tabs)/community-recipe-detail');
+  }
+
   const pillBase = 'flex-row items-center gap-1 px-3 py-1.5 rounded-full border';
   const pillActive = 'bg-amber-500 border-amber-500';
   const pillInactive = 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700';
@@ -243,6 +263,38 @@ export default function CommunityScreen(): React.JSX.Element {
 
         <View style={{ flex: 1 }}>
           <PageContainer className="px-4 mt-4">
+            {/* Popular Right Now — top community recipes by save count */}
+            {popularRecipes.length > 0 ? (
+              <View testID="popular-section" className="mb-5">
+                <Text className="text-sm font-nunito-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Popular Right Now
+                </Text>
+                <FlatList<SharedRecipe>
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={popularRecipes}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      testID={`popular-recipe-${item.id}`}
+                      onPress={() => handlePopularPress(item)}
+                      className="mr-3 w-40 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-3 shadow-sm"
+                    >
+                      <Text
+                        className="text-sm font-nunito-bold text-gray-900 dark:text-gray-100"
+                        numberOfLines={2}
+                      >
+                        {item.recipe.title}
+                      </Text>
+                      <Text className="text-xs font-nunito text-gray-400 mt-1">
+                        {item.saveCount} save{item.saveCount !== 1 ? 's' : ''}
+                      </Text>
+                    </Pressable>
+                  )}
+                />
+              </View>
+            ) : null}
+
             {/* Collapsible filters — Meal Type, Cuisine, Other, Difficulty, Time, Serving */}
             <CollapsibleSection
               title="Filters"

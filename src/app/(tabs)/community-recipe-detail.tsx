@@ -11,6 +11,7 @@ import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatu
 import { Button } from '@/shared/components/ui';
 
 import { useRecipesStore } from '@/features/recipes/store/recipesStore';
+import { useGroceryList } from '@/features/grocery';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
   const savedRecipes = useSavedRecipesStore((s) => s.savedRecipes);
   const { saveToMyCollection } = useCommunityRecipes();
   const setCurrentRecipe = useRecipesStore((s) => s.setCurrentRecipe);
+  const { addItemsFromRecipe } = useGroceryList();
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
@@ -326,6 +328,21 @@ export default function CommunityRecipeDetailScreen(): React.JSX.Element {
                     </View>
                   </View>
                 ) : null}
+
+                {/* Add to Grocery List */}
+                <View className="mb-3">
+                  <Pressable
+                    testID="btn-add-to-grocery"
+                    onPress={() => {
+                      if (recipe) addItemsFromRecipe(recipe);
+                    }}
+                    className="py-4 rounded-2xl items-center bg-teal-600"
+                  >
+                    <Text className="text-base font-nunito-bold text-white">
+                      🛒 Add to Grocery List
+                    </Text>
+                  </Pressable>
+                </View>
 
                 {/* Chat with AI */}
                 <View className="mb-3">

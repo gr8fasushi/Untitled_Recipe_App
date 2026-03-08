@@ -1,0 +1,10 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "sharedRecipes",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "saveCount", "order": "DESCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}

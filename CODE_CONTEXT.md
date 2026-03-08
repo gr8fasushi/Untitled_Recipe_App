@@ -1,8 +1,8 @@
 # CODE_CONTEXT.md — Session-Start Reference
 
 > Updated at end of each session. Read this instead of individual files to save tokens.
-> Last updated: Feature 14 (UI polish + holiday theming system) — COMPLETE. 748 tests, 75 suites, all passing.
-> Current branch: `feature/web-deploy`
+> Last updated: 2026-03-07 — Phases A+B+C (Grocery List + Popular Recipes). 871 tests, 81 suites, all passing.
+> Current branch: `feature/grocery-explore`
 
 ---
 

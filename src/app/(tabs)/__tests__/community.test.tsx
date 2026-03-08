@@ -30,6 +30,22 @@ jest.mock('@/shared/services/firebase/functions.service', () => ({
   generateRecipeFn: (...args: unknown[]) => mockGenerateRecipeFn(...args),
 }));
 
+const mockSetPopularRecipes = jest.fn();
+const mockSetCurrentSharedRecipe = jest.fn();
+jest.mock('@/features/saved-recipes/store/communityStore', () => ({
+  useCommunityStore: (sel: (s: unknown) => unknown) =>
+    sel({
+      popularRecipes: [],
+      setPopularRecipes: mockSetPopularRecipes,
+      setCurrentSharedRecipe: mockSetCurrentSharedRecipe,
+    }),
+}));
+
+const mockLoadPopularRecipes = jest.fn().mockResolvedValue([]);
+jest.mock('@/features/saved-recipes/services/communityService', () => ({
+  loadPopularRecipes: (...args: unknown[]) => mockLoadPopularRecipes(...args),
+}));
+
 jest.mock('@/features/recipes/components/RecipeSummaryCard', () => ({
   RecipeSummaryCard: ({
     recipe,

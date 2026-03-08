@@ -80,3 +80,16 @@ export async function incrementSaveCount(sharedRecipeId: string): Promise<void> 
     saveCount: increment(1),
   });
 }
+
+export async function loadPopularRecipes(): Promise<SharedRecipe[]> {
+  const q = query(sharedRecipesCol(), orderBy('saveCount', 'desc'), limit(10));
+  const snapshot = await getDocs(q);
+  const results: SharedRecipe[] = [];
+  for (const docSnap of snapshot.docs) {
+    const parsed = SharedRecipeSchema.safeParse(docSnap.data());
+    if (parsed.success) {
+      results.push(parsed.data);
+    }
+  }
+  return results;
+}

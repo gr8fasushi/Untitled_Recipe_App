@@ -8,6 +8,7 @@ import { MealDbBadge } from '@/features/recipes/components/MealDbBadge';
 import { MeatTemperatureCard } from '@/features/recipes/components/MeatTemperatureCard';
 
 import { useSaveRecipe } from '@/features/saved-recipes/hooks/useSaveRecipe';
+import { useGroceryList } from '@/features/grocery';
 import { useIsDarkMode } from '@/shared/hooks/useIsDarkMode';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
@@ -21,6 +22,7 @@ export default function RecipeDetailScreen(): React.JSX.Element {
   const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
   const { isSaved, isSaving, toggleSave } = useSaveRecipe(recipe);
+  const { addItemsFromRecipe } = useGroceryList();
   const isDark = useIsDarkMode();
   const isWeb = Platform.OS === 'web';
 
@@ -298,6 +300,15 @@ export default function RecipeDetailScreen(): React.JSX.Element {
 
                 {/* Action buttons */}
                 <View className="gap-3 mb-2">
+                  <Pressable
+                    testID="btn-add-to-grocery"
+                    onPress={() => addItemsFromRecipe(recipe)}
+                    className="py-4 rounded-2xl items-center bg-teal-600"
+                  >
+                    <Text className="text-base font-nunito-bold text-white">
+                      🛒 Add to Grocery List
+                    </Text>
+                  </Pressable>
                   <Pressable
                     testID="btn-save-recipe"
                     disabled={isSaving}

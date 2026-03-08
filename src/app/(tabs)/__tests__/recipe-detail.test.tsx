@@ -46,6 +46,19 @@ jest.mock('@/features/saved-recipes/hooks/useSaveRecipe', () => ({
   }),
 }));
 
+jest.mock('@/features/grocery', () => ({
+  useGroceryList: () => ({
+    items: [],
+    isLoading: false,
+    error: null,
+    addItemsFromRecipe: jest.fn(),
+    removeItem: jest.fn(),
+    toggleChecked: jest.fn(),
+    clearChecked: jest.fn(),
+    clearAll: jest.fn(),
+  }),
+}));
+
 // eslint-disable-next-line import/first
 import RecipeDetailScreen from '../recipe-detail';
 

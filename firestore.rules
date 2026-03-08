@@ -44,6 +44,11 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
+      // Grocery list subcollection — single doc per user: users/{uid}/groceryList/items
+      match /groceryList/{doc} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
       // Saved recipes subcollection — private to each user
       match /savedRecipes/{recipeId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == uid;
@@ -58,6 +63,13 @@ service cloud.firestore {
       allow update: if request.auth != null;
       allow delete: if request.auth != null
         && request.auth.uid == resource.data.sharedBy.uid;
+    }
+
+    // Shared ingredient cache — any authenticated user can read or write
+    // Stores safe metadata only: id, name, category, emoji, cachedAt
+    match /ingredients/{ingredientId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
     // Rate limit counters — only writable by authenticated Cloud Functions
